@@ -30,22 +30,22 @@ def main(matrix_in, prefix):
     os.system("mv tmp2.matrix clean_PI_matrix.txt")
     
 if __name__ == "__main__":
-	usage="usage: %prog [options]"
-	parser = OptionParser(usage=usage) 
-	parser.add_option("-m", "--input_matrix", dest="matrix_in",
+    usage="usage: %prog [options]"
+    parser = OptionParser(usage=usage) 
+    parser.add_option("-m", "--input_matrix", dest="matrix_in",
                       help="/path/to/isg_matrix [REQUIRED]",
                       action="callback", callback=test_file, type="string")
-	parser.add_option("-p", "--output_prefix", dest="prefix",
+    parser.add_option("-p", "--output_prefix", dest="prefix",
                       help="prefix for outfiles [REQUIRED]",
                       action="store", type="string")    
 
-        options, args = parser.parse_args()
+    options, args = parser.parse_args()
     
-	mandatories = ["matrix_in", "prefix"]
-	for m in mandatories:
-		if not options.__dict__[m]:
-			print "\nMust provide %s.\n" %m
-			parser.print_help()
-			exit(-1)
+    mandatories = ["matrix_in", "prefix"]
+    for m in mandatories:
+	    if not options.__dict__[m]:
+		print "\nMust provide %s.\n" %m
+		parser.print_help()
+		exit(-1)
 
-	main(options.matrix_in, options.prefix)
+    main(options.matrix_in, options.prefix)
