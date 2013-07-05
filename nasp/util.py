@@ -2,6 +2,7 @@
 
 from collections import deque
 import collections
+import sys
 
 def get_field_index(matrix_in):
     """find where the sequence data stops"""
@@ -26,15 +27,25 @@ def get_singleton_snps(matrix_in, my_genome, last):
     firstLine=matrix.readline()
     output = open("unique_snps.txt", "w")
     #print >> output, firstLine,
+    to_remove = [ ]
     for line in matrix:
         hits = [ ]
-        fields = line.split("\t")
+        fields = line.split()
         for x in fields[1:last]:
-            if x in fields[my_genome]:
+            if "A" in x and x in fields[my_genome]:
                 hits.append("1")
+            elif "T" in x and x in fields[my_genome]:
+                hits.append("1")
+            elif "C" in x and x in fields[my_genome]:
+                hits.append("1")
+            elif "G" in x and x in fields[my_genome]:
+                hits.append("1")
+            else:
+                pass
         if int(len(hits))==1:
-            print >> output, fields[0],"\n",
-
+            to_remove.append(fields[0])
+    print >> output,"\n".join(to_remove)
+    
 def inverse_filter_matrix(in_matrix, prefix, coords):
     """filter NASP matrix for a user provided list of genome
     coordinates"""
@@ -50,7 +61,7 @@ def inverse_filter_matrix(in_matrix, prefix, coords):
 	if fields[0] not in coords_file:
             lines.append(line)
 	    print >> out_file, line,
-    print "Number of matching SNPs:", len(lines)
+    print "Number of unique SNPs removed:", len(coords_file)
 
 def raw_matrix(matrix_in):
     """bring in ISG matrix and report the total number of SNPs"""
