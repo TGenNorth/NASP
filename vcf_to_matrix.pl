@@ -3,6 +3,8 @@
 
 use strict;
 use warnings;
+use FindBin;
+use lib $FindBin::Bin;
 use Vcf;
 #use Data::Dumper;
 
@@ -317,12 +319,12 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $nonxfileha
   print $nonxfilehandle "LocusID\tReference\t";
   print $intersectfilehandle "LocusID\tReference\t";
   print $allcallfilehandle "LocusID\tReference\t";
-  foreach my $samplefile ( sort keys( $samplecallsdata ) )
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
   {
     $badcallcounts->{'N'}{$samplefile} = {};
     $badcallcounts->{'X'}{$samplefile} = {};
     $badcallcounts->{'?'}{$samplefile} = {};
-    foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+    foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
     {
       print $matrixfilehandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
       print $nonxfilehandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
@@ -362,9 +364,9 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $nonxfileha
       my $somethingcalledn = 0;
       my $somethingcalledx = 0;
       my $somethingcalledoth = 0;
-      foreach my $samplefile ( sort keys( $samplecallsdata ) )
+      foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
       {
-        foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+        foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
         {
           if( length( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} ) < ( $currentposition ) ){ $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} .= ( 'X' x ( $currentposition - length( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} ) ) ); }
           my $samplecall = substr( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome}, ( $currentposition - 1 ), 1 );
@@ -423,9 +425,9 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $nonxfileha
         if( !defined( $snppatternarray->{$callpattern} ) ){ $snppatternarray->{$callpattern} = $snpnextpatternnum++; }
         print $matrixfilehandle $linetoprint . "'$callpattern'\t$snppatternarray->{$callpattern}\t$dupscall\t\t\n";
         $refsnpfastadata .= $simplifiedrefcall;
-        foreach my $samplefile ( sort keys( $samplecallsdata ) )
+        foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
         {
-          foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+          foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
           {
             if( !defined( $snpfastadata->{$samplefile} ) ){ $snpfastadata->{$samplefile} = {}; }
             if( !defined( $snpfastadata->{$samplefile}{$samplecolumn} ) ){ $snpfastadata->{$samplefile}{$samplecolumn} = ''; }
@@ -438,9 +440,9 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $nonxfileha
           if( !defined( $nonxpatternarray->{$callpattern} ) ){ $nonxpatternarray->{$callpattern} = $nonxnextpatternnum++; }
           print $nonxfilehandle $linetoprint . "'$callpattern'\t$nonxpatternarray->{$callpattern}\t$dupscall\t\t\n";
           $nonxrefsnpfastadata .= $simplifiedrefcall;
-          foreach my $samplefile ( sort keys( $samplecallsdata ) )
+          foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
           {
-            foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+            foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
             {
               if( !defined( $nonxsnpfastadata->{$samplefile} ) ){ $nonxsnpfastadata->{$samplefile} = {}; }
               if( !defined( $nonxsnpfastadata->{$samplefile}{$samplecolumn} ) ){ $nonxsnpfastadata->{$samplefile}{$samplecolumn} = ''; }
@@ -448,15 +450,15 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $nonxfileha
             }
           }
           my $intersectionpresent = 1;
-          foreach my $samplename ( keys( $intersectioncalls ) ){ if( $intersectioncalls->{$samplename} eq 'N' ){ $intersectionpresent = 0; } }
+          foreach my $samplename ( keys( %{$intersectioncalls} ) ){ if( $intersectioncalls->{$samplename} eq 'N' ){ $intersectionpresent = 0; } }
           if( $intersectionpresent == 1 )
           {
             if( !defined( $intersectpatternarray->{$callpattern} ) ){ $intersectpatternarray->{$callpattern} = $intersectnextpatternnum++; }
             print $intersectfilehandle $linetoprint . "'$callpattern'\t$intersectpatternarray->{$callpattern}\t$dupscall\t\t\n";
             $intersectrefsnpfastadata .= $simplifiedrefcall;
-            foreach my $samplefile ( sort keys( $samplecallsdata ) )
+            foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
             {
-              foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+              foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
               {
                 if( !defined( $intersectsnpfastadata->{$samplefile} ) ){ $intersectsnpfastadata->{$samplefile} = {}; }
                 if( !defined( $intersectsnpfastadata->{$samplefile}{$samplecolumn} ) ){ $intersectsnpfastadata->{$samplefile}{$samplecolumn} = ''; }
@@ -488,9 +490,9 @@ if( open( my $snpfastahandle, '>', $snpfastafile ) && open( my $nonxsnpfastahand
   {
     print $snpfastahandle ">SNP::Reference\n";
     print $snpfastahandle "$refsnpfastadata\n";
-    foreach my $samplefile ( sort keys( $samplecallsdata ) )
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
     {
-      foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+      foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
       {
         print $snpfastahandle ">SNP::${samplecolumn}::$samplefileinfo->{$samplefile}\n";
         print $snpfastahandle "$snpfastadata->{$samplefile}{$samplecolumn}\n";
@@ -501,9 +503,9 @@ if( open( my $snpfastahandle, '>', $snpfastafile ) && open( my $nonxsnpfastahand
   {
     print $nonxsnpfastahandle ">SNP::Reference\n";
     print $nonxsnpfastahandle "$nonxrefsnpfastadata\n";
-    foreach my $samplefile ( sort keys( $samplecallsdata ) )
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
     {
-      foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+      foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
       {
         print $nonxsnpfastahandle ">SNP::${samplecolumn}::$samplefileinfo->{$samplefile}\n";
         print $nonxsnpfastahandle "$nonxsnpfastadata->{$samplefile}{$samplecolumn}\n";
@@ -514,9 +516,9 @@ if( open( my $snpfastahandle, '>', $snpfastafile ) && open( my $nonxsnpfastahand
   {
     print $intersectsnpfastahandle ">SNP::Reference\n";
     print $intersectsnpfastahandle "$intersectrefsnpfastadata\n";
-    foreach my $samplefile ( sort keys( $samplecallsdata ) )
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
     {
-      foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+      foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
       {
         print $intersectsnpfastahandle ">SNP::${samplecolumn}::$samplefileinfo->{$samplefile}\n";
         print $intersectsnpfastahandle "$intersectsnpfastadata->{$samplefile}{$samplecolumn}\n";
@@ -535,9 +537,9 @@ if( open( my $statshandle, '>', $statisticsfile ) )
   print $statshandle "# It's especially complicated because it needs to be both human-readable and script-parsable, and preferably have enough information for people to understand what all them crazy numbers mean.\n";
   print $statshandle "Stat_ID\tTotal\t";
   my $nopersampleinfo = '';
-  foreach my $samplefile ( sort keys( $samplecallsdata ) )
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
   {
-    foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+    foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
     {
       $nopersampleinfo .= "\t";
       print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
@@ -545,14 +547,14 @@ if( open( my $statshandle, '>', $statisticsfile ) )
   }
   print $statshandle "\n";
   my $referencelength = 0;
-  foreach my $currentchromosome ( keys( $seenchromosomes ) ){ $referencelength += length( $referencecalls->{$currentchromosome} ); }
+  foreach my $currentchromosome ( keys( %{$seenchromosomes} ) ){ $referencelength += length( $referencecalls->{$currentchromosome} ); }
   print $statshandle "reference_length\t$referencelength\t$nopersampleinfo\n";
   my $referencegood = 0;
-  #foreach my $currentchromosome ( keys( $seenchromosomes ) ){ $referencegood += scalar( () = ( $referencecalls->{$currentchromosome} =~ /[ACGTUacgtu]/g ) ); }
-  foreach my $currentchromosome ( keys( $seenchromosomes ) ){ $referencegood += scalar( grep( /[ACGTUacgtu]/, split( '', $referencecalls->{$currentchromosome} ) ) ); }
+  #foreach my $currentchromosome ( keys( %{$seenchromosomes} ) ){ $referencegood += scalar( () = ( $referencecalls->{$currentchromosome} =~ /[ACGTUacgtu]/g ) ); }
+  foreach my $currentchromosome ( keys( %{$seenchromosomes} ) ){ $referencegood += scalar( grep( /[ACGTUacgtu]/, split( '', $referencecalls->{$currentchromosome} ) ) ); }
   print $statshandle "reference_clean\t$referencegood\t$nopersampleinfo\n";
   my $duppositions = 0;
-  foreach my $currentchromosome ( keys( $seenchromosomes ) ){ $duppositions += scalar( grep( /1/, split( '', $dupscalls->{$currentchromosome} ) ) ); }
+  foreach my $currentchromosome ( keys( %{$seenchromosomes} ) ){ $duppositions += scalar( grep( /1/, split( '', $dupscalls->{$currentchromosome} ) ) ); }
   print $statshandle "dups_count\t$duppositions\t$nopersampleinfo\n";
   print $statshandle "dups_proportion\t" . sprintf( "%.2f", ( $duppositions * 100 / $referencelength ) ) . "%\t$nopersampleinfo\n";
   print $statshandle "core_genome_size\t$coregenomesize\t$nopersampleinfo\n";
@@ -561,26 +563,26 @@ if( open( my $statshandle, '>', $statisticsfile ) )
   print $statshandle "num_intersect_snps\t$numintersectsnps\t$nopersampleinfo\n";
   print $statshandle "core_genome_portion_snp\t" . ( ( $coregenomesize > 0 ) ? ( sprintf( "%.2f", ( $numintersectsnps * 100 / $coregenomesize ) ) . "%\t" ) : '-\t' ) . "$nopersampleinfo\n";
   print $statshandle "num_n\t$badcallsum->{'N'}\t";
-  foreach my $samplefile ( sort keys( $samplecallsdata ) ){ foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) ){ print $statshandle "$badcallcounts->{'N'}{$samplefile}{$samplecolumn}\t"; } }
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$badcallcounts->{'N'}{$samplefile}{$samplecolumn}\t"; } }
   print $statshandle "\n";
   print $statshandle "num_x\t$badcallsum->{'X'}\t";
-  foreach my $samplefile ( sort keys( $samplecallsdata ) ){ foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) ){ print $statshandle "$badcallcounts->{'X'}{$samplefile}{$samplecolumn}\t"; } }
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$badcallcounts->{'X'}{$samplefile}{$samplecolumn}\t"; } }
   print $statshandle "\n";
   print $statshandle "num_other\t$badcallsum->{'?'}\t";
-  foreach my $samplefile ( sort keys( $samplecallsdata ) ){ foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) ){ print $statshandle "$badcallcounts->{'?'}{$samplefile}{$samplecolumn}\t"; } }
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$badcallcounts->{'?'}{$samplefile}{$samplecolumn}\t"; } }
   print $statshandle "\n";
   print $statshandle "depth_filtered\t-\t";
-  foreach my $samplefile ( sort keys( $samplecallsdata ) ){ foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) ){ print $statshandle '' . ( defined( $vcfcallcounts->{'depthfiltered'}{$samplefile}{$samplecolumn} ) ? "$vcfcallcounts->{'depthfiltered'}{$samplefile}{$samplecolumn}\t" : "-\t" ); } }
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle '' . ( defined( $vcfcallcounts->{'depthfiltered'}{$samplefile}{$samplecolumn} ) ? "$vcfcallcounts->{'depthfiltered'}{$samplefile}{$samplecolumn}\t" : "-\t" ); } }
   print $statshandle "\n";
   print $statshandle "proportion_filtered\t-\t";
-  foreach my $samplefile ( sort keys( $samplecallsdata ) ){ foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) ){ print $statshandle '' . ( defined( $vcfcallcounts->{'propfiltered'}{$samplefile}{$samplecolumn} ) ? "$vcfcallcounts->{'propfiltered'}{$samplefile}{$samplecolumn}\t" : "-\t" ); } }
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle '' . ( defined( $vcfcallcounts->{'propfiltered'}{$samplefile}{$samplecolumn} ) ? "$vcfcallcounts->{'propfiltered'}{$samplefile}{$samplecolumn}\t" : "-\t" ); } }
   print $statshandle "\n";
   my $avgavg = 0;
   my $avgcount = 0;
   my $avgstring = '';
-  foreach my $samplefile ( sort keys( $samplecallsdata ) )
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
   {
-    foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) )
+    foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
     {
       if( defined( $vcfcallcounts->{'depthsum'}{$samplefile}{$samplecolumn} ) )
       {
@@ -592,7 +594,7 @@ if( open( my $statshandle, '>', $statisticsfile ) )
   }
   print $statshandle "coverage_depth\t" . sprintf( "%.2f", ( $avgavg / $referencelength ) ) . "\t$avgstring\n";
   print $statshandle "coverage_breadth\t-\t";
-  foreach my $samplefile ( sort keys( $samplecallsdata ) ){ foreach my $samplecolumn ( sort keys( $samplecallsdata->{$samplefile} ) ){ print $statshandle '' . ( defined( $vcfcallcounts->{'breadthpositions'}{$samplefile}{$samplecolumn} ) ? sprintf( "%.2f", ( $vcfcallcounts->{'breadthpositions'}{$samplefile}{$samplecolumn} * 100 / $referencelength ) ) . "%\t" : "-\t" ); } }
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle '' . ( defined( $vcfcallcounts->{'breadthpositions'}{$samplefile}{$samplecolumn} ) ? sprintf( "%.2f", ( $vcfcallcounts->{'breadthpositions'}{$samplefile}{$samplecolumn} * 100 / $referencelength ) ) . "%\t" : "-\t" ); } }
   print $statshandle "\n";
   print $statshandle "# reference_length: total number of positions found across all chromosomes in the reference\n";
   print $statshandle "# reference_clean: number of positions called A/C/G/T in the reference\n";

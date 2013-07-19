@@ -72,7 +72,7 @@ if( open( my $deltahandle, "<", "reference.delta" ) )
   # Write data to final output
   if( open( my $outputfilehandle, ">", $outputfilename ) )
   {
-    foreach my $currentchrom ( sort( keys( $isduplicate ) ) )
+    foreach my $currentchrom ( sort( keys( %{$isduplicate} ) ) )
     {
       print $outputfilehandle ">$currentchrom\n";
       print $outputfilehandle "$isduplicate->{$currentchrom}\n";
