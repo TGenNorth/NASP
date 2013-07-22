@@ -147,7 +147,7 @@ sub nasp
   $userinput = '';
   while( $userinput !~ /^\d{1,31}$/ )
   {
-    print "\nThis pipeline can do filtering based on coverage.\nCalls at positions with insufficient coverage will be changed to 'X'.\nIf you do not want filtering based on coverage, enter 0.\nWhat is your minimum coverage threshold [10]? ";
+    print "\nThis pipeline can do filtering based on coverage.\nIf you do not want filtering based on coverage, enter 0.\nWhat is your minimum coverage threshold [10]? ";
     $userinput = <>;
     chomp( $userinput );
     if( $userinput =~ /^$/ ){ $userinput = 10; }
@@ -156,7 +156,7 @@ sub nasp
   $userinput = '';
   while( $userinput !~ /^(?:[01](?:\.0{0,31})?|0?\.\d{1,31})$/ )
   {
-    print "\nThis pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.\nIf the proportion is insufficient, the call will be changed to 'N'.\nIf you do not want filtering based on proportion, enter 0.\nWhat is the minimum acceptable proportion [0.9]? ";
+    print "\nThis pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.\nIf you do not want filtering based on proportion, enter 0.\nWhat is the minimum acceptable proportion [0.9]? ";
     $userinput = <>;
     chomp( $userinput );
     if( $userinput =~ /^$/ ){ $userinput = .9; }
