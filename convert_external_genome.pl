@@ -118,7 +118,7 @@ if( open( my $externalfilehandle, "<", $externalfilename ) )
     }
     close( $deltahandle );
     # Pad any unaligned ends
-    foreach my $currentchrom ( sort( keys( $externalcalls ) ) )
+    foreach my $currentchrom ( sort( keys( %{$externalcalls} ) ) )
     {
       if( length( $externalcalls->{$currentchrom} ) < $chromsizes->{$currentchrom} )
       {
@@ -129,7 +129,7 @@ if( open( my $externalfilehandle, "<", $externalfilename ) )
     # Write data to final output
     if( open( my $outputfilehandle, ">", $outputfilename ) )
     {
-      foreach my $currentchrom ( sort( keys( $externalcalls ) ) )
+      foreach my $currentchrom ( sort( keys( %{$externalcalls} ) ) )
       {
         print $outputfilehandle ">franken::$currentchrom\n";
         print $outputfilehandle "$externalcalls->{$currentchrom}\n";
