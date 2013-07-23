@@ -36,11 +36,11 @@ if( open( my $externalfilehandle, "<", $externalfilename ) )
     my $linefromfile = "";
     while( $linefromfile = <$externalfilehandle> )
     {
-      if( $linefromfile =~ /^[A-Za-z.-]+\s*$/ )
+      if( $linefromfile =~ /^([A-Za-z.-]+)\s*$/ )
       {
-        chomp( $linefromfile );
-        print $concatenatedhandle "$linefromfile\n";
-        $externalgenome .= $linefromfile;
+        my $fastachunk = $1;
+        print $concatenatedhandle "$fastachunk\n";
+        $externalgenome .= $fastachunk;
       }
     }
     close( $concatenatedhandle );

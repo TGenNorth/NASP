@@ -561,8 +561,8 @@ if( open( my $statshandle, '>', $statisticsfile ) )
   print $statshandle "num_total_variant\t$statscounters->{'totalvariant'}\t$nopersampleinfo\n";
   print $statshandle "num_best_snps\t$statscounters->{'bestsnps'}\t$nopersampleinfo\n";
   print $statshandle "best_position_breadth\t" . sprintf( "%.2f", ( $statscounters->{'bestpos'} * 100 / $statscounters->{'reflength'} ) ) . "%\t$nopersampleinfo\n";
-  print $statshandle "core_genome_portion_snp\t" . ( ( $statscounters->{'allbreadth'} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'} * 100 / $statscounters->{'allbreadth'} ) ) . "%\t" ) : '-\t' ) . "$nopersampleinfo\n";
-  print $statshandle "best_position_portion_snp\t" . ( ( $statscounters->{'bestpos'} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'} * 100 / $statscounters->{'bestpos'} ) ) . "%\t" ) : '-\t' ) . "\t$nopersampleinfo\n";
+  print $statshandle "core_genome_portion_snp\t" . ( ( $statscounters->{'allbreadth'} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'} * 100 / $statscounters->{'allbreadth'} ) ) . "%\t" ) : "-\t" ) . "$nopersampleinfo\n";
+  print $statshandle "best_position_portion_snp\t" . ( ( $statscounters->{'bestpos'} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'} * 100 / $statscounters->{'bestpos'} ) ) . "%\t" ) : "-\t" ) . "\t$nopersampleinfo\n";
   print $statshandle "num_called\t$statscounters->{'allcalled'}\t";
   foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplecalled'}{$samplefile}{$samplecolumn}\t"; } }
   print $statshandle "\n";
