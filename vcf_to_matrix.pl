@@ -14,7 +14,7 @@ if( @ARGV < 9 )
 Meant to be called from the pipeline automatically.
 
 Usage:
-vcf_to_matrix.pl <min_coverage> <min_proportion> <reference.fasta> <samples.vcf> [samples2.vcf ...] <allvariant_matrix.tsv> <bestsnps_matrix.tsv> <allcallable_matrix.tsv> <bestsnps.snpfasta> <statistics_file.tsv>
+vcf_to_matrix.pl <min_coverage> <min_proportion> <reference.fasta> <samples.vcf> [samples2.vcf ...] <allcallable_matrix.tsv> <bestsnps_matrix.tsv> <allsnps_matrix.tsv> <allindels_matrix.tsv> <bestsnps.snpfasta> <statistics_file.tsv>
 EOF
   exit();
 }
@@ -26,7 +26,8 @@ my @samplecallsfiles = ();
 while( my $samplecallsfile = shift() ){ push( @samplecallsfiles, $samplecallsfile ); } 
 my $statisticsfile = pop( @samplecallsfiles );
 my $bestsnpfastafile = pop( @samplecallsfiles );
-my $allcallmatrixfile = pop( @samplecallsfiles );
+my $allindelmatrixfile = pop( @samplecallsfiles );
+my $allsnpmatrixfile = pop( @samplecallsfiles );
 my $bestsnpmatrixfile = pop( @samplecallsfiles );
 my $outputmatrixfile = pop( @samplecallsfiles );
 
@@ -71,12 +72,14 @@ $samplefilterdata->{'proportion'} = {};
 my $statscounters = {};
 
 # Read in reference file
-if( open( my $referencefilehandle, '<', $referencefastafile ) )
+if( -e( $referencefastafile ) && open( my $referencefilehandle, '<', $referencefastafile ) )
 {
   my $linefromfile = "";
   my $currentchromosome = "";
-  $statscounters->{'reflength'} = 0;
-  $statscounters->{'refclean'} = 0;
+  $statscounters->{'reflength'} = {};
+  $statscounters->{'reflength'}{''} = 0;
+  $statscounters->{'refclean'} = {};
+  $statscounters->{'refclean'}{''} = 0;
   while( $linefromfile = <$referencefilehandle> )
   {
     if( $linefromfile =~ /^>([^\s]+)(?:\s|$)/ )
@@ -84,36 +87,54 @@ if( open( my $referencefilehandle, '<', $referencefastafile ) )
       $currentchromosome = $1;
       $seenchromosomes->{$currentchromosome} = 1;
       $referencecalls->{$currentchromosome} = '';
-    }
-    elsif( length( $currentchromosome ) && ( $linefromfile =~ /^([A-Za-z.-]+)\s*$/ ) )
+      $statscounters->{'reflength'}{$currentchromosome} = 0;
+      $statscounters->{'refclean'}{$currentchromosome} = 0;
+    } elsif( length( $currentchromosome ) && ( $linefromfile =~ /^([A-Za-z.-]+)\s*$/ ) )
     {
       my $refchunk = $1;
       $referencecalls->{$currentchromosome} .= $refchunk;
-      $statscounters->{'reflength'} += length( $refchunk );
-      $statscounters->{'refclean'} += scalar( grep( /[ACGTUacgtu]/, split( '', $refchunk ) ) );
+      my $statvalue = length( $refchunk );
+      $statscounters->{'reflength'}{''} += $statvalue;
+      $statscounters->{'reflength'}{$currentchromosome} += $statvalue;
+      $statvalue = scalar( grep( /[ACGTUacgtu]/, split( '', $refchunk ) ) );
+      $statscounters->{'refclean'}{''} += $statvalue;
+      $statscounters->{'refclean'}{$currentchromosome} += $statvalue;
     }
   }
   close( $referencefilehandle );
-} else { print STDERR "Could not open '$referencefastafile'!\n"; }
+} else
+{
+  print STDERR "Unable to continue because reference file '$referencefastafile' does not exist or could not be read!\n";
+  die( "Unable to continue because reference file '$referencefastafile' does not exist or could not be read!\n" );
+}
+if( ( scalar( keys( %{$seenchromosomes} ) ) < 1 ) || ( $statscounters->{'reflength'}{''} < 1 ) )
+{
+  print STDERR "Unable to continue because reference from file '$referencefastafile' is corrupt or blank!\n";
+  die( "Unable to continue because reference from file '$referencefastafile' is corrupt or blank!\n" );
+}
 
 # Read in duplicate region calls file
 if( length( $duplicatesfile ) && open( my $duplicateshandle, '<', $duplicatesfile ) )
 {
   my $linefromfile = "";
   my $currentchromosome = "";
-  $statscounters->{'duppositions'} = 0;
+  $statscounters->{'duppositions'} = {};
+  $statscounters->{'duppositions'}{''} = 0;
   while( $linefromfile = <$duplicateshandle> )
   {
     if( $linefromfile =~ /^>([^\s]+)(?:\s|$)/ )
     {
       $currentchromosome = $1;
       $dupscalls->{$currentchromosome} = '';
+      $statscounters->{'duppositions'}{$currentchromosome} = 0;
     }
     elsif( length( $currentchromosome ) && ( $linefromfile =~ /^([01]+)\s*$/ ) )
     {
       my $dupchunk = $1;
       $dupscalls->{$currentchromosome} .= $dupchunk;
-      $statscounters->{'duppositions'} += scalar( grep( /1/, split( '', $dupchunk ) ) );
+      my $statvalue = scalar( grep( /1/, split( '', $dupchunk ) ) );
+      $statscounters->{'duppositions'}{''} += $statvalue;
+      $statscounters->{'duppositions'}{$currentchromosome} += $statvalue;
     }
   }
   close( $duplicateshandle );
@@ -140,8 +161,7 @@ foreach my $externalfile ( sort keys( %{$externalfiles} ) )
           $currentchromosome = $1;
           $samplecallsdata->{$externalfile}{$externalnickname}{$currentchromosome} = '';
           $samplefilterdata->{'called'}{$externalfile}{$externalnickname}{$currentchromosome} = '';
-        }
-        elsif( length( $currentchromosome ) && ( $linefromfile =~ /^([A-Za-z.-]+)\s*$/ ) )
+        } elsif( length( $currentchromosome ) && ( $linefromfile =~ /^([A-Za-z.-]+)\s*$/ ) )
         {
           my $externalchunk = $1;
           $samplecallsdata->{$externalfile}{$externalnickname}{$currentchromosome} .= $externalchunk;
@@ -157,6 +177,13 @@ foreach my $externalfile ( sort keys( %{$externalfiles} ) )
 # Read in called SNPs
 my $vcfcallcounts = {};
 $vcfcallcounts->{'depthsum'} = {};
+$vcfcallcounts->{'depthsum'}{''} = {};
+$vcfcallcounts->{'depthsum'}{''}{''} = 0;
+foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+{
+  $vcfcallcounts->{'depthsum'}{$currentchromosome} = {};
+  $vcfcallcounts->{'depthsum'}{$currentchromosome}{''} = 0;
+}
 foreach my $samplecallsfile ( sort keys( %{$vcffiles} ) )
 {
   if( -e( $samplecallsfile ) && ( my $samplefilehandle = eval { Vcf->new( 'file'=>$samplecallsfile ); } ) )
@@ -167,12 +194,16 @@ foreach my $samplecallsfile ( sort keys( %{$vcffiles} ) )
     $samplefilterdata->{'called'}{$samplecallsfile} = {};
     $samplefilterdata->{'coverage'}{$samplecallsfile} = {};
     $samplefilterdata->{'proportion'}{$samplecallsfile} = {};
+    $vcfcallcounts->{'depthsum'}{''}{$samplecallsfile} = {};
+    foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ $vcfcallcounts->{'depthsum'}{$currentchromosome}{$samplecallsfile} = {}; }
     foreach my $currentsample (@samplelist)
     {
       $samplecallsdata->{$samplecallsfile}{$currentsample} = {};
       $samplefilterdata->{'called'}{$samplecallsfile}{$currentsample} = {};
       $samplefilterdata->{'coverage'}{$samplecallsfile}{$currentsample} = {};
       $samplefilterdata->{'proportion'}{$samplecallsfile}{$currentsample} = {};
+      $vcfcallcounts->{'depthsum'}{''}{$samplecallsfile}{$currentsample} = 0;
+      foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ $vcfcallcounts->{'depthsum'}{$currentchromosome}{$samplecallsfile}{$currentsample} = 0; }
     }
     my $positiondata = {};
     while( $positiondata = eval { $samplefilehandle->next_data_hash(); } )
@@ -188,8 +219,8 @@ foreach my $samplecallsfile ( sort keys( %{$vcffiles} ) )
           {
             if( ( substr( $referencecalls->{$currentchromosome}, ( $positiondata->{'POS'} + $i - 1 ), 1 ) !~ /^[TtUu]$/ ) || ( substr( $positiondata->{'REF'}, $i, 1 ) !~ /^[TtUu]$/ ) )
             {
-              print STDERR "Are you crazy?! This data was generated from disagreeing references! '" . substr( $referencecalls->{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), length( $positiondata->{'REF'} ) ) . "' is not '$positiondata->{'REF'}' at position $positiondata->{'POS'} on chromosome '$currentchromosome' from file '$samplecallsfile'\n";
-              die( "Are you crazy?! This data was generated from disagreeing references! '" . substr( $referencecalls->{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), length( $positiondata->{'REF'} ) ) . "' is not '$positiondata->{'REF'}' at position $positiondata->{'POS'} on chromosome '$currentchromosome' from file '$samplecallsfile'\n" );
+              print STDERR "Are you crazy?! Unable to continue because this data was generated from disagreeing references! '" . substr( $referencecalls->{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), length( $positiondata->{'REF'} ) ) . "' is not '$positiondata->{'REF'}' at position $positiondata->{'POS'} on chromosome '$currentchromosome' from file '$samplecallsfile'\n";
+              die( "Are you crazy?! Unable to continue because this data was generated from disagreeing references! '" . substr( $referencecalls->{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), length( $positiondata->{'REF'} ) ) . "' is not '$positiondata->{'REF'}' at position $positiondata->{'POS'} on chromosome '$currentchromosome' from file '$samplecallsfile'\n" );
             }
           }
           $i++;
@@ -228,9 +259,13 @@ foreach my $samplecallsfile ( sort keys( %{$vcffiles} ) )
             my $callfrequencypl = scalar( grep( ( uc( $_ ) eq uc( $calledallele ) ), split( '', $positiondata->{'INFO'}{'PL'} ) ) );
             if( ( $callfrequency == -1 ) || ( $callfrequencypl < $callfrequency ) ){ $callfrequency = $callfrequencypl; }
           }
-          if( !defined( $vcfcallcounts->{'depthsum'}{$samplecallsfile} ) ){ $vcfcallcounts->{'depthsum'}{$samplecallsfile} = {}; }
-          if( !defined( $vcfcallcounts->{'depthsum'}{$samplecallsfile}{$currentsample} ) ){ $vcfcallcounts->{'depthsum'}{$samplecallsfile}{$currentsample} = 0; }
-          if( $positiondepth > 0 ){ $vcfcallcounts->{'depthsum'}{$samplecallsfile}{$currentsample} += $positiondepth; }
+          if( $positiondepth > 0 )
+          {
+            $vcfcallcounts->{'depthsum'}{''}{''} += $positiondepth;
+            $vcfcallcounts->{'depthsum'}{$currentchromosome}{''} += $positiondepth;
+            $vcfcallcounts->{'depthsum'}{''}{$samplecallsfile}{$currentsample} += $positiondepth;
+            $vcfcallcounts->{'depthsum'}{$currentchromosome}{$samplecallsfile}{$currentsample} += $positiondepth;
+          }
           if( $positiondepth < $mincoverage ){ substr( $samplefilterdata->{'coverage'}{$samplecallsfile}{$currentsample}{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), 1, 'N' ); }
           #elsif( ( $callfrequency != -1 ) && ( $callfrequency < $mincoverage ) ){ substr( $samplefilterdata->{'coverage'}{$samplecallsfile}{$currentsample}{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), 1, 'N' ); } # This applies the depth-filtering to only reads matching the call
           else { substr( $samplefilterdata->{'coverage'}{$samplecallsfile}{$currentsample}{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), 1, 'Y' ); }
@@ -299,7 +334,7 @@ foreach my $samplecallsfile ( sort keys( %{$vcffiles} ) )
           substr( $samplecallsdata->{$samplecallsfile}{$currentsample}{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), 1, $calledallele );
           substr( $samplefilterdata->{'called'}{$samplecallsfile}{$currentsample}{$currentchromosome}, ( $positiondata->{'POS'} - 1 ), 1, ( ( uc( $calledallele ) eq 'N' ) ? 'N' : 'Y' ) );
         }
-      } else { print STDERR "Call omitted for being outside of reference at position $positiondata->{'POS'} on chromosome '$currentchromosome from file '$samplecallsfile'.\n"; }
+      } else { print STDERR "Call omitted for being outside of reference at position $positiondata->{'POS'} on chromosome '$currentchromosome' from file '$samplecallsfile'.\n"; }
     }
     eval { $samplefilehandle->close(); };
   } else { print STDERR "Could not open '$samplecallsfile'!\n"; }
@@ -310,7 +345,7 @@ foreach my $samplecallsfile ( sort keys( %{$vcffiles} ) )
 # Make SNP matrix
 my $bestsnpfastadata = {};
 my $bestrefsnpfastadata = '';
-if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfilehandle, '>', $bestsnpmatrixfile ) && open( my $allcallfilehandle, '>', $allcallmatrixfile ) )
+if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfilehandle, '>', $bestsnpmatrixfile ) && open( my $allsnpfilehandle, '>', $allsnpmatrixfile ) && open( my $allindelfilehandle, '>', $allindelmatrixfile ) )
 {
   my $allpatternarray = {};
   my $allnextpatternnum = 1;
@@ -319,46 +354,110 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
   my $bestsnppatternarray = {};
   my $bestsnpnextpatternnum = 1;
   my $numsamplecolumns = 0;
-  $statscounters->{'totalvariant'} = 0;
-  $statscounters->{'bestsnps'} = 0;
-  $statscounters->{'allcalled'} = 0;
+  $statscounters->{'bestsnps'} = {};
+  $statscounters->{'bestsnps'}{''} = 0;
+  $statscounters->{'bestpos'} = {};
+  $statscounters->{'bestpos'}{''} = 0;
+  $statscounters->{'consensus'} = {};
+  $statscounters->{'consensus'}{''} = {};
+  $statscounters->{'consensus'}{''}{''} = 0;
+  $statscounters->{'totalsnp'} = {};
+  $statscounters->{'totalsnp'}{''} = {};
+  $statscounters->{'totalsnp'}{''}{''} = 0;
+  $statscounters->{'totalindel'} = {};
+  $statscounters->{'totalindel'}{''} = {};
+  $statscounters->{'totalindel'}{''}{''} = 0;
   $statscounters->{'samplecalled'} = {};
-  $statscounters->{'allcoveragepass'} = 0;
-  $statscounters->{'samplecoveragepass'} = {};
-  $statscounters->{'allproportionpass'} = 0;
-  $statscounters->{'sampleproportionpass'} = {};
-  $statscounters->{'anynxdegen'} = 0;
+  $statscounters->{'samplecalled'}{''} = {};
+  $statscounters->{'samplecalled'}{''}{''} = 0;
+  $statscounters->{'coveragepass'} = {};
+  $statscounters->{'coveragepass'}{''} = {};
+  $statscounters->{'coveragepass'}{''}{''} = 0;
+  $statscounters->{'proportionpass'} = {};
+  $statscounters->{'proportionpass'}{''} = {};
+  $statscounters->{'proportionpass'}{''}{''} = 0;
   $statscounters->{'samplenxdegen'} = {};
-  $statscounters->{'allbreadth'} = 0;
+  $statscounters->{'samplenxdegen'}{''} = {};
+  $statscounters->{'samplenxdegen'}{''}{''} = 0;
   $statscounters->{'samplebreadth'} = {};
-  $statscounters->{'consensus'} = 0;
-  $statscounters->{'bestpos'} = 0;
+  $statscounters->{'samplebreadth'}{''} = {};
+  $statscounters->{'samplebreadth'}{''}{''} = 0;
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    $statscounters->{'bestsnps'}{$currentchromosome} = 0;
+    $statscounters->{'bestpos'}{$currentchromosome} = 0;
+    $statscounters->{'consensus'}{$currentchromosome} = {};
+    $statscounters->{'consensus'}{$currentchromosome}{''} = 0;
+    $statscounters->{'totalsnp'}{$currentchromosome} = {};
+    $statscounters->{'totalsnp'}{$currentchromosome}{''} = 0;
+    $statscounters->{'totalindel'}{$currentchromosome} = {};
+    $statscounters->{'totalindel'}{$currentchromosome}{''} = 0;
+    $statscounters->{'samplecalled'}{$currentchromosome} = {};
+    $statscounters->{'samplecalled'}{$currentchromosome}{''} = 0;
+    $statscounters->{'coveragepass'}{$currentchromosome} = {};
+    $statscounters->{'coveragepass'}{$currentchromosome}{''} = 0;
+    $statscounters->{'proportionpass'}{$currentchromosome} = {};
+    $statscounters->{'proportionpass'}{$currentchromosome}{''} = 0;
+    $statscounters->{'samplenxdegen'}{$currentchromosome} = {};
+    $statscounters->{'samplenxdegen'}{$currentchromosome}{''} = 0;
+    $statscounters->{'samplebreadth'}{$currentchromosome} = {};
+    $statscounters->{'samplebreadth'}{$currentchromosome}{''} = 0;
+  }
   print $matrixfilehandle "LocusID\tReference\t";
   print $bestsnpfilehandle "LocusID\tReference\t";
-  print $allcallfilehandle "LocusID\tReference\t";
+  print $allsnpfilehandle "LocusID\tReference\t";
+  print $allindelfilehandle "LocusID\tReference\t";
   foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
   {
-    $statscounters->{'samplecalled'}{$samplefile} = {};
-    $statscounters->{'samplecoveragepass'}{$samplefile} = {};
-    $statscounters->{'sampleproportionpass'}{$samplefile} = {};
-    $statscounters->{'samplenxdegen'}{$samplefile} = {};
-    $statscounters->{'samplebreadth'}{$samplefile} = {};
+    $statscounters->{'totalsnp'}{''}{$samplefile} = {};
+    $statscounters->{'totalindel'}{''}{$samplefile} = {};
+    $statscounters->{'samplecalled'}{''}{$samplefile} = {};
+    $statscounters->{'coveragepass'}{''}{$samplefile} = {};
+    $statscounters->{'proportionpass'}{''}{$samplefile} = {};
+    $statscounters->{'samplenxdegen'}{''}{$samplefile} = {};
+    $statscounters->{'samplebreadth'}{''}{$samplefile} = {};
+    foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+    {
+      $statscounters->{'totalsnp'}{$currentchromosome}{$samplefile} = {};
+      $statscounters->{'totalindel'}{$currentchromosome}{$samplefile} = {};
+      $statscounters->{'samplecalled'}{$currentchromosome}{$samplefile} = {};
+      $statscounters->{'coveragepass'}{$currentchromosome}{$samplefile} = {};
+      $statscounters->{'proportionpass'}{$currentchromosome}{$samplefile} = {};
+      $statscounters->{'samplenxdegen'}{$currentchromosome}{$samplefile} = {};
+      $statscounters->{'samplebreadth'}{$currentchromosome}{$samplefile} = {};
+    }
     foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
     {
       print $matrixfilehandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
       print $bestsnpfilehandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
-      print $allcallfilehandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
-      $statscounters->{'samplecalled'}{$samplefile}{$samplecolumn} = 0;
-      $statscounters->{'samplecoveragepass'}{$samplefile}{$samplecolumn} = 0;
-      $statscounters->{'sampleproportionpass'}{$samplefile}{$samplecolumn} = 0;
-      $statscounters->{'samplenxdegen'}{$samplefile}{$samplecolumn} = 0;
-      $statscounters->{'samplebreadth'}{$samplefile}{$samplecolumn} = 0;
+      print $allsnpfilehandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
+      print $allindelfilehandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
+      $statscounters->{'consensus'}{''}{$samplecolumn} = 0;
+      $statscounters->{'totalsnp'}{''}{$samplefile}{$samplecolumn} = 0;
+      $statscounters->{'totalindel'}{''}{$samplefile}{$samplecolumn} = 0;
+      $statscounters->{'samplecalled'}{''}{$samplefile}{$samplecolumn} = 0;
+      $statscounters->{'coveragepass'}{''}{$samplefile}{$samplecolumn} = 0;
+      $statscounters->{'proportionpass'}{''}{$samplefile}{$samplecolumn} = 0;
+      $statscounters->{'samplenxdegen'}{''}{$samplefile}{$samplecolumn} = 0;
+      $statscounters->{'samplebreadth'}{''}{$samplefile}{$samplecolumn} = 0;
+      foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+      {
+        $statscounters->{'consensus'}{$currentchromosome}{$samplecolumn} = 0;
+        $statscounters->{'totalsnp'}{$currentchromosome}{$samplefile}{$samplecolumn} = 0;
+        $statscounters->{'totalindel'}{$currentchromosome}{$samplefile}{$samplecolumn} = 0;
+        $statscounters->{'samplecalled'}{$currentchromosome}{$samplefile}{$samplecolumn} = 0;
+        $statscounters->{'coveragepass'}{$currentchromosome}{$samplefile}{$samplecolumn} = 0;
+        $statscounters->{'proportionpass'}{$currentchromosome}{$samplefile}{$samplecolumn} = 0;
+        $statscounters->{'samplenxdegen'}{$currentchromosome}{$samplefile}{$samplecolumn} = 0;
+        $statscounters->{'samplebreadth'}{$currentchromosome}{$samplefile}{$samplecolumn} = 0;
+      }
       $numsamplecolumns++;
     }
   }
   print $matrixfilehandle "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\t\n";
   print $bestsnpfilehandle "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tPattern\tPattern#\t\n";
-  print $allcallfilehandle "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\t\n";
+  print $allsnpfilehandle "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\t\n";
+  print $allindelfilehandle "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\t\n";
   foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
   {
     my $currentposition = 1;
@@ -389,6 +488,7 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
         foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
         {
           # Get sample call and calculate pre-filter columns (A/C/G/T/Indel/NXdegen)
+          if( !defined( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} ) ){ $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} = ''; }
           if( length( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} ) < ( $currentposition ) ){ $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} .= ( 'X' x ( $currentposition - length( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome} ) ) ); }
           my $samplecall = substr( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome}, ( $currentposition - 1 ), 1 );
           my $isindel = 0;
@@ -398,7 +498,7 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
             $samplecall = $indellist->{$samplefile}{$samplecolumn}{$currentchromosome}{$currentposition}; 
             $allelecounts->{'indel'}++;
             $isindel = 1;
-            if( substr( $samplecall, 0, 1 ) ne '.' ){ $isdelete = 1; }
+            if( $samplecall eq '.' ){ $isdelete = 1; }
           }
           $linetoprint .= "$samplecall\t";
           my $simplifiedbasecall = "N";
@@ -407,15 +507,23 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
             $simplifiedbasecall = uc( substr( $samplecall, 0, 1 ) );
             if( $simplifiedbasecall eq 'U' ){ $simplifiedbasecall = "T"; }
           }
-          if( !( $isdelete ) ){ $allelecounts->{$simplifiedbasecall}++; }
-          if( $simplifiedbasecall eq 'N' ){ $statscounters->{'samplenxdegen'}{$samplefile}{$samplecolumn}++; }
+          if( !( $isdelete ) )
+          {
+            $allelecounts->{$simplifiedbasecall}++;
+            if( $simplifiedbasecall eq 'N' )
+            {
+              $statscounters->{'samplenxdegen'}{''}{$samplefile}{$samplecolumn}++;
+              $statscounters->{'samplenxdegen'}{$currentchromosome}{$samplefile}{$samplecolumn}++;
+            }
+          }
           # Check filters
           my $callwasmade = 'N';
           if( defined( $samplefilterdata->{'called'}{$samplefile}{$samplecolumn}{$currentchromosome} ) && ( length( $samplefilterdata->{'called'}{$samplefile}{$samplecolumn}{$currentchromosome} ) >= $currentposition ) ){ $callwasmade = substr( $samplefilterdata->{'called'}{$samplefile}{$samplecolumn}{$currentchromosome}, ( $currentposition - 1 ), 1 ); }
           $callmadestring .= $callwasmade;
           $callwasmade = ( ( $callwasmade eq 'Y' ) ? 1 : 0 );
           $allelecounts->{'called'} += $callwasmade;
-          $statscounters->{'samplecalled'}{$samplefile}{$samplecolumn} += $callwasmade;
+          $statscounters->{'samplecalled'}{''}{$samplefile}{$samplecolumn} += $callwasmade;
+          $statscounters->{'samplecalled'}{$currentchromosome}{$samplefile}{$samplecolumn} += $callwasmade;
           my $coveragepassed = '?';
           my $proportionpassed = '?';
           if( defined( $externalfiles->{$samplefile} ) )
@@ -433,15 +541,34 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
           $proportionpassed = ( ( ( $proportionpassed eq 'Y' ) || ( $proportionpassed eq '-' ) ) ? 1 : 0 );
           $allelecounts->{'coverage'} += $coveragepassed;
           $allelecounts->{'proportion'} += $proportionpassed;
-          $statscounters->{'samplecoveragepass'}{$samplefile}{$samplecolumn} += $coveragepassed;
-          $statscounters->{'sampleproportionpass'}{$samplefile}{$samplecolumn} += $proportionpassed;
-          if( $callwasmade && $coveragepassed){ $statscounters->{'samplebreadth'}{$samplefile}{$samplecolumn}++; }
-          # Calculate post-filter columns (SNP/Indel/Ref)
-          if( $callwasmade && $coveragepassed && $proportionpassed && ( $simplifiedrefcall ne 'N' ) )
+          $statscounters->{'coveragepass'}{''}{$samplefile}{$samplecolumn} += $coveragepassed;
+          $statscounters->{'coveragepass'}{$currentchromosome}{$samplefile}{$samplecolumn} += $coveragepassed;
+          $statscounters->{'proportionpass'}{''}{$samplefile}{$samplecolumn} += $proportionpassed;
+          $statscounters->{'proportionpass'}{$currentchromosome}{$samplefile}{$samplecolumn} += $proportionpassed;
+          if( $callwasmade && $coveragepassed)
           {
-            if( $simplifiedrefcall eq $simplifiedbasecall ){ $allelecounts->{'refcall'}++; }
-            elsif( $simplifiedbasecall ne 'N' ){ $allelecounts->{'snpcall'}++; }
-            if( $isindel ){ $allelecounts->{'indelcall'}++; }
+            $statscounters->{'samplebreadth'}{''}{$samplefile}{$samplecolumn}++;
+            $statscounters->{'samplebreadth'}{$currentchromosome}{$samplefile}{$samplecolumn}++;
+          }
+          # Calculate post-filter columns (SNP/Indel/Ref)
+          if( $callwasmade && $coveragepassed && $proportionpassed )
+          {
+            if( $simplifiedrefcall ne 'N' )
+            {
+              if( $simplifiedrefcall eq $simplifiedbasecall ){ $allelecounts->{'refcall'}++; }
+              elsif( $simplifiedbasecall ne 'N' )
+              {
+                $allelecounts->{'snpcall'}++;
+                $statscounters->{'totalsnp'}{''}{$samplefile}{$samplecolumn}++;
+                $statscounters->{'totalsnp'}{$currentchromosome}{$samplefile}{$samplecolumn}++;
+              }
+              if( $isindel )
+              {
+                $allelecounts->{'indelcall'}++;
+                $statscounters->{'totalindel'}{''}{$samplefile}{$samplecolumn}++;
+                $statscounters->{'totalindel'}{$currentchromosome}{$samplefile}{$samplecolumn}++;
+              }
+            }
           } else { $simplifiedbasecall = 'N'; }
           # Make pattern
           if( $simplifiedbasecall eq "N" ){ $callpattern .= "N"; } else
@@ -474,15 +601,25 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
       $linetoprint .= "$allelecounts->{'snpcall'}\t$allelecounts->{'indelcall'}\t$allelecounts->{'refcall'}\t$allelecounts->{'called'}/$numsamplecolumns\t$allelecounts->{'coverage'}/$numsamplecolumns\t$allelecounts->{'proportion'}/$numsamplecolumns\t$allelecounts->{'A'}\t$allelecounts->{'C'}\t$allelecounts->{'G'}\t$allelecounts->{'T'}\t$allelecounts->{'indel'}\t$allelecounts->{'N'}\t";
       $linetoprint .= "$currentchromosome\t$currentposition\t$dupscall\t";
       my $intersectionpresent = 1;
-      foreach my $samplename ( keys( %{$intersectioncalls} ) ){ if( $intersectioncalls->{$samplename} eq 'N' ){ $intersectionpresent = 0; } }
+      foreach my $samplename ( keys( %{$intersectioncalls} ) )
+      {
+        if( $intersectioncalls->{$samplename} eq 'N' ){ $intersectionpresent = 0; }
+        else
+        {
+          $statscounters->{'consensus'}{''}{$samplename}++;
+          $statscounters->{'consensus'}{$currentchromosome}{$samplename}++;
+        }
+      }
       $linetoprint .= ( $intersectionpresent ? "Yes\t" : "No\t" );
-      $statscounters->{'consensus'} += $intersectionpresent;
+      $statscounters->{'consensus'}{''}{''} += $intersectionpresent;
+      $statscounters->{'consensus'}{$currentchromosome}{''} += $intersectionpresent;
       my $longlinetoprint = "$callmadestring\t$passedcoveragestring\t$passedproportionstring\t";
-      if( ( ( $allelecounts->{'snpcall'} + $allelecounts->{'indelcall'} ) > 0 ) && ( $dupscall ne 'Yes' ) )
+      if( ( $allelecounts->{'snpcall'} > 0 ) && ( $dupscall ne 'Yes' ) )
       {
         if( !defined( $snppatternarray->{$callpattern} ) ){ $snppatternarray->{$callpattern} = $snpnextpatternnum++; }
-        print $matrixfilehandle $linetoprint . $longlinetoprint . "'$callpattern'\t$snppatternarray->{$callpattern}\t\n";
-        $statscounters->{'totalvariant'}++;
+        print $allsnpfilehandle $linetoprint . $longlinetoprint . "'$callpattern'\t$snppatternarray->{$callpattern}\t\n";
+        $statscounters->{'totalsnp'}{''}{''}++;
+        $statscounters->{'totalsnp'}{$currentchromosome}{''}++;
         if( ( $allelecounts->{'snpcall'} > 0 ) && ( $allelecounts->{'indelcall'} == 0 ) && ( $intersectionpresent == 1 ) && ( $allelecounts->{'called'} == $numsamplecolumns ) && ( $allelecounts->{'coverage'} == $numsamplecolumns ) && ( $allelecounts->{'N'} == 0 ) && ( $allelecounts->{'proportion'} == $numsamplecolumns ) )
         {
           if( !defined( $bestsnppatternarray->{$callpattern} ) ){ $bestsnppatternarray->{$callpattern} = $bestsnpnextpatternnum++; }
@@ -490,33 +627,62 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
           $bestrefsnpfastadata .= $simplifiedrefcall;
           foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
           {
-             foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
+            foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
             {
               if( !defined( $bestsnpfastadata->{$samplefile} ) ){ $bestsnpfastadata->{$samplefile} = {}; }
               if( !defined( $bestsnpfastadata->{$samplefile}{$samplecolumn} ) ){ $bestsnpfastadata->{$samplefile}{$samplecolumn} = ''; }
               $bestsnpfastadata->{$samplefile}{$samplecolumn} .= substr( $samplecallsdata->{$samplefile}{$samplecolumn}{$currentchromosome}, ( $currentposition - 1 ), 1 );
             }
           }
-          $statscounters->{'bestsnps'}++;
+          $statscounters->{'bestsnps'}{''}++;
+          $statscounters->{'bestsnps'}{$currentchromosome}++;
         }
       }
+      if( ( $allelecounts->{'indelcall'} > 0 ) && ( $dupscall ne 'Yes' ) )
+      {
+        print $allindelfilehandle $linetoprint . $longlinetoprint . "\t\n";
+        $statscounters->{'totalindel'}{''}{''}++;
+        $statscounters->{'totalindel'}{$currentchromosome}{''}++;
+      }
       if( !defined( $allpatternarray->{$callpattern} ) ){ $allpatternarray->{$callpattern} = $allnextpatternnum++; }
-      print $allcallfilehandle $linetoprint . $longlinetoprint . "'$callpattern'\t$allpatternarray->{$callpattern}\t\n";
-      if( $allelecounts->{'called'} == $numsamplecolumns ){ $statscounters->{'allcalled'}++; }
-      if( $allelecounts->{'coverage'} == $numsamplecolumns ){ $statscounters->{'allcoveragepass'}++; }
-      if( $allelecounts->{'proportion'} == $numsamplecolumns ){ $statscounters->{'allproportionpass'}++; }
-      if( $allelecounts->{'N'} > 0 ){ $statscounters->{'anynxdegen'}++; }
+      print $matrixfilehandle $linetoprint . $longlinetoprint . "'$callpattern'\t$allpatternarray->{$callpattern}\t\n";
+      if( $allelecounts->{'called'} == $numsamplecolumns )
+      {
+        $statscounters->{'samplecalled'}{''}{''}++;
+        $statscounters->{'samplecalled'}{$currentchromosome}{''}++;
+      }
+      if( $allelecounts->{'coverage'} == $numsamplecolumns )
+      {
+        $statscounters->{'coveragepass'}{''}{''}++;
+        $statscounters->{'coveragepass'}{$currentchromosome}{''}++;
+      }
+      if( $allelecounts->{'proportion'} == $numsamplecolumns )
+      {
+        $statscounters->{'proportionpass'}{''}{''}++;
+        $statscounters->{'proportionpass'}{$currentchromosome}{''}++;
+      }
+      if( $allelecounts->{'N'} > 0 )
+      {
+        $statscounters->{'samplenxdegen'}{''}{''}++;
+        $statscounters->{'samplenxdegen'}{$currentchromosome}{''}++;
+      }
       if( ( $allelecounts->{'called'} == $numsamplecolumns ) && ( $allelecounts->{'coverage'} == $numsamplecolumns ) && ( $dupscall ne 'Yes' ) )
       {
-        $statscounters->{'allbreadth'}++;
-        if( $intersectionpresent && ( $allelecounts->{'N'} == 0 ) && ( $allelecounts->{'proportion'} == $numsamplecolumns ) ){ $statscounters->{'bestpos'}++; }
+        $statscounters->{'samplebreadth'}{''}{''}++;
+        $statscounters->{'samplebreadth'}{$currentchromosome}{''}++;
+        if( $intersectionpresent && ( $allelecounts->{'N'} == 0 ) && ( $allelecounts->{'proportion'} == $numsamplecolumns ) )
+        {
+          $statscounters->{'bestpos'}{''}++;
+          $statscounters->{'bestpos'}{$currentchromosome}++;
+        }
       }
       $currentposition++;
     }
   }
   close( $matrixfilehandle );
   close( $bestsnpfilehandle );
-  close( $allcallfilehandle );
+  close( $allsnpfilehandle );
+  close( $allindelfilehandle );
 } else { print STDERR "Could not open '$outputmatrixfile'!\n"; }
 
 # Make snpfasta
@@ -541,92 +707,150 @@ if( open( my $bestsnpfastahandle, '>', $bestsnpfastafile ) )
 # Do final calculations and write the statistics file
 if( open( my $statshandle, '>', $statisticsfile ) )
 {
-  print $statshandle "Stat_ID\tTotal\t";
-  my $nopersampleinfo = '';
+  print $statshandle "reference_length\t(total number of positions found in the reference)\n";
+  print $statshandle "\t\tReference\t\n";
+  print $statshandle "\tTotal\t$statscounters->{'reflength'}{''}\t\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ print $statshandle "\t$currentchromosome\t$statscounters->{'reflength'}{$currentchromosome}\t\n"; }
+  print $statshandle "\nreference_clean\t(number of positions called A/C/G/T in the reference)\n";
+  print $statshandle "\t\tReference\tReference (%)\t\n";
+  print $statshandle "\tTotal\t$statscounters->{'refclean'}{''}\t" . sprintf( "%.2f", ( $statscounters->{'refclean'}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ print $statshandle "\t$currentchromosome\t$statscounters->{'refclean'}{$currentchromosome}\t" . sprintf( "%.2f", ( $statscounters->{'refclean'}{$currentchromosome} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t\n"; }
+  print $statshandle "\ndups_count\t(number of positions that appear to be in duplicated regions of the reference)\n";
+  print $statshandle "\t\tTotal\tTotal (%)\t\n";
+  print $statshandle "\tTotal\t$statscounters->{'duppositions'}{''}\t" . sprintf( "%.2f", ( $statscounters->{'duppositions'}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ print $statshandle "\t$currentchromosome\t$statscounters->{'duppositions'}{$currentchromosome}\t" . sprintf( "%.2f", ( $statscounters->{'duppositions'}{$currentchromosome} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t\n"; }
+  print $statshandle "\ncoverage_depth\t(the sum of the depths at each position, whether filtered or not, divided by reference_length)\n";
+  print $statshandle "\t\tAverage\t";
+  my $depthnumsamples = 0;
   foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
   {
     foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
     {
-      $nopersampleinfo .= "\t";
       print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t";
+      if( defined( $vcfcallcounts->{'depthsum'}{''}{$samplefile}{$samplecolumn} ) ){ $depthnumsamples++; }
     }
   }
+  print $statshandle "\n\tTotal\t" . sprintf( "%.2f", ( ( $vcfcallcounts->{'depthsum'}{''}{''} / $depthnumsamples ) / $statscounters->{'reflength'}{''} ) ) . "\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . ( defined( $vcfcallcounts->{'depthsum'}{''}{$samplefile}{$samplecolumn} ) ? sprintf( "%.2f", ( $vcfcallcounts->{'depthsum'}{''}{$samplefile}{$samplecolumn} / $statscounters->{'reflength'}{''} ) ) : "-" ) . "\t"; } }
   print $statshandle "\n";
-  print $statshandle "reference_length\t$statscounters->{'reflength'}\t$nopersampleinfo\n";
-  print $statshandle "reference_clean\t$statscounters->{'refclean'}\t$nopersampleinfo\n";
-  print $statshandle "dups_count\t$statscounters->{'duppositions'}\t$nopersampleinfo\n";
-  print $statshandle "dups_portion\t" . sprintf( "%.2f", ( $statscounters->{'duppositions'} * 100 / $statscounters->{'reflength'} ) ) . "%\t$nopersampleinfo\n";
-  print $statshandle "consensus_count\t$statscounters->{'consensus'}\t$nopersampleinfo\n";
-  print $statshandle "consensus_portion\t" . sprintf( "%.2f", ( $statscounters->{'consensus'} * 100 / $statscounters->{'reflength'} ) ) . "%\t$nopersampleinfo\n";
-  print $statshandle "num_total_variant\t$statscounters->{'totalvariant'}\t$nopersampleinfo\n";
-  print $statshandle "num_best_snps\t$statscounters->{'bestsnps'}\t$nopersampleinfo\n";
-  print $statshandle "best_position_breadth\t" . sprintf( "%.2f", ( $statscounters->{'bestpos'} * 100 / $statscounters->{'reflength'} ) ) . "%\t$nopersampleinfo\n";
-  print $statshandle "core_genome_portion_snp\t" . ( ( $statscounters->{'allbreadth'} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'} * 100 / $statscounters->{'allbreadth'} ) ) . "%\t" ) : "-\t" ) . "$nopersampleinfo\n";
-  print $statshandle "best_position_portion_snp\t" . ( ( $statscounters->{'bestpos'} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'} * 100 / $statscounters->{'bestpos'} ) ) . "%\t" ) : "-\t" ) . "\t$nopersampleinfo\n";
-  print $statshandle "num_called\t$statscounters->{'allcalled'}\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplecalled'}{$samplefile}{$samplecolumn}\t"; } }
-  print $statshandle "\n";
-  print $statshandle "portion_called\t" . sprintf( "%.2f", ( $statscounters->{'allcalled'} * 100 / $statscounters->{'reflength'} ) ) . "%\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . sprintf( "%.2f", ( $statscounters->{'samplecalled'}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'} ) ) . "%\t"; } }
-  print $statshandle "\n";
-  print $statshandle "num_passed_coverage_filter\t$statscounters->{'allcoveragepass'}\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . ( defined( $vcffiles->{$samplefile} ) ? "$statscounters->{'samplecoveragepass'}{$samplefile}{$samplecolumn}\t" : "-\t" ); } }
-  print $statshandle "\n";
-  print $statshandle "portion_passed_coverage_filter\t" . sprintf( "%.2f", ( $statscounters->{'allcoveragepass'} * 100 / $statscounters->{'reflength'} ) ) . "%\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . ( defined( $vcffiles->{$samplefile} ) ? ( sprintf( "%.2f", ( $statscounters->{'samplecoveragepass'}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'} ) ) . "%\t" ) : "-\t" ); } }
-  print $statshandle "\n";
-  print $statshandle "num_passed_proportion_filter\t$statscounters->{'allproportionpass'}\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . ( defined( $vcffiles->{$samplefile} ) ? "$statscounters->{'sampleproportionpass'}{$samplefile}{$samplecolumn}\t" : "-\t" ); } }
-  print $statshandle "\n";
-  print $statshandle "portion_passed_proportion_filter\t" . sprintf( "%.2f", ( $statscounters->{'allproportionpass'} * 100 / $statscounters->{'reflength'} ) ) . "%\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . ( defined( $vcffiles->{$samplefile} ) ? ( sprintf( "%.2f", ( $statscounters->{'sampleproportionpass'}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'} ) ) . "%\t" ) : "-\t" ); } }
-  print $statshandle "\n";
-  print $statshandle "num_NXdegen\t$statscounters->{'anynxdegen'}\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplenxdegen'}{$samplefile}{$samplecolumn}\t"; } }
-  print $statshandle "\n";
-  print $statshandle "portion_NXdegen\t" . sprintf( "%.2f", ( $statscounters->{'anynxdegen'} * 100 / $statscounters->{'reflength'} ) ) . "%\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . sprintf( "%.2f", ( $statscounters->{'samplenxdegen'}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'} ) ) . "%\t"; } }
-  print $statshandle "\n";
-  my $avgsum = 0;
-  my $avgcount = 0;
-  my $avgstring = '';
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) )
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
   {
-    foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) )
-    {
-      if( defined( $vcfcallcounts->{'depthsum'}{$samplefile}{$samplecolumn} ) )
-      {
-        $avgcount++;
-        $avgsum += $vcfcallcounts->{'depthsum'}{$samplefile}{$samplecolumn};
-        $avgstring .= sprintf( "%.2f", ( $vcfcallcounts->{'depthsum'}{$samplefile}{$samplecolumn} / $statscounters->{'reflength'} ) ) . "\t";
-      } else { $avgstring .= "-\t"; }
-    }
+    print $statshandle "\t$currentchromosome\t" . sprintf( "%.2f", ( ( $vcfcallcounts->{'depthsum'}{$currentchromosome}{''} / $depthnumsamples ) / $statscounters->{'reflength'}{$currentchromosome} ) ) . "\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . ( defined( $vcfcallcounts->{'depthsum'}{$currentchromosome}{$samplefile}{$samplecolumn} ) ? sprintf( "%.2f", ( $vcfcallcounts->{'depthsum'}{$currentchromosome}{$samplefile}{$samplecolumn} / $statscounters->{'reflength'}{$currentchromosome} ) ) : "-" ) . "\t"; } }
+    print $statshandle "\n";
   }
-  print $statshandle "coverage_depth\t" . sprintf( "%.2f", ( ( $avgsum / $avgcount ) / $statscounters->{'reflength'} ) ) . "\t$avgstring\n";
-  print $statshandle "coverage_breadth\t" . sprintf( "%.2f", ( $statscounters->{'allbreadth'} * 100 / $statscounters->{'reflength'} ) ) . "%\t";
-  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "" . sprintf( "%.2f", ( $statscounters->{'samplebreadth'}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'} ) ) . "%\t"; } }
+  print $statshandle "\ncoverage_breadth\t(number of positions that had any call made and passed depth filtering)\n";
+  print $statshandle "\t\tAll\tAll (%)\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t${samplecolumn}::$samplefileinfo->{$samplefile} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'samplebreadth'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'samplebreadth'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplebreadth'}{''}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'samplebreadth'}{''}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
   print $statshandle "\n";
-  print $statshandle "# reference_length: total number of positions found across all chromosomes in the reference\n";
-  print $statshandle "# reference_clean: number of positions called A/C/G/T in the reference\n";
-  print $statshandle "# dups_count: number of positions that appear to be in duplicated regions of the reference\n";
-  print $statshandle "# dups_portion: dups_count / reference_length * 100%\n";
-  print $statshandle "# consensus_count: number of positions in which all analyses of any one sample were in agreement\n";
-  print $statshandle "# consensus_portion: consensus_count / reference_length * 100%\n";
-  print $statshandle "# num_total_variant: number of positions where the reference and at least one analysis of at least one sample differed, were both called A/C/G/T, passed all filters, and were outside known-duplicated regions\n";
-  print $statshandle "# num_best_snps: number of positions where the requirements for num_total_variant were met, there were no indels, all analyses of all samples were called A/C/G/T and passed all filters, and all analyses of any one sample were in agreement\n";
-  print $statshandle "# best_position_breadth: number of positions where the requirements for num_best_snps would have been met if a snp were present and indels absent, divided by reference_length * 100%\n";
-  print $statshandle "# core_genome_portion_snp: num_best_snps divided by the number of positions meething the requirements for total coverage_breadth\n";
-  print $statshandle "# best_position_portion_snp: num_best_snps divided by the number of positions meeting the requirement for best_position_breadth\n";
-  print $statshandle "# num_called: number of positions where the SNP caller made any call except 'N', regardless of filters\n";
-  print $statshandle "# portion_called: num_called / reference_length * 100%\n";
-  print $statshandle "# num_passed_coverage_filter: number of positions that met the depth filter requirements\n";
-  print $statshandle "# portion_passed_coverage_filter: num_passed_coverage_filter / reference_length * 100%\n";
-  print $statshandle "# num_passed_proportion_filter: number of positions that met the proportion filter requirements\n";
-  print $statshandle "# portion_passed_proportion_filter: num_passed_proportion_filter / reference_length * 100%\n";
-  print $statshandle "# num_NXdegen: number of positions called N, X, a degeneracy, or not called, regardless of filters\n";
-  print $statshandle "# portion_NXdegen: num_NXdegen / reference_length * 100%\n";
-  print $statshandle "# coverage_depth: the sum of the depths at each position, whether filtered or not, divided by reference_length\n";
-  print $statshandle "# coverage_breadth: number of positions that had any call made and passed depth filtering, divided by reference_length * 100%\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'samplebreadth'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'samplebreadth'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplebreadth'}{$currentchromosome}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'samplebreadth'}{$currentchromosome}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nnum_called\t(number of positions where the SNP caller made any call except 'N', regardless of filters)\n";
+  print $statshandle "\t\tAll\tAll (%)\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t${samplecolumn}::$samplefileinfo->{$samplefile} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'samplecalled'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'samplecalled'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplecalled'}{''}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'samplecalled'}{''}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
+  print $statshandle "\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'samplecalled'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'samplecalled'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplecalled'}{$currentchromosome}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'samplecalled'}{$currentchromosome}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nnum_passed_coverage_filter\t(number of positions that met the depth filter requirements)\n";
+  print $statshandle "\t\tAll\tAll (%)\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t${samplecolumn}::$samplefileinfo->{$samplefile} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'coveragepass'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'coveragepass'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'coveragepass'}{''}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'coveragepass'}{''}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
+  print $statshandle "\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'coveragepass'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'coveragepass'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'coveragepass'}{$currentchromosome}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'coveragepass'}{$currentchromosome}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nnum_passed_proportion_filter\t(number of positions that met the proportion filter requirements)\n";
+  print $statshandle "\t\tAll\tAll (%)\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t${samplecolumn}::$samplefileinfo->{$samplefile} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'proportionpass'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'proportionpass'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'proportionpass'}{''}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'proportionpass'}{''}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
+  print $statshandle "\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'proportionpass'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'proportionpass'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'proportionpass'}{$currentchromosome}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'proportionpass'}{$currentchromosome}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nnum_NXdegen\t(number of positions called N, X, a degeneracy, or not called, regardless of filters)\n";
+  print $statshandle "\t\tAny\tAny (%)\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t${samplecolumn}::$samplefileinfo->{$samplefile} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'samplenxdegen'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'samplenxdegen'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplenxdegen'}{''}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'samplenxdegen'}{''}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
+  print $statshandle "\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'samplenxdegen'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'samplenxdegen'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'samplenxdegen'}{$currentchromosome}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'samplenxdegen'}{$currentchromosome}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nconsensus_count\t(number of positions in which all analyses of any one sample were in agreement)\n";
+  print $statshandle "\t\tAll\tAll (%)\t";
+  foreach my $samplecolumn ( sort keys( %{$statscounters->{'consensus'}{''}} ) ){ if( $samplecolumn ne '' ){ print $statshandle "${samplecolumn}\t${samplecolumn} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'consensus'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'consensus'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplecolumn ( sort keys( %{$statscounters->{'consensus'}{''}} ) ){ if( $samplecolumn ne '' ){ print $statshandle "$statscounters->{'consensus'}{''}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'consensus'}{''}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
+  print $statshandle "\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'consensus'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'consensus'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplecolumn ( sort keys( %{$statscounters->{'consensus'}{''}} ) ){ if( $samplecolumn ne '' ){ print $statshandle "$statscounters->{'consensus'}{$currentchromosome}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'consensus'}{$currentchromosome}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nnum_snps\t(number of positions where the reference and at least one analysis of at least one sample differed in call, were both called A/C/G/T, all filters passed on that sample analysis, and this was not a known-duplicated region)\n";
+  print $statshandle "\t\tAny\tAny (%)\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t${samplecolumn}::$samplefileinfo->{$samplefile} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'totalsnp'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'totalsnp'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'totalsnp'}{''}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'totalsnp'}{''}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
+  print $statshandle "\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'totalsnp'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'totalsnp'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'totalsnp'}{$currentchromosome}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'totalsnp'}{$currentchromosome}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nnum_indels\t(number of positions where the reference and at least one analysis of at least one sample differed in the length of the called state, all filters passed on that sample analysis, the reference was called A/C/G/T, and this was not a known-duplicated region)\n";
+  print $statshandle "\t\tAny\tAny (%)\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "${samplecolumn}::$samplefileinfo->{$samplefile}\t${samplecolumn}::$samplefileinfo->{$samplefile} (%)\t"; } }
+  print $statshandle "\n\tTotal\t$statscounters->{'totalindel'}{''}{''}\t" . sprintf( "%.2f", ( $statscounters->{'totalindel'}{''}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t";
+  foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'totalindel'}{''}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'totalindel'}{''}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t"; } }
+  print $statshandle "\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) )
+  {
+    print $statshandle "\t$currentchromosome\t$statscounters->{'totalindel'}{$currentchromosome}{''}\t" . sprintf( "%.2f", ( $statscounters->{'totalindel'}{$currentchromosome}{''} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t";
+    foreach my $samplefile ( sort keys( %{$samplecallsdata} ) ){ foreach my $samplecolumn ( sort keys( %{$samplecallsdata->{$samplefile}} ) ){ print $statshandle "$statscounters->{'totalindel'}{$currentchromosome}{$samplefile}{$samplecolumn}\t" . sprintf( "%.2f", ( $statscounters->{'totalindel'}{$currentchromosome}{$samplefile}{$samplecolumn} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t"; } }
+    print $statshandle "\n";
+  }
+  print $statshandle "\nnum_best_snps\t(number of positions where the requirements for num_snps were met, there were no indels, all analyses of all samples were called A/C/G/T and passed all filters, and all analyses of any one sample were in agreement)\n";
+  print $statshandle "\t\tTotal\tTotal (%)\t\n";
+  print $statshandle "\tTotal\t$statscounters->{'bestsnps'}{''}\t" . sprintf( "%.2f", ( $statscounters->{'bestsnps'}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ print $statshandle "\t$currentchromosome\t$statscounters->{'bestsnps'}{$currentchromosome}\t" . sprintf( "%.2f", ( $statscounters->{'bestsnps'}{$currentchromosome} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t\n"; }
+  print $statshandle "\nnum_best_positions\t(number of positions where the requirements for num_best_snps would have been met, ignoring the actual number of snp and indel calls at that position)\n";
+  print $statshandle "\t\tTotal\tTotal (%)\t\n";
+  print $statshandle "\tTotal\t$statscounters->{'bestpos'}{''}\t" . sprintf( "%.2f", ( $statscounters->{'bestpos'}{''} * 100 / $statscounters->{'reflength'}{''} ) ) . "%\t\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ print $statshandle "\t$currentchromosome\t$statscounters->{'bestpos'}{$currentchromosome}\t" . sprintf( "%.2f", ( $statscounters->{'bestpos'}{$currentchromosome} * 100 / $statscounters->{'reflength'}{$currentchromosome} ) ) . "%\t\n"; }
+  print $statshandle "\ncore_genome_portion_snp\t(num_best_snps divided by the number of positions meething the requirements for coverage_breadth across all samples)\n";
+  print $statshandle "\t\tTotal\t\n";
+  print $statshandle "\tTotal\t" . ( ( $statscounters->{'samplebreadth'}{''}{''} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'}{''} * 100 / $statscounters->{'samplebreadth'}{''}{''} ) ) . "%" ) : "-" ) . "\t\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ print $statshandle "\t$currentchromosome\t" . ( ( $statscounters->{'samplebreadth'}{$currentchromosome}{''} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'}{$currentchromosome} * 100 / $statscounters->{'samplebreadth'}{$currentchromosome}{''} ) ) . "%" ) : "-" ) . "\t\n"; }
+  print $statshandle "\nbest_position_portion_snp\t(num_best_snps divided by the number of positions meeting the requirement for num_best_positions)\n";
+  print $statshandle "\t\tTotal\t\n";
+  print $statshandle "\tTotal\t" . ( ( $statscounters->{'bestpos'}{''} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'}{''} * 100 / $statscounters->{'bestpos'}{''} ) ) . "%" ) : "-" ) . "\t\n";
+  foreach my $currentchromosome ( sort keys( %{$seenchromosomes} ) ){ print $statshandle "\t$currentchromosome\t" . ( ( $statscounters->{'bestpos'}{$currentchromosome} > 0 ) ? ( sprintf( "%.2f", ( $statscounters->{'bestsnps'}{$currentchromosome} * 100 / $statscounters->{'bestpos'}{$currentchromosome} ) ) . "%" ) : "-" ) . "\t\n"; }
 } else { print STDERR "Could not open '$statisticsfile'!\n"; }
 
 

@@ -6,7 +6,7 @@ use Cwd;
 
 # Some constants for tweaking.
 # Some of these should be set dynamically... someday.
-my $naspversion = "0.8.5";
+my $naspversion = "0.8.6";
 my $finddupspath = "find_duplicates.pl";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
@@ -114,9 +114,20 @@ sub nasp
   my $readfilefolder = shift();
   my $outputfilefolder = shift();
   my $mastermatrixfile = shift();
+  # Check for existence of important files passed from command line.
+  if( !( -e( $referencefastafile ) ) )
+  {
+    print STDERR "Cannot continue because reference file '$referencefastafile' does not seem to exist!\n";
+    die( "Cannot continue because reference file '$referencefastafile' does not seem to exist!\n" );
+  }
+  if( !( -e( $readfilefolder ) ) )
+  {
+    print STDERR "Cannot continue because read folder '$readfilefolder' does not seem to exist!\n";
+    die( "Cannot continue because read folder '$readfilefolder' does not seem to exist!\n" );
+  }
   print "Welcome to nasp version $naspversion.\n";
   print "* Starred features might be broken.\n";
-  
+
   # This section is the interactive command-line user input section.
   # A web form or Java interface would replace this section.
   if( -e( $outputfilefolder ) )
@@ -590,14 +601,14 @@ sub nasp
           if( ( $possiblereadfile =~ /\.f(?:ast)?q(?:\.gz)?$/i ) && ( $possiblereadfile =~ /_[Rr][12]_/ ) )
           {
             my $nametomatch = $possiblereadfile;
-            $nametomatch =~ s/_[Rr][12]_//g;
+            $nametomatch =~ s/_[Rr][12]_/_/g;
             my $i = 0;
             while( !( $matchfound ) && defined( $fastqfilelist[$i] ) )
             {
               if( scalar( @{$fastqfilelist[$i]} ) == 1 )
               {
                 my $nametocheck = $fastqfilelist[$i]->[0];
-                $nametocheck =~ s/_[Rr][12]_//g;
+                $nametocheck =~ s/_[Rr][12]_/_/g;
                 if( $nametomatch eq $nametocheck )
                 {
                   my @readpair = sort( ( $fastqfilelist[$i]->[0], $possiblereadfile ) );
@@ -743,7 +754,7 @@ sub nasp
       print $loghandle "\nCommands submitted:\n\n";
 
       # This is the main core of the pipeline.
-      # This section prepares the jobs, and then submits them to PBS.
+      # This section prepares the jobs and then submits them to PBS.
       # From there, this script exits and relies on the downstream components to finish the job.
       if( !( -e( $outputfilefolder ) ) ){ mkdir( $outputfilefolder ); }
       if( !( -e( "$outputfilefolder/reference" ) ) ){ mkdir( "$outputfilefolder/reference" ); }
@@ -980,7 +991,7 @@ sub nasp
             print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/distance_matrix.tsv' when job '$distancecalcqid' is complete.\n";
           } else
           {
-            my $commandtorun = "$matrixmakingscript $mincoverage $minproportion $referencefastafile $finalfilestring $outputfilefolder/allvariant_matrix.tsv $outputfilefolder/bestsnps_matrix.tsv $outputfilefolder/allcallable_matrix.tsv $outputfilefolder/bestsnps.snpfasta $outputfilefolder/statistics.tsv \n";
+            my $commandtorun = "$matrixmakingscript $mincoverage $minproportion $referencefastafile $finalfilestring $outputfilefolder/allcallable_matrix.tsv $outputfilefolder/bestsnps_matrix.tsv $outputfilefolder/allsnps_matrix.tsv $outputfilefolder/allindels_matrix.tsv $outputfilefolder/bestsnps.snpfasta $outputfilefolder/statistics.tsv \n";
             my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=1,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor -x - `;
             chomp( $matrixmakingqid );
             print $loghandle "$matrixmakingqid:\n$commandtorun\n";
@@ -1036,11 +1047,11 @@ sub _submit_bwa
   {
     $commandtorun .= "$bwapath aln $oldformatstring $referencefastafile $inputfilefolder/$readfilepair->[0] -t $numcpusforbwa -f $outputfilefolder/bwa/$readfilenickname-R1.sai $defaultbwaalnargs \n";
     $commandtorun .= "$bwapath aln $oldformatstring $referencefastafile $inputfilefolder/$readfilepair->[1] -t $numcpusforbwa -f $outputfilefolder/bwa/$readfilenickname-R2.sai $defaultbwaalnargs \n";
-    $commandtorun .= "$bwapath sampe -r '$bamstringthingy' $referencefastafile $outputfilefolder/bwa/$readfilenickname-R1.sai $outputfilefolder/bwa/$readfilenickname-R2.sai $inputfilefolder/$readfilepair->[0] $inputfilefolder/$readfilepair->[1] $defaultbwasampeargs | $samtoolspath view -S -F 4 -b -h -q 5 - | $samtoolspath sort - $readfilenickname-bwa \n";
+    $commandtorun .= "$bwapath sampe -r '$bamstringthingy' $referencefastafile $outputfilefolder/bwa/$readfilenickname-R1.sai $outputfilefolder/bwa/$readfilenickname-R2.sai $inputfilefolder/$readfilepair->[0] $inputfilefolder/$readfilepair->[1] $defaultbwasampeargs | $samtoolspath view -S -b -h - | $samtoolspath sort - $readfilenickname-bwa \n";
   } else
   {
     $commandtorun .= "$bwapath aln $oldformatstring $referencefastafile $inputfilefolder/$readfilepair->[0] -t $numcpusforbwa -f $outputfilefolder/bwa/$readfilenickname.sai $defaultbwaalnargs \n";
-    $commandtorun .= "$bwapath samse -r '$bamstringthingy' $referencefastafile $outputfilefolder/bwa/$readfilenickname.sai $inputfilefolder/$readfilepair->[0] $defaultbwasampeargs | $samtoolspath view -S -F 4 -b -h -q 5 - | $samtoolspath sort - $readfilenickname-bwa \n";
+    $commandtorun .= "$bwapath samse -r '$bamstringthingy' $referencefastafile $outputfilefolder/bwa/$readfilenickname.sai $inputfilefolder/$readfilepair->[0] $defaultbwasampeargs | $samtoolspath view -S -b -h - | $samtoolspath sort - $readfilenickname-bwa \n";
   }
   $commandtorun .= "$samtoolspath index $readfilenickname-bwa.bam \n";
   my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/bwa' -w '$outputfilefolder/bwa' -l ncpus=$numcpusforbwa,mem=${gigsofmemforbwa}gb,walltime=$wallhoursforbwa:00:00 -m a -N 'nasp_bwa_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
@@ -1067,7 +1078,7 @@ sub _submit_bwamem
   my $oldformatstring = "";
   my $bamstringthingy = '@RG\tID:' . $readfilenickname . '\tSM:' . $readfilenickname;
   my $readfilestring = "$inputfilefolder/" . join( " $inputfilefolder/", @{$readfilepair} );
-  my $commandtorun = "$bwapath mem -R '$bamstringthingy' $defaultbwamemargs -t $numcpusforbwa $referencefastafile $readfilestring | $samtoolspath view -S -F 4 -b -h -q 5 - | $samtoolspath sort - $readfilenickname-bwamem \n $samtoolspath index $readfilenickname-bwamem.bam \n";
+  my $commandtorun = "$bwapath mem -R '$bamstringthingy' $defaultbwamemargs -t $numcpusforbwa $referencefastafile $readfilestring | $samtoolspath view -S -b -h - | $samtoolspath sort - $readfilenickname-bwamem \n $samtoolspath index $readfilenickname-bwamem.bam \n";
   my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/bwamem' -w '$outputfilefolder/bwamem' -l ncpus=$numcpusforbwa,mem=${gigsofmemforbwa}gb,walltime=$wallhoursforbwa:00:00 -m a -N 'nasp_bwamem_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
   chomp( $alignerqid );
   print $loghandle "$alignerqid:\n$commandtorun\n";
@@ -1094,7 +1105,7 @@ sub _submit_novo
   my $bamstringthingy = '@RG\tID:' . $readfilenickname . '\tSM:' . $readfilenickname;
   my $readfilestring = "$inputfilefolder/" . join( " $inputfilefolder/", @{$readfilepair} );
   my $pairedstring = ( ( $ispaired ) ? "$novopairedargs" : "" );
-  my $commandtorun = "$novopath -f $readfilestring $pairedstring -c $numcpusfornovo -o SAM '$bamstringthingy' -d $referencefastafile.idx $defaultnovoargs | $samtoolspath view -S -F 4 -b -h -q 5 - | $samtoolspath sort - $readfilenickname-novo \n $samtoolspath index $readfilenickname-novo.bam \n";
+  my $commandtorun = "$novopath -f $readfilestring $pairedstring -c $numcpusfornovo -o SAM '$bamstringthingy' -d $referencefastafile.idx $defaultnovoargs | $samtoolspath view -S -b -h - | $samtoolspath sort - $readfilenickname-novo \n $samtoolspath index $readfilenickname-novo.bam \n";
   my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/novoalign' -w '$outputfilefolder/novoalign' -l ncpus=$numcpusfornovo,mem=${gigsofmemfornovo}gb,walltime=$wallhoursfornovo:00:00 -m a -N 'nasp_novo_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
   chomp( $alignerqid );
   print $loghandle "$alignerqid:\n$commandtorun\n";
