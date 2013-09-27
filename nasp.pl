@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -6,7 +6,7 @@ use Cwd;
 
 # Some constants for tweaking.
 # Some of these should be set dynamically... someday.
-my $naspversion = "0.8.6";
+my $naspversion = "0.8.7";
 my $finddupspath = "find_duplicates.pl";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
@@ -69,13 +69,13 @@ my @jarpaths =
   "."
 );
 
-if( @ARGV < 1 || @ARGV > 3 )
+if( ( @ARGV < 1 ) || ( @ARGV > 3 ) || ( $ARGV[0] =~ /^--?[HhVv]/ ) )
 {
   print <<EOF;
 This is the experimental "Northern Arizona SNP Pipeline", version $naspversion.
 
 Usage:
-nasp <reference.fasta> [read_folder [output_folder]]
+nasp <reference.fasta> [output_folder]
 EOF
   exit();
 }
@@ -97,7 +97,7 @@ $currentdirectory =~ s/\/+$//;
 my $referencefastafile = shift();
 if( $referencefastafile =~ /^[^\/~]/ ){ $referencefastafile = "$currentdirectory/$referencefastafile"; }
 my $bamfilefolder = $currentdirectory;
-if( @ARGV > 0 ){ $bamfilefolder = shift(); }
+if( @ARGV == 2 ){ $bamfilefolder = shift(); }
 $bamfilefolder =~ s/\/+$//;
 if( $bamfilefolder =~ /^[^\/~]/ ){ $bamfilefolder = "$currentdirectory/$bamfilefolder"; }
 my $outputfilefolder = "$bamfilefolder/nasp_results";
@@ -1127,7 +1127,7 @@ sub _submit_gatk
   my $bamfilename = shift();
   my $bamfilenickname = shift();
   my $loghandle = shift();
-  my $commandtorun = "java -Xmx${gigsofmemforgatk}G -jar $gatkpath -T UnifiedGenotyper -dt NONE -I $inputfilefolder/$bamfilename -R $referencefastafile -nt $numcpusforgatk -ploidy 1 -o $outputfilefolder/gatk/$bamfilenickname-gatk.vcf -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE $defaultgatkargs \n";
+  my $commandtorun = "java -Xmx${gigsofmemforgatk}G -jar $gatkpath -T UnifiedGenotyper -dt NONE -glm BOTH -I $inputfilefolder/$bamfilename -R $referencefastafile -nt $numcpusforgatk -ploidy 1 -o $outputfilefolder/gatk/$bamfilenickname-gatk.vcf -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE $defaultgatkargs \n";
   my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/gatk' -w '$outputfilefolder/gatk' -l ncpus=$numcpusforgatk,mem=${gigsofmemforgatk}gb,walltime=$wallhoursforgatk:00:00 -m a -N 'nasp_gatk_$bamfilenickname' -x -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
