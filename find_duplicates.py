@@ -6,7 +6,6 @@ __email__ = "dsmith@tgen.org"
 
 
 def _parse_args():
-    'Parses command line arguments.'
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
     parser.add_argument( "--nucmerpath", default="nucmer", help="Path to the 'nucmer' executable." )
@@ -26,14 +25,14 @@ def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
     line_match = re.match( '^>([^ ]+) ([^ ]+) (\d+) (\d+)\s*$', line_from_delta_file )
     if line_match:
         current_contigs = ( line_match.group(1), line_match.group(2) )
-        contig_0_start = int( line_match.group(3) )
-        contig_1_start = int( line_match.group(4) )
+        contig_0_end = int( line_match.group(3) )
+        contig_1_end = int( line_match.group(4) )
         dups_data.add_contig( current_contigs[0], False )
         dups_data.add_contig( current_contigs[1], False )
-        if contig_0_start > dups_data.get_contig_length( current_contigs[0] ):
-            dups_data.append_contig( ( "0" * ( contig_0_start - dups_data.get_contig_length( current_contigs[0] ) ) ), current_contigs[0] )
-        if contig_0_start > dups_data.get_contig_length( current_contigs[1] ):
-            dups_data.append_contig( ( "0" * ( contig_1_start - dups_data.get_contig_length( current_contigs[1] ) ) ), current_contigs[1] )
+        if contig_0_end > dups_data.get_contig_length( current_contigs[0] ):
+            dups_data.append_contig( ( "0" * ( contig_0_end - dups_data.get_contig_length( current_contigs[0] ) ) ), current_contigs[0] )
+        if contig_0_end > dups_data.get_contig_length( current_contigs[1] ):
+            dups_data.append_contig( ( "0" * ( contig_1_end - dups_data.get_contig_length( current_contigs[1] ) ) ), current_contigs[1] )
     else:
         line_match = re.match( '^(\d+) (\d+) (\d+) (\d+) \d+ \d+ \d+\s*$', line_from_delta_file )
         if line_match:
@@ -61,8 +60,8 @@ def write_dups_file( output_filename, dups_data ):
     dups_data.write_to_file( output_filename )
 
 def main():
-    commandline_args = _parse_args()
     from nasp_objects import GenomeStatus
+    commandline_args = _parse_args()
     run_nucmer_on_reference( commandline_args.nucmerpath, commandline_args.reference )
     dups_data = GenomeStatus()
     parse_delta_file( "reference.delta", dups_data )
