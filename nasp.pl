@@ -7,7 +7,7 @@ use Cwd;
 # Some constants for tweaking.
 # Some of these should be set dynamically... someday.
 my $naspversion = "0.8.7";
-my $finddupspath = "find_duplicates.pl";
+my $finddupspath = "find_duplicates.py";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
 my $convertexternalpath = "convert_external_genome.pl";
@@ -54,6 +54,7 @@ my $matrixmakingscript = "vcf_to_matrix.pl";
 my $gigsofmemfordistancecalc = "60";
 my $wallhoursfordistancecalc = "36";
 my $distancecalcscript = "matrix_distance.pl";
+my $nucmerpath = "nucmer";
 
 # Standalone executables will be checked for in the
 # $PATH by default, using the normal methods.
@@ -787,7 +788,7 @@ sub nasp
       }
       if( $finddupregions )
       {
-        $indexcommand .= "$finddupspath $referencefastafile duplicates.txt \n";
+        $indexcommand .= "$finddupspath --nucmerpath $nucmerpath --reference $referencefastafile --outputfile duplicates.txt \n";
         push( @finalfilelist, "dups,nucmer,::$outputfilefolder/reference/duplicates.txt" );
       }
       if( scalar( @bamfilelist ) >= 1 )
