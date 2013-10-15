@@ -788,7 +788,7 @@ sub nasp
       }
       if( $finddupregions )
       {
-        $indexcommand .= "$finddupspath --nucmerpath $nucmerpath --reference $referencefastafile --outputfile duplicates.txt \n";
+        $indexcommand .= "$finddupspath --nucmerpath $nucmerpath --reference $referencefastafile \n";
         push( @finalfilelist, "dups,nucmer,::$outputfilefolder/reference/duplicates.txt" );
       }
       if( scalar( @bamfilelist ) >= 1 )

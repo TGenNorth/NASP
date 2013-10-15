@@ -10,8 +10,7 @@ def _parse_args():
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
     parser.add_argument( "--nucmerpath", default="nucmer", help="Path to the 'nucmer' executable." )
     parser.add_argument( "--reference", required=True, help="Path to the reference fasta file." )
-    parser.add_argument( "--outputfile", required=True, help="Path to the dups file to output." )
-    return( parser.parse_args() )
+    return parser.parse_args()
 
 def run_nucmer_on_reference( nucmer_path, reference_path ):
     import subprocess
@@ -22,7 +21,7 @@ def run_nucmer_on_reference( nucmer_path, reference_path ):
 
 def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
     import re
-    line_match = re.match( '^>([^ ]+) ([^ ]+) (\d+) (\d+)\s*$', line_from_delta_file )
+    line_match = re.match( r'^>([^ ]+) ([^ ]+) (\d+) (\d+)\s*$', line_from_delta_file )
     if line_match:
         current_contigs = ( line_match.group(1), line_match.group(2) )
         contig_0_end = int( line_match.group(3) )
@@ -34,7 +33,7 @@ def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
         if contig_0_end > dups_data.get_contig_length( current_contigs[1] ):
             dups_data.append_contig( ( "0" * ( contig_1_end - dups_data.get_contig_length( current_contigs[1] ) ) ), current_contigs[1] )
     else:
-        line_match = re.match( '^(\d+) (\d+) (\d+) (\d+) \d+ \d+ \d+\s*$', line_from_delta_file )
+        line_match = re.match( r'^(\d+) (\d+) (\d+) (\d+) \d+ \d+ \d+\s*$', line_from_delta_file )
         if line_match:
             contig_0_start = int( line_match.group(1) )
             contig_0_end = int( line_match.group(2) )
@@ -45,8 +44,8 @@ def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
                     contig_0_end, contig_0_start = contig_0_start, contig_0_end
                 if contig_1_end < contig_1_start:
                     contig_1_end, contig_1_start = contig_1_start, contig_1_end
-                dups_data.set_value( ( "1" * ( contig_0_end - contig_0_start + 1 ) ), current_contigs[0], contig_0_start, "?" )
-                dups_data.set_value( ( "1" * ( contig_1_end - contig_1_start + 1 ) ), current_contigs[1], contig_1_start, "?" )
+                dups_data.set_value( ( "1" * ( contig_0_end - contig_0_start + 1 ) ), contig_0_start, "!", current_contigs[0] )
+                dups_data.set_value( ( "1" * ( contig_1_end - contig_1_start + 1 ) ), contig_1_start, "!", current_contigs[1] )
     return current_contigs
 
 def parse_delta_file( delta_filename, dups_data ):
@@ -56,16 +55,14 @@ def parse_delta_file( delta_filename, dups_data ):
         current_contigs = _parse_delta_line( line_from_delta_file, dups_data, current_contigs )
     delta_handle.close()
 
-def write_dups_file( output_filename, dups_data ):
-    dups_data.write_to_file( output_filename )
-
 def main():
     from nasp_objects import GenomeStatus
     commandline_args = _parse_args()
     run_nucmer_on_reference( commandline_args.nucmerpath, commandline_args.reference )
     dups_data = GenomeStatus()
     parse_delta_file( "reference.delta", dups_data )
-    write_dups_file( commandline_args.outputfile, dups_data )
+    dups_data.write_to_file( "duplicates.txt" )
+
 
 if __name__ == "__main__": main()
 
