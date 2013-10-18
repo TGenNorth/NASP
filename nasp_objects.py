@@ -36,7 +36,7 @@ class GenomeStatus:
         if len( self._status_data[contig_name] ) < new_length:
             self._status_data[contig_name] = self._status_data[contig_name] + ( missing_range_filler * ( new_length - len( self._status_data[contig_name] ) ) )
 
-    def set_value( self, new_data, first_position, missing_range_filler = "?", contig_name = None, change_current_contig = False ):
+    def set_value( self, new_data, first_position, missing_range_filler = "!", contig_name = None, change_current_contig = False ):
         if contig_name is None:
             contig_name = self._current_contig
         self.add_contig( contig_name, change_current_contig )

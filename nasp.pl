@@ -10,7 +10,7 @@ my $naspversion = "0.9.1";
 my $finddupspath = "find_duplicates.py";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
-my $convertexternalpath = "convert_external_genome.pl";
+my $convertexternalpath = "convert_external_genome.py";
 my $gigsofmemforexternal = "2";
 my $wallhoursforexternal = "1";
 my $bwapath = "bwa";
@@ -55,6 +55,7 @@ my $gigsofmemfordistancecalc = "60";
 my $wallhoursfordistancecalc = "36";
 my $distancecalcscript = "matrix_distance.pl";
 my $nucmerpath = "nucmer";
+my $deltafilterpath = "delta-filter";
 
 # Standalone executables will be checked for in the
 # $PATH by default, using the normal methods.
@@ -1016,7 +1017,7 @@ sub _submit_external_fasta
   my $fastafilename = shift();
   my $fastafilenickname = shift();
   my $loghandle = shift();
-  my $commandtorun = "$convertexternalpath $referencefastafile $inputfilefolder/$fastafilename $fastafilenickname.frankenfasta \n";
+  my $commandtorun = "$convertexternalpath --nucmerpath $nucmerpath --deltafilterpath $deltafilterpath --reference $referencefastafile --external $inputfilefolder/$fastafilename \n";
   my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/external' -w '$outputfilefolder/external' -l ncpus=1,mem=${gigsofmemforexternal}gb,walltime=$wallhoursforexternal:00:00 -m a -N 'nasp_external_$fastafilename' -x -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
