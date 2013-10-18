@@ -134,8 +134,8 @@ class Genome:
         return fasta_nickname
 
     def reverse_complement( dna_string ):
-        import str
-        return dna_string.translate( str.maketrans( 'ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr' ) )[::-1]
+        import string
+        return dna_string.translate( string.maketrans( 'ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr' ) )[::-1]
 
 
 class ReferenceGenome:
