@@ -683,11 +683,19 @@ sub nasp
       print $loghandle "Fasta data:\n  Reference file: $referencefastafile\n";
       print $loghandle "  Check for duplicated regions: " . ( $finddupregions ? "Yes" : "No" ) . "\n";
       print $loghandle "  External genomes: ";
-      if( $findexternalfastas ){ print $loghandle "\n    " . join( "\n    ", @fastafilelist ) . "\n"; } else { print $loghandle "none\n"; }
+      if( $findexternalfastas )
+      {
+        print $loghandle "\n    " . join( "\n    ", @fastafilelist ) . "\n"; } else { print $loghandle "none\n";
+        print $loghandle "  NUCmer args for external import: '$defaultexternalnucmerargs'\n";
+      }
       print "Fasta data:\n  Reference file: $referencefastafile\n";
       print "  Check for duplicated regions: " . ( $finddupregions ? "Yes" : "No" ) . "\n";
       print "  External genomes: ";
-      if( $findexternalfastas ){ print "\n    " . join( "\n    ", @fastafilelist ) . "\n"; } else { print "none\n"; }
+      if( $findexternalfastas )
+      {
+        print "\n    " . join( "\n    ", @fastafilelist ) . "\n"; } else { print "none\n"; }
+        print "  NUCmer args for external import: '$defaultexternalnucmerargs'\n";
+      }
       print $loghandle "Filter configuration:\n";
       print $loghandle "  Minimum coverage: " . ( $mincoverage ? "$mincoverage\n" : "Off" );
       print $loghandle "  Minimum proportion: " . ( $minproportion ? "$minproportion\n" : "Off" );
