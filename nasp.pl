@@ -154,21 +154,18 @@ sub nasp
   {
     print "\nDo you have fasta files for external genomes you wish to include [Y]? ";
     $userinput = <>;
-    if( $userinput !~ /^[Nn]/ )
-    {
-      $findexternalfastas = 1;
-      print "  Would you like to set advanced NUCmer settings [N]? ";
-      $userinput = <>;
-      if( $userinput =~ /^[Yy]/ )
-      {
-        $userinput = '';
-        print "  What additional arguments would you like to pass to 'nucmer' while importing external genomes [ $defaultexternalnucmerargs ]? ";
-        $userinput = <>;
-        chomp( $userinput );
-        # This could use some sanity-checking, and perhaps multiple smarter questions.
-        if( length( $userinput ) ){ $defaultexternalnucmerargs = $userinput; }
-      }
-    }
+    if( $userinput !~ /^[Nn]/ ){ $findexternalfastas = 1; }
+  }
+  print "  Would you like to set advanced NUCmer settings [N]? ";
+  $userinput = <>;
+  if( $userinput =~ /^[Yy]/ )
+  {
+    $userinput = '';
+    print "  What additional arguments would you like to pass to 'nucmer' while importing external genomes [ $defaultexternalnucmerargs ]? ";
+    $userinput = <>;
+    chomp( $userinput );
+    # This could use some sanity-checking, and perhaps multiple smarter questions.
+    if( length( $userinput ) ){ $defaultexternalnucmerargs = $userinput; }
   }
 
   # Filters section
