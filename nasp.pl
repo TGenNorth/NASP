@@ -11,6 +11,7 @@ my $finddupspath = "find_duplicates.py";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
 my $convertexternalpath = "convert_external_genome.py";
+my $defaultexternalnucmerargs = "";
 my $gigsofmemforexternal = "2";
 my $wallhoursforexternal = "1";
 my $bwapath = "bwa";
@@ -153,7 +154,21 @@ sub nasp
   {
     print "\nDo you have fasta files for external genomes you wish to include [Y]? ";
     $userinput = <>;
-    if( $userinput !~ /^[Nn]/ ){ $findexternalfastas = 1; }
+    if( $userinput !~ /^[Nn]/ )
+    {
+      $findexternalfastas = 1;
+      print "  Would you like to set advanced NUCmer settings [N]? ";
+      $userinput = <>;
+      if( $userinput =~ /^[Yy]/ )
+      {
+        $userinput = '';
+        print "  What additional arguments would you like to pass to 'nucmer' while importing external genomes [ $defaultexternalnucmerargs ]? ";
+        $userinput = <>;
+        chomp( $userinput );
+        # This could use some sanity-checking, and perhaps multiple smarter questions.
+        if( length( $userinput ) ){ $defaultexternalnucmerargs = $userinput; }
+      }
+    }
   }
 
   # Filters section
@@ -1017,7 +1032,7 @@ sub _submit_external_fasta
   my $fastafilename = shift();
   my $fastafilenickname = shift();
   my $loghandle = shift();
-  my $commandtorun = "$convertexternalpath --nucmerpath $nucmerpath --deltafilterpath $deltafilterpath --reference $referencefastafile --external $inputfilefolder/$fastafilename \n";
+  my $commandtorun = "$convertexternalpath --nucmerpath $nucmerpath --nucmerargs '$defaultexternalnucmerargs' --deltafilterpath $deltafilterpath --reference $referencefastafile --external $inputfilefolder/$fastafilename \n";
   my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/external' -w '$outputfilefolder/external' -l ncpus=1,mem=${gigsofmemforexternal}gb,walltime=$wallhoursforexternal:00:00 -m a -N 'nasp_external_$fastafilename' -x -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";

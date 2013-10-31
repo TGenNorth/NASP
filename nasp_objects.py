@@ -11,6 +11,12 @@ class GenomeStatus:
         self._status_data = {}
         self._current_contig = None
 
+    def set_current_contig( self, contig_name ):
+        if contig_name not in self._status_data:
+            raise InvalidContigName()
+        else:
+            self._current_contig = contig_name
+
     def add_contig( self, contig_name, change_current_contig = True ):
         if contig_name is not None:
             if change_current_contig:
@@ -82,6 +88,9 @@ class Genome:
 
     def __init__( self ):
         self._genome = GenomeStatus()
+
+    def set_current_contig( self, contig_name ):
+        self._genome.set_current_contig( contig_name )
 
     def append_contig( self, genome_data, contig_name = None ):
         self._genome.append_contig( genome_data, contig_name )
