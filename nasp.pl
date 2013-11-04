@@ -6,11 +6,12 @@ use Cwd;
 
 # Some constants for tweaking.
 # Some of these should be set dynamically... someday.
-my $naspversion = "0.8.7";
-my $finddupspath = "find_duplicates.pl";
+my $naspversion = "0.9.1";
+my $finddupspath = "find_duplicates.py";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
-my $convertexternalpath = "convert_external_genome.pl";
+my $convertexternalpath = "convert_external_genome.py";
+my $defaultexternalnucmerargs = "";
 my $gigsofmemforexternal = "2";
 my $wallhoursforexternal = "1";
 my $bwapath = "bwa";
@@ -27,6 +28,11 @@ my $wallhoursfornovo = "36";
 my $defaultnovoargs = "-r all";
 my $novopairedargs = "-i PE 500,100";
 my $novoindexpath = "novoindex";
+my $snappath = "snap";
+my $gigsofmemforsnap = "12";
+my $numcpusforsnap = "4";
+my $wallhoursforsnap = "36";
+my $defaultsnapargs = "";
 my $gatkpath = "GenomeAnalysisTK.jar";
 my $gigsofmemforgatk = "12";
 my $numcpusforgatk = "4";
@@ -54,6 +60,8 @@ my $matrixmakingscript = "vcf_to_matrix.pl";
 my $gigsofmemfordistancecalc = "60";
 my $wallhoursfordistancecalc = "36";
 my $distancecalcscript = "matrix_distance.pl";
+my $nucmerpath = "nucmer";
+my $deltafilterpath = "delta-filter";
 
 # Standalone executables will be checked for in the
 # $PATH by default, using the normal methods.
@@ -153,6 +161,17 @@ sub nasp
     $userinput = <>;
     if( $userinput !~ /^[Nn]/ ){ $findexternalfastas = 1; }
   }
+  print "  Would you like to set advanced NUCmer settings [N]? ";
+  $userinput = <>;
+  if( $userinput =~ /^[Yy]/ )
+  {
+    $userinput = '';
+    print "  What additional arguments would you like to pass to 'nucmer' while importing external genomes [ $defaultexternalnucmerargs ]? ";
+    $userinput = <>;
+    chomp( $userinput );
+    # This could use some sanity-checking, and perhaps multiple smarter questions.
+    if( length( $userinput ) ){ $defaultexternalnucmerargs = $userinput; }
+  }
 
   # Filters section
   $userinput = '';
@@ -178,11 +197,12 @@ sub nasp
   my $runbwa = 0;
   my $runbwamem = 0;
   my $runnovo = 0;
+  my $runsnap = 0;
   my $findbams = 0;
   $userinput = 'X';
   while( $userinput !~ /^$|^[YNyn]/ )
   {
-    print "\nThis pipeline currently supports two aligners, BWA and Novoalign, and you can provide pre-aligned BAM files.\nYou can choose as many options as you want.\nWould you like to run BWA samp/se [N]?* ";
+    print "\nThis pipeline currently supports three aligners: BWA, Novoalign, and SNAP.\nYou can also provide pre-aligned BAM files, and you can choose as many options as you want.\nWould you like to run BWA samp/se [N]?* ";
     $userinput = <>;
     if( $userinput =~ /^[Yy]/ ){ $runbwa = 1; }
   }
@@ -203,12 +223,19 @@ sub nasp
   $userinput = 'X';
   while( $userinput !~ /^$|^[YNyn]/ )
   {
+    print "Would you like to run SNAP [N]?* ";
+    $userinput = <>;
+    if( $userinput =~ /^[Yy]/ ){ $runsnap = 1; }
+  }
+  $userinput = 'X';
+  while( $userinput !~ /^$|^[YNyn]/ )
+  {
     print "Would you like to provide pre-aligned SAM/BAM files [N]? ";
     $userinput = <>;
     if( $userinput =~ /^[Yy]/ ){ $findbams = 1; }
   }
   my $findpaired = 0;
-  if( $runbwa || $runbwamem || $runnovo )
+  if( $runbwa || $runbwamem || $runnovo || $runsnap )
   {
     $userinput = 'X';
     while( $userinput !~ /^$|^[YNyn]/ )
@@ -342,6 +369,53 @@ sub nasp
         if( length( $userinput ) ){ $defaultnovoargs = $userinput; }
       }
     }
+    if( $runsnap )
+    {
+      print "Would you like to set advanced SNAP settings [N]? ";
+      $userinput = <>;
+      if( $userinput =~ /^[Yy]/ )
+      {
+        print "  Would you like to use an alternate SNAP version [N]? ";
+        $userinput = <>;
+        if( $userinput =~ /^[Yy]/ )
+        {
+          print "  What is the path to the SNAP runtime you wish to use [system default]? ";
+          $userinput = <>;
+          chomp( $userinput );
+          if( length( $userinput ) ){ $snappath = $userinput; }
+        }
+        $userinput = 'X';
+        while( $userinput !~ /^\d{0,4}$/ )
+        {
+          print "  How much memory will SNAP require [$gigsofmemforsnap]? ";
+          $userinput = <>;
+          chomp( $userinput );
+          if( $userinput !~ /^$/ ){ $gigsofmemforsnap = $userinput; }
+        }
+        $userinput = 'X';
+        while( $userinput !~ /^\d{0,2}$/ )
+        {
+          print "  How many CPUs do you want SNAP to use [$numcpusforsnap]? ";
+          $userinput = <>;
+          chomp( $userinput );
+          if( $userinput !~ /^$/ ){ $numcpusforsnap = $userinput; }
+        }
+        $userinput = 'X';
+        while( $userinput !~ /^\d{0,3}$/ )
+        {
+          print "  How many hours will SNAP take to run [$wallhoursforsnap]? ";
+          $userinput = <>;
+          chomp( $userinput );
+          if( $userinput !~ /^$/ ){ $wallhoursforsnap = $userinput; }
+        }
+        $userinput = '';
+        print "  What additional arguments would you like to pass to SNAP [ $defaultsnapargs ]? ";
+        $userinput = <>;
+        chomp( $userinput );
+        # This could use some sanity-checking, and perhaps multiple smarter questions.
+        if( length( $userinput ) ){ $defaultsnapargs = $userinput; }
+      }
+    }
   }
   
   # SNP calling section
@@ -350,7 +424,7 @@ sub nasp
   my $runvarscan = 0;
   my $runsamtools = 0;
   my $findvcfs = 0;
-  if( $runbwa || $runbwamem || $runnovo || $findbams )
+  if( $runbwa || $runbwamem || $runnovo || $runsnap || $findbams )
   {
     $userinput = 'X';
     while( $userinput !~ /^$|^[YNyn]/ )
@@ -593,7 +667,7 @@ sub nasp
         }
       }
       # fastq
-      if( ( $runbwa || $runbwamem || $runnovo ) && ( $possiblereadfile =~ /\.f(?:ast)?q(?:\.gz)?$|_sequence\.txt(?:\.gz)?$/i ) )
+      if( ( $runbwa || $runbwamem || $runnovo || $runsnap ) && ( $possiblereadfile =~ /\.f(?:ast)?q(?:\.gz)?$|_sequence\.txt(?:\.gz)?$/i ) )
       {
         my $matchfound = 0;
         if( $findpaired )
@@ -666,11 +740,19 @@ sub nasp
       print $loghandle "Fasta data:\n  Reference file: $referencefastafile\n";
       print $loghandle "  Check for duplicated regions: " . ( $finddupregions ? "Yes" : "No" ) . "\n";
       print $loghandle "  External genomes: ";
-      if( $findexternalfastas ){ print $loghandle "\n    " . join( "\n    ", @fastafilelist ) . "\n"; } else { print $loghandle "none\n"; }
+      if( $findexternalfastas )
+      {
+        print $loghandle "\n    " . join( "\n    ", @fastafilelist ) . "\n";
+        print $loghandle "  NUCmer args for external import: '$defaultexternalnucmerargs'\n";
+      } else { print $loghandle "none\n"; }
       print "Fasta data:\n  Reference file: $referencefastafile\n";
       print "  Check for duplicated regions: " . ( $finddupregions ? "Yes" : "No" ) . "\n";
       print "  External genomes: ";
-      if( $findexternalfastas ){ print "\n    " . join( "\n    ", @fastafilelist ) . "\n"; } else { print "none\n"; }
+      if( $findexternalfastas )
+      {
+        print "\n    " . join( "\n    ", @fastafilelist ) . "\n";
+        print "  NUCmer args for external import: '$defaultexternalnucmerargs'\n";
+      } else { print "none\n"; }
       print $loghandle "Filter configuration:\n";
       print $loghandle "  Minimum coverage: " . ( $mincoverage ? "$mincoverage\n" : "Off" );
       print $loghandle "  Minimum proportion: " . ( $minproportion ? "$minproportion\n" : "Off" );
@@ -678,7 +760,7 @@ sub nasp
       print "  Minimum coverage: " . ( $mincoverage ? "$mincoverage\n" : "Off" );
       print "  Minimum proportion: " . ( $minproportion ? "$minproportion\n" : "Off" );
       print $loghandle "Aligners:\n";
-      print $loghandle "  Aligners to run: " . ( ( $runbwa + $runbwamem + $runnovo ) ? ( $runbwa ? 'BWA ' : '' ) . ( $runbwamem ? 'BWA-mem ' : '' ) . ( $runnovo ? 'Novoalign ' : '' ) : "none" ) . "\n";
+      print $loghandle "  Aligners to run: " . ( ( $runbwa + $runbwamem + $runnovo + $runsnap ) ? ( $runbwa ? 'BWA ' : '' ) . ( $runbwamem ? 'BWA-mem ' : '' ) . ( $runnovo ? 'Novoalign ' : '' ) . ( $runsnap ? 'SNAP ' : '' ) : "none" ) . "\n";
       if( $runbwa || $runbwamem )
       {
         print $loghandle "  BWA:\n    Executable: '$bwapath'\n";
@@ -690,9 +772,10 @@ sub nasp
         print $loghandle "  Novoalign:\n    Executable: '$novopath'\n    Args: '$defaultnovoargs'\n";
         if( $findpaired ){ print $loghandle "    Paired-read args: '$novopairedargs'\n"; }
       }
-      if( $runbwa + $runbwamem + $runnovo ){ print $loghandle "  Check for paired read files: " . ( $findpaired ? "Yes" : "No" ) . "\n"; }
+      if( $runsnap ){ print $loghandle "  SNAP:\n    Executable: '$snappath'\n    Args: '$defaultsnapargs'\n"; }
+      if( $runbwa + $runbwamem + $runnovo + $runsnap ){ print $loghandle "  Check for paired read files: " . ( $findpaired ? "Yes" : "No" ) . "\n"; }
       print $loghandle "  Fastq files: ";
-      if( $runbwa + $runbwamem + $runnovo )
+      if( $runbwa + $runbwamem + $runnovo + $runsnap )
       {
         print $loghandle "\n";
         foreach my $fastqpair (@fastqfilelist)
@@ -707,7 +790,7 @@ sub nasp
       print $loghandle "  Pre-aligned files: ";
       if( $findbams ){ print $loghandle "\n    " . join( "\n    ", @bamfilelist ) . "\n"; } else { print $loghandle "none\n"; }
       print "Aligners:\n";
-      print "  Aligners to run: " . ( ( $runbwa + $runbwamem + $runnovo ) ? ( $runbwa ? 'BWA ' : '' ) . ( $runbwamem ? 'BWA-mem ' : '' ) . ( $runnovo ? 'Novoalign ' : '' ) : "none" ) . "\n";
+      print "  Aligners to run: " . ( ( $runbwa + $runbwamem + $runnovo + $runsnap ) ? ( $runbwa ? 'BWA ' : '' ) . ( $runbwamem ? 'BWA-mem ' : '' ) . ( $runnovo ? 'Novoalign ' : '' ) . ( $runsnap ? 'SNAP ' : '' ) : "none" ) . "\n";
       if( $runbwa || $runbwamem )
       {
         print "  BWA:\n    Executable: '$bwapath'\n";
@@ -719,9 +802,10 @@ sub nasp
         print "  Novoalign:\n    Executable: '$novopath'\n    Args: '$defaultnovoargs'\n";
         if( $findpaired ){ print "    Paired-read args: '$novopairedargs'\n"; }
       }
-      if( $runbwa + $runbwamem + $runnovo ){ print "  Check for paired read files: " . ( $findpaired ? "Yes" : "No" ) . "\n"; }
+      if( $runsnap ){ print "  SNAP:\n    Executable: '$snappath'\n    Args: '$defaultsnapargs'\n"; }
+      if( $runbwa + $runbwamem + $runnovo + $runsnap ){ print "  Check for paired read files: " . ( $findpaired ? "Yes" : "No" ) . "\n"; }
       print "  Fastq files: ";
-      if( $runbwa + $runbwamem + $runnovo )
+      if( $runbwa + $runbwamem + $runnovo + $runsnap )
       {
         print "\n";
         foreach my $fastqpair (@fastqfilelist)
@@ -766,6 +850,7 @@ sub nasp
         if( $runbwa && !( -e( "$outputfilefolder/bwa" ) ) ){ mkdir( "$outputfilefolder/bwa" ); }
         if( $runbwamem && !( -e( "$outputfilefolder/bwamem" ) ) ){ mkdir( "$outputfilefolder/bwamem" ); }
         if( $runnovo && !( -e( "$outputfilefolder/novoalign" ) ) ){ mkdir( "$outputfilefolder/novoalign" ); }
+        if( $runsnap && !( -e( "$outputfilefolder/snap" ) ) ){ mkdir( "$outputfilefolder/snap" ); }
       }
       if( scalar( @bamfilelist ) && !( -e( "$outputfilefolder/bams" ) ) ){ mkdir( "$outputfilefolder/bams" ); }
       if( ( scalar( @fastqfilelist ) + scalar( @bamfilelist ) ) >= 1 )
@@ -779,6 +864,7 @@ sub nasp
       my $indexcommand = "";
       if( ( $runbwa || $runbwamem ) && ( scalar( @fastqfilelist ) >= 1 ) ){ $indexcommand .= "$bwapath index $referencefastafile \n"; }
       if( $runnovo && ( scalar( @fastqfilelist ) >= 1 ) ){ $indexcommand .= "$novoindexpath $referencefastafile.idx $referencefastafile \n"; }
+      if( $runsnap && ( scalar( @fastqfilelist ) >= 1 ) ){ $indexcommand .= "$snappath index $referencefastafile $outputfilefolder/reference/snap \n"; }
       if( $rungatk && ( ( scalar( @fastqfilelist ) >= 1 ) || ( scalar( @bamfilelist ) >= 1 ) ) )
       {
         $indexcommand .= "java -Xmx${gigsofmemforindex}G -jar $dictgeneratorpath R=$referencefastafile O=$referencefastafile.dict \n";
@@ -787,7 +873,7 @@ sub nasp
       }
       if( $finddupregions )
       {
-        $indexcommand .= "$finddupspath $referencefastafile duplicates.txt \n";
+        $indexcommand .= "$finddupspath --nucmerpath $nucmerpath --reference $referencefastafile \n";
         push( @finalfilelist, "dups,nucmer,::$outputfilefolder/reference/duplicates.txt" );
       }
       if( scalar( @bamfilelist ) >= 1 )
@@ -931,6 +1017,38 @@ sub nasp
                 }
               }
             }
+            if( $runsnap )
+            {
+              my $alignerdata = _submit_snap( $pipelinestartqid, $referencefastafile, $readfilefolder, $outputfilefolder, $readfilepair, $readfilenickname, $loghandle );
+              if( scalar( @{$alignerdata} ) == 2 )
+              {
+                if( $rungatk )
+                {
+                  my $snpcallerdata = _submit_gatk( $alignerdata->[0], $referencefastafile, "$outputfilefolder/snap", $outputfilefolder, $alignerdata->[1], "$readfilenickname-snap", $loghandle );
+                  push( @snpcallerqids, $snpcallerdata->[0] );
+                  push( @finalfilelist, ( "vcf,SNAP,GATK,::" . $snpcallerdata->[1] ) );
+                }
+                if( $runsolsnp )
+                {
+                  `ln -s -f $alignerdata->[1] $outputfilefolder/snap/$readfilenickname`;
+                  my $snpcallerdata = _submit_solsnp( $alignerdata->[0], $referencefastafile, "$outputfilefolder/snap", $outputfilefolder, $readfilenickname, "$readfilenickname-snap", $loghandle );
+                  push( @snpcallerqids, $snpcallerdata->[0] );
+                  push( @finalfilelist, ( "vcf,SNAP,SolSnp,::" . $snpcallerdata->[1] ) );
+                }
+                if( $runvarscan )
+                {
+                  my $snpcallerdata = _submit_varscan( $alignerdata->[0], $referencefastafile, "$outputfilefolder/snap", $outputfilefolder, $alignerdata->[1], "$readfilenickname-snap", $readfilenickname, $loghandle );
+                  push( @snpcallerqids, $snpcallerdata->[0] );
+                  push( @finalfilelist, ( "vcf,SNAP,VarScan,::" . $snpcallerdata->[1] ) );
+                }
+                if( $runsamtools )
+                {
+                  my $snpcallerdata = _submit_samtools( $alignerdata->[0], $referencefastafile, "$outputfilefolder/snap", $outputfilefolder, $alignerdata->[1], "$readfilenickname-snap", $loghandle );
+                  push( @snpcallerqids, $snpcallerdata->[0] );
+                  push( @finalfilelist, ( "vcf,SNAP,SAMtools,::" . $snpcallerdata->[1] ) );
+                }
+              }
+            }
           }
         }
         if( scalar( @bamfilelist ) >= 1 )
@@ -1015,7 +1133,7 @@ sub _submit_external_fasta
   my $fastafilename = shift();
   my $fastafilenickname = shift();
   my $loghandle = shift();
-  my $commandtorun = "$convertexternalpath $referencefastafile $inputfilefolder/$fastafilename $fastafilenickname.frankenfasta \n";
+  my $commandtorun = "$convertexternalpath --nucmerpath $nucmerpath --nucmerargs '$defaultexternalnucmerargs' --deltafilterpath $deltafilterpath --reference $referencefastafile --external $inputfilefolder/$fastafilename \n";
   my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/external' -w '$outputfilefolder/external' -l ncpus=1,mem=${gigsofmemforexternal}gb,walltime=$wallhoursforexternal:00:00 -m a -N 'nasp_external_$fastafilename' -x -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
@@ -1115,6 +1233,44 @@ sub _submit_novo
     push( @returnarray, $alignerqid );
     push( @returnarray, "$readfilenickname-novo.bam" );
   } else { print STDERR "Error scheduling Novoalign for '$readfilepair->[0]'!\n"; }
+  return( \@returnarray );
+}
+
+sub _submit_snap
+{
+  my $jobtodependon = shift();
+  my $referencefastafile = shift();
+  my $inputfilefolder = shift();
+  my $outputfilefolder = shift();
+  my $readfilepair = shift();
+  my $readfilenickname = shift();
+  my $loghandle = shift();
+  my $ispaired = 0;
+  if( scalar( @{$readfilepair} ) == 2 ){ $ispaired = 1; }
+  my $readfilestring = "";
+  my $commandtorun = "";
+  my $rmtempstring = "";
+  foreach my $currentreadfile ( @{$readfilepair} )
+  {
+    if( $currentreadfile =~ /^(.+)\.gz$/ )
+    {
+      my $decompressedfilename = $1;
+      $commandtorun .= "zcat '$inputfilefolder/$currentreadfile' > '$outputfilefolder/snap/$decompressedfilename' \n";
+      $readfilestring .= "'$outputfilefolder/snap/$decompressedfilename' ";
+      $rmtempstring .= "rm '$outputfilefolder/snap/$decompressedfilename' \n"
+    } else { $readfilestring .= "'$inputfilefolder/$currentreadfile' "; }
+  }
+  my $pairedstring = ( ( $ispaired ) ? "paired" : "single" );
+  $commandtorun .= "$snappath $pairedstring $outputfilefolder/reference/snap $readfilestring -o $readfilenickname-snap.sam $defaultsnapargs \n $samtoolspath view -S -b -h $readfilenickname-snap.sam | $samtoolspath sort - $readfilenickname-snap \n $samtoolspath index $readfilenickname-snap.bam \n $rmtempstring";
+  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/snap' -w '$outputfilefolder/snap' -l ncpus=$numcpusforsnap,mem=${gigsofmemforsnap}gb,walltime=$wallhoursforsnap:00:00 -m a -N 'nasp_snap_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  chomp( $alignerqid );
+  print $loghandle "$alignerqid:\n$commandtorun\n";
+  my @returnarray = ();
+  if( $alignerqid =~ /^\d{1,31}\.\w/ )
+  {
+    push( @returnarray, $alignerqid );
+    push( @returnarray, "$readfilenickname-snap.bam" );
+  } else { print STDERR "Error scheduling SNAP for '$readfilepair->[0]'!\n"; }
   return( \@returnarray );
 }
 
