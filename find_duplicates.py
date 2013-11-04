@@ -12,6 +12,7 @@ def _parse_args():
     parser.add_argument( "--reference", required=True, help="Path to the reference fasta file." )
     return parser.parse_args()
 
+# This should eventually be moved to the main job manager section
 def run_nucmer_on_reference( nucmer_path, reference_path ):
     import subprocess
     import sys

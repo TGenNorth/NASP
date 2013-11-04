@@ -15,6 +15,7 @@ def _parse_args():
     parser.add_argument( "--external", required=True, help="Path to the external genome fasta file." )
     return parser.parse_args()
 
+# This should eventually be moved to the main job manager section
 def generate_delta_file( nucmer_path, nucmer_args, delta_filter_path, external_nickname, reference_path, external_path ):
     import subprocess
     import sys
