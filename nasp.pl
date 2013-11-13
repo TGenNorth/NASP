@@ -2,11 +2,12 @@
 
 use strict;
 use warnings;
+use FindBin;
 use Cwd;
 
 # Some constants for tweaking.
 # Some of these should be set dynamically... someday.
-my $naspversion = "0.9.1";
+my $naspversion = "0.9.2";
 my $finddupspath = "find_duplicates.py";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
@@ -68,13 +69,14 @@ my $deltafilterpath = "delta-filter";
 # Jar files will be searched for in the $PATH plus:
 my @jarpaths =
 (
+  $FindBin::Bin,
+  ".",
+  "~/jars",
+  "~/bin",
+  "~/tools",
   "/usr/share/java",
   "/media/lumberyard/bin",
-  "/tnorth/bin",
-  "~/bin",
-  "~/jars",
-  "~/tools",
-  "."
+  "/tnorth/bin"
 );
 
 if( ( @ARGV < 1 ) || ( @ARGV > 3 ) || ( $ARGV[0] =~ /^--?[HhVv]/ ) )
@@ -89,7 +91,7 @@ EOF
 }
 
 # Find jar files
-push( @jarpaths, split( ':', $ENV{"PATH"} ) );
+unshift( @jarpaths, split( ':', $ENV{"PATH"} ) );
 foreach my $jarpath (@jarpaths)
 {
   $jarpath =~ s/^\~/$ENV{"HOME"}/;
