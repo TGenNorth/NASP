@@ -38,13 +38,13 @@ def _update_genome_from_delta_data( franken_genome, external_genome, parser_stat
             matching_segment = Genome.reverse_complement( external_genome.get_call( ( parser_state['external_pos'] - distance_covered + 1 ), parser_state['external_pos'] ) )
         else:
             matching_segment = external_genome.get_call( parser_state['external_pos'], ( parser_state['external_pos'] + distance_covered - 1 ) )
-        franken_genome.set_call( matching_segment, parser_state['reference_pos'], 'N' )
+        franken_genome.set_call( matching_segment, parser_state['reference_pos'], 'X' )
     parser_state['reference_pos'] = parser_state['reference_pos'] + distance_covered
     parser_state['external_pos'] = parser_state['external_pos'] + ( -distance_covered if parser_state['external_is_reversed'] else distance_covered )
     if is_external_insert:
         parser_state['external_pos'] = parser_state['external_pos'] + ( -1 if parser_state['external_is_reversed'] else 1 ) 
     else:
-        franken_genome.set_call( 'N', parser_state['reference_pos'], '!' )
+        franken_genome.set_call( '.', parser_state['reference_pos'], '!' )
         parser_state['reference_pos'] = parser_state['reference_pos'] + 1
     return parser_state
 
@@ -78,7 +78,7 @@ def parse_delta_file( delta_filename, franken_genome, external_genome ):
         parser_state = _parse_delta_line( line_from_delta_file, franken_genome, external_genome, parser_state )
     delta_handle.close()
     for current_contig in franken_genome.get_contigs():
-        franken_genome.extend_contig( parser_state['contig_sizes'][current_contig], 'N', current_contig )
+        franken_genome.extend_contig( parser_state['contig_sizes'][current_contig], 'X', current_contig )
 
 def main():
     from nasp_objects import Genome
