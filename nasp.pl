@@ -893,7 +893,7 @@ sub nasp
       }
       my @snpcallerqids = ();
       my $possiblereadfile = "";
-      my $pipelinestartqid = `echo "sleep 2 \n $indexcommand" | qsub -d '$outputfilefolder/reference' -w '$outputfilefolder/reference' -l ncpus=1,mem=${gigsofmemforindex}gb,walltime=$wallhoursforindex:00:00 -m ab -N 'nasp_index' -x - `;
+      my $pipelinestartqid = `echo "sleep 2 \n $indexcommand" | qsub -d '$outputfilefolder/reference' -w '$outputfilefolder/reference' -l ncpus=1,mem=${gigsofmemforindex}gb,walltime=$wallhoursforindex:00:00 -m ab -N 'nasp_index' - `;
       chomp( $pipelinestartqid );
       if( $pipelinestartqid =~ /^\d{1,31}\.\w/ )
       {
@@ -1105,14 +1105,14 @@ sub nasp
           if( defined( $mastermatrixfile ) && length( $mastermatrixfile ) )
           {
             my $commandtorun = "$distancecalcscript $mincoverage $minproportion $mastermatrixfile $finalfilestring $outputfilefolder/snp_matrix.tsv $outputfilefolder/distance_matrix.tsv $outputfilefolder/filter_log.txt \n";
-            my $distancecalcqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=1,mem=${gigsofmemfordistancecalc}gb,walltime=$wallhoursfordistancecalc:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor -x - `;
+            my $distancecalcqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=1,mem=${gigsofmemfordistancecalc}gb,walltime=$wallhoursfordistancecalc:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor - `;
             chomp( $distancecalcqid );
             print $loghandle "$distancecalcqid:\n$commandtorun\n";
             print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/distance_matrix.tsv' when job '$distancecalcqid' is complete.\n";
           } else
           {
             my $commandtorun = "$matrixmakingscript $mincoverage $minproportion $referencefastafile $finalfilestring $outputfilefolder/allcallable_matrix.tsv $outputfilefolder/bestsnps_matrix.tsv $outputfilefolder/allsnps_matrix.tsv $outputfilefolder/allindels_matrix.tsv $outputfilefolder/bestsnps.snpfasta $outputfilefolder/statistics.tsv \n";
-            my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=1,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor -x - `;
+            my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=1,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor - `;
             chomp( $matrixmakingqid );
             print $loghandle "$matrixmakingqid:\n$commandtorun\n";
             print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/snp_matrix.tsv' when job '$matrixmakingqid' is complete.\n";
@@ -1136,7 +1136,7 @@ sub _submit_external_fasta
   my $fastafilenickname = shift();
   my $loghandle = shift();
   my $commandtorun = "$convertexternalpath --nucmerpath $nucmerpath --nucmerargs '$defaultexternalnucmerargs' --deltafilterpath $deltafilterpath --reference $referencefastafile --external $inputfilefolder/$fastafilename \n";
-  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/external' -w '$outputfilefolder/external' -l ncpus=1,mem=${gigsofmemforexternal}gb,walltime=$wallhoursforexternal:00:00 -m a -N 'nasp_external_$fastafilename' -x -W depend=afterok:$jobtodependon - `;
+  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/external' -w '$outputfilefolder/external' -l ncpus=1,mem=${gigsofmemforexternal}gb,walltime=$wallhoursforexternal:00:00 -m a -N 'nasp_external_$fastafilename' -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1174,7 +1174,7 @@ sub _submit_bwa
     $commandtorun .= "$bwapath samse -r '$bamstringthingy' $referencefastafile $outputfilefolder/bwa/$readfilenickname.sai $inputfilefolder/$readfilepair->[0] $defaultbwasampeargs | $samtoolspath view -S -b -h - | $samtoolspath sort - $readfilenickname-bwa \n";
   }
   $commandtorun .= "$samtoolspath index $readfilenickname-bwa.bam \n";
-  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/bwa' -w '$outputfilefolder/bwa' -l ncpus=$numcpusforbwa,mem=${gigsofmemforbwa}gb,walltime=$wallhoursforbwa:00:00 -m a -N 'nasp_bwa_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/bwa' -w '$outputfilefolder/bwa' -l ncpus=$numcpusforbwa,mem=${gigsofmemforbwa}gb,walltime=$wallhoursforbwa:00:00 -m a -N 'nasp_bwa_$readfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $alignerqid );
   print $loghandle "$alignerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1199,7 +1199,7 @@ sub _submit_bwamem
   my $bamstringthingy = '@RG\tID:' . $readfilenickname . '\tSM:' . $readfilenickname;
   my $readfilestring = "$inputfilefolder/" . join( " $inputfilefolder/", @{$readfilepair} );
   my $commandtorun = "$bwapath mem -R '$bamstringthingy' $defaultbwamemargs -t $numcpusforbwa $referencefastafile $readfilestring | $samtoolspath view -S -b -h - | $samtoolspath sort - $readfilenickname-bwamem \n $samtoolspath index $readfilenickname-bwamem.bam \n";
-  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/bwamem' -w '$outputfilefolder/bwamem' -l ncpus=$numcpusforbwa,mem=${gigsofmemforbwa}gb,walltime=$wallhoursforbwa:00:00 -m a -N 'nasp_bwamem_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/bwamem' -w '$outputfilefolder/bwamem' -l ncpus=$numcpusforbwa,mem=${gigsofmemforbwa}gb,walltime=$wallhoursforbwa:00:00 -m a -N 'nasp_bwamem_$readfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $alignerqid );
   print $loghandle "$alignerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1226,7 +1226,7 @@ sub _submit_novo
   my $readfilestring = "$inputfilefolder/" . join( " $inputfilefolder/", @{$readfilepair} );
   my $pairedstring = ( ( $ispaired ) ? "$novopairedargs" : "" );
   my $commandtorun = "$novopath -f $readfilestring $pairedstring -c $numcpusfornovo -o SAM '$bamstringthingy' -d $referencefastafile.idx $defaultnovoargs | $samtoolspath view -S -b -h - | $samtoolspath sort - $readfilenickname-novo \n $samtoolspath index $readfilenickname-novo.bam \n";
-  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/novoalign' -w '$outputfilefolder/novoalign' -l ncpus=$numcpusfornovo,mem=${gigsofmemfornovo}gb,walltime=$wallhoursfornovo:00:00 -m a -N 'nasp_novo_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/novoalign' -w '$outputfilefolder/novoalign' -l ncpus=$numcpusfornovo,mem=${gigsofmemfornovo}gb,walltime=$wallhoursfornovo:00:00 -m a -N 'nasp_novo_$readfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $alignerqid );
   print $loghandle "$alignerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1264,7 +1264,7 @@ sub _submit_snap
   }
   my $pairedstring = ( ( $ispaired ) ? "paired" : "single" );
   $commandtorun .= "$snappath $pairedstring $outputfilefolder/reference/snap $readfilestring -o $readfilenickname-snap.sam $defaultsnapargs \n $samtoolspath view -S -b -h $readfilenickname-snap.sam | $samtoolspath sort - $readfilenickname-snap \n $samtoolspath index $readfilenickname-snap.bam \n $rmtempstring";
-  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/snap' -w '$outputfilefolder/snap' -l ncpus=$numcpusforsnap,mem=${gigsofmemforsnap}gb,walltime=$wallhoursforsnap:00:00 -m a -N 'nasp_snap_$readfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $alignerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/snap' -w '$outputfilefolder/snap' -l ncpus=$numcpusforsnap,mem=${gigsofmemforsnap}gb,walltime=$wallhoursforsnap:00:00 -m a -N 'nasp_snap_$readfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $alignerqid );
   print $loghandle "$alignerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1286,7 +1286,7 @@ sub _submit_gatk
   my $bamfilenickname = shift();
   my $loghandle = shift();
   my $commandtorun = "java -Xmx${gigsofmemforgatk}G -jar $gatkpath -T UnifiedGenotyper -dt NONE -glm BOTH -I $inputfilefolder/$bamfilename -R $referencefastafile -nt $numcpusforgatk -ploidy 1 -o $outputfilefolder/gatk/$bamfilenickname-gatk.vcf -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE $defaultgatkargs \n";
-  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/gatk' -w '$outputfilefolder/gatk' -l ncpus=$numcpusforgatk,mem=${gigsofmemforgatk}gb,walltime=$wallhoursforgatk:00:00 -m a -N 'nasp_gatk_$bamfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/gatk' -w '$outputfilefolder/gatk' -l ncpus=$numcpusforgatk,mem=${gigsofmemforgatk}gb,walltime=$wallhoursforgatk:00:00 -m a -N 'nasp_gatk_$bamfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1308,7 +1308,7 @@ sub _submit_solsnp
   my $bamfilenickname = shift();
   my $loghandle = shift();
   my $commandtorun = "java -Xmx${gigsofmemforsolsnp}G -jar $solsnppath INPUT=$inputfilefolder/$bamfilename REFERENCE_SEQUENCE=$referencefastafile OUTPUT=$outputfilefolder/solsnp/$bamfilenickname-solsnp.vcf SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable $defaultsolsnpargs \n";
-  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/solsnp' -w '$outputfilefolder/solsnp' -l ncpus=$numcpusforsolsnp,mem=${gigsofmemforsolsnp}gb,walltime=$wallhoursforsolsnp:00:00 -m a -N 'nasp_solsnp_$bamfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/solsnp' -w '$outputfilefolder/solsnp' -l ncpus=$numcpusforsolsnp,mem=${gigsofmemforsolsnp}gb,walltime=$wallhoursforsolsnp:00:00 -m a -N 'nasp_solsnp_$bamfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1331,7 +1331,7 @@ sub _submit_varscan
   my $shortenednickname = shift(); # it's in the bam file retard
   my $loghandle = shift();
   my $commandtorun = "echo '$shortenednickname' > $outputfilefolder/varscan/$bamfilenickname.txt \n $samtoolspath mpileup -B -d 10000000 -f $referencefastafile $inputfilefolder/$bamfilename > $inputfilefolder/$bamfilenickname.mpileup \n java -Xmx${gigsofmemforvarscan}G -jar $varscanpath mpileup2cns $inputfilefolder/$bamfilenickname.mpileup --output-vcf 1 --vcf-sample-list $outputfilefolder/varscan/$bamfilenickname.txt > $outputfilefolder/varscan/$bamfilenickname-varscan.vcf $defaultvarscanargs \n";
-  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/varscan' -w '$outputfilefolder/varscan' -l ncpus=$numcpusforvarscan,mem=${gigsofmemforvarscan}gb,walltime=$wallhoursforvarscan:00:00 -m a -N 'nasp_varscan_$bamfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/varscan' -w '$outputfilefolder/varscan' -l ncpus=$numcpusforvarscan,mem=${gigsofmemforvarscan}gb,walltime=$wallhoursforvarscan:00:00 -m a -N 'nasp_varscan_$bamfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
   my @returnarray = ();
@@ -1353,7 +1353,7 @@ sub _submit_samtools
   my $bamfilenickname = shift();
   my $loghandle = shift();
   my $commandtorun = "$samtoolspath mpileup -uD -d 10000000 -f $referencefastafile $inputfilefolder/$bamfilename | $bcftoolspath view -ceg - > $outputfilefolder/samtools/$bamfilenickname-samtools.vcf \n";
-  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/samtools' -w '$outputfilefolder/samtools' -l ncpus=$numcpusforbcftools,mem=${gigsofmemforbcftools}gb,walltime=$wallhoursforbcftools:00:00 -m a -N 'nasp_samtools_$bamfilenickname' -x -W depend=afterok:$jobtodependon - `;
+  my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/samtools' -w '$outputfilefolder/samtools' -l ncpus=$numcpusforbcftools,mem=${gigsofmemforbcftools}gb,walltime=$wallhoursforbcftools:00:00 -m a -N 'nasp_samtools_$bamfilenickname' -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
   my @returnarray = ();
