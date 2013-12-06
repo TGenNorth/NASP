@@ -132,6 +132,7 @@ class Genome:
     def write_to_file( self, output_filename, contig_prefix = "", max_chars_per_line = 80 ):
         self._genome.write_to_file( output_filename, contig_prefix, max_chars_per_line )
 
+    @staticmethod
     def generate_nickname_from_fasta_filename( fasta_filename ):
         import re
         import random
@@ -142,6 +143,7 @@ class Genome:
             fasta_nickname = "fasta_" + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) )
         return fasta_nickname
 
+    @staticmethod
     def reverse_complement( dna_string ):
         return dna_string.translate( ''.maketrans( 'ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr' ) )[::-1]
 
