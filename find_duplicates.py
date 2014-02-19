@@ -56,14 +56,14 @@ def parse_delta_file( delta_filename, dups_data ):
         current_contigs = _parse_delta_line( line_from_delta_file, dups_data, current_contigs )
     delta_handle.close()
 
+
 def main():
     from nasp_objects import GenomeStatus
     commandline_args = _parse_args()
     run_nucmer_on_reference( commandline_args.nucmerpath, commandline_args.reference )
     dups_data = GenomeStatus()
     parse_delta_file( "reference.delta", dups_data )
-    dups_data.write_to_file( "duplicates.txt" )
-
+    dups_data.write_to_fasta_file( "duplicates.txt" )
 
 if __name__ == "__main__": main()
 

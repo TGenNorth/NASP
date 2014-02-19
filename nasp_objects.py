@@ -67,7 +67,7 @@ class GenomeStatus:
             contig_name = self._current_contig
         return len( self._status_data[contig_name] )
 
-    def _send_to_filehandle( self, output_handle, contig_prefix = "", max_chars_per_line = 80 ):
+    def _send_to_fasta_handle( self, output_handle, contig_prefix = "", max_chars_per_line = 80 ):
         for current_contig in self.get_contigs():
             output_handle.write( ">" + contig_prefix + current_contig + "\n" )
             if max_chars_per_line > 0:
@@ -78,9 +78,9 @@ class GenomeStatus:
             else:
                 output_handle.write( self._status_data[current_contig] + "\n" )
 
-    def write_to_file( self, output_filename, contig_prefix = "", max_chars_per_line = 80 ):
+    def write_to_fasta_file( self, output_filename, contig_prefix = "", max_chars_per_line = 80 ):
         output_handle = open( output_filename, 'w' )
-        self._send_to_filehandle( output_handle, contig_prefix, max_chars_per_line )
+        self._send_to_fasta_handle( output_handle, contig_prefix, max_chars_per_line )
         output_handle.close()
 
 
@@ -129,34 +129,72 @@ class Genome:
     def get_contig_length( self, contig_name = None ):
         return self._genome.get_contig_length( contig_name )
 
-    def write_to_file( self, output_filename, contig_prefix = "", max_chars_per_line = 80 ):
-        self._genome.write_to_file( output_filename, contig_prefix, max_chars_per_line )
-
-    def generate_nickname_from_fasta_filename( fasta_filename ):
-        import re
-        import random
-        filename_match = re.match( r'^(?:.*\/)?([^\/]+?)(?:\.[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?)?$', fasta_filename )
-        if filename_match:
-            fasta_nickname = filename_match.group(1)
-        else:
-            fasta_nickname = "fasta_" + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) )
-        return fasta_nickname
+    def write_to_fasta_file( self, output_filename, contig_prefix = "", max_chars_per_line = 80 ):
+        self._genome.write_to_fasta_file( output_filename, contig_prefix, max_chars_per_line )
 
     def reverse_complement( dna_string ):
         return dna_string.translate( ''.maketrans( 'ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr' ) )[::-1]
 
 
-class ReferenceGenome:
+class GenomeMeta:
 
     def __init__( self ):
-        self._genome = Genome()
+        self._nickname = None
+        self._file_path = None
+        self._file_type = None
+        self._generators = [] # This should probably be a dictionary someday
+
+    def set_file_path( self, file_path ):
+        self._file_path = file_path
+        if self._nickname == None:
+            self._nickname = GenomeMeta.generate_nickname_from_filename( file_path )
+
+    def set_file_type( self, type_string ):
+        self._file_type = type_string
+
+    def set_nickname( self, nickname ):
+        self._nickname = nickname
+
+    def add_generators( self, generator_array ):
+        self._generators.extend( generator_array )
+
+    def file_path( self ):
+        return( self._file_path )
+
+    def file_type( self ):
+        return( self._file_type )
+
+    def nickname( self ):
+        return( self._nickname )
+
+    def identifier( self ):
+        identifier = self._nickname
+        if len( self._generators ) > 0:
+            identifier = identifier + "::" + ( ','.join( self._generators ) )
+        return( identifier )
+
+    def generate_nickname_from_filename( filename ):
+        import re
+        import random
+        filename_match = re.match( r'^(?:.*\/)?([^\/]+?)(?:\.[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?|\.[Vv][Cc][Ff])?$', filename )
+        if filename_match:
+            nickname = filename_match.group(1)
+        else:
+            nickname = "file_" + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) )
+        return nickname
+
+
+class IndelList:
+
+    def __init__( self ):
+        self._indels = {}
+
+
+class ReferenceGenome( Genome ):
+
+    def __init__( self ):
+        Genome.__init__( self )
         self._dups = GenomeStatus()
-
-    def get_contigs( self ):
-        return sorted( self._genome.keys )
-
-    def get_call( self, contig_name, first_position, last_position = None ):
-        return self._genome.get_call( contig_name, first_position, last_position )
 
     def get_dups_call( self, first_position, last_position = None, contig_name = None ):
         return self._dups.get_value( first_position, last_position, contig_name )
@@ -165,7 +203,7 @@ class ReferenceGenome:
         import re
         contig_match = re.match( r'^>' + re.escape( contig_prefix ) + r'([^\s]+)(?:\s|$)', line_from_dups_file )
         if contig_match:
-            self._genome.add_contig( contig_match.group(1), False )
+            self.add_contig( contig_match.group(1), False )
             self._dups.add_contig( contig_match.group(1) )
         else:
             data_match = re.match( r'^([01-]+)\s*$', line_from_dups_file )
@@ -179,19 +217,96 @@ class ReferenceGenome:
         dups_handle.close()
 
 
-class ExternalGenome:
+class FastaGenome( Genome ):
 
     def __init__( self ):
-        self._genome = Genome()
+        Genome.__init__( self )
+        self._meta = GenomeMeta()
+        self._indels = IndelList()
+
+    def set_file_path( self, file_path ):
+        self._meta.set_file_path( file_path )
+
+    def set_file_type( self, type_string ):
+        self._meta.set_file_type( type_string )
+
+    def set_nickname( self, nickname ):
+        self._meta.set_nickname( nickname )
+
+    def add_generators( self, generator_name ):
+        self._meta.add_generators( generator_name )
+
+    def file_path( self ):
+        return( self._meta.file_path() )
+
+    def file_type( self ):
+        return( self._meta.file_type() )
+
+    def nickname( self ):
+        return( self._meta.nickname() )
+
+    def identifier( self ):
+        return( self._meta.identifier() )
+
+
+class VCFGenome( Genome ):
+
+    def __init__( self ):
+        Genome.__init__( self )
+        self._meta = GenomeMeta()
+        self._indels = IndelList()
+        self._passed_depth = GenomeStatus()
+        self._passed_proportion = GenomeStatus()
+
+    def set_file_path( self, file_path ):
+        self._meta.set_file_path( file_path )
+
+    def set_file_type( self, type_string ):
+        self._meta.set_file_type( type_string )
+
+    def set_nickname( self, nickname ):
+        self._meta.set_nickname( nickname )
+
+    def add_generators( self, generator_name ):
+        self._meta.add_generators( generator_name )
+
+    def file_path( self ):
+        return( self._meta.file_path() )
+
+    def file_type( self ):
+        return( self._meta.file_type() )
+
+    def nickname( self ):
+        return( self._meta.nickname() )
+
+    def identifier( self ):
+        return( self._meta.identifier() )
+
+
+class GenomeCollection:
+
+    def __init__( self ):
+        self._reference = None
+        self._genomes = []
+
+    def set_reference( self, reference ):
+        self._reference = reference
+
+    def add_genome( self, genome ):
+        self._genomes.append( genome )
+
+    def set_current_contig( self, contig_name ):
+        self._reference.set_current_contig( contig_name )
+        for genome in self._genomes:
+            genome.set_current_contig( contig_name )
 
     def get_contigs( self ):
-        return self._genome.get_contigs()
+        return self._reference.get_contigs()
 
-    def set_call( self, new_data, first_position, missing_range_filler = "N", contig_name = None, change_current_contig = False ):
-        self._genome.set_value( new_data, first_position, missing_range_filler, contig_name, change_current_contig )
-
-    def get_call( self, first_position, last_position = None, contig_name = None ):
-        return self._genome.get_value( first_position, last_position, contig_name )
+    def write_to_matrix( self, output_filename ):
+        output_handle = open( output_filename, 'w' )
+        self._send_to_matrix_handle( output_handle )
+        output_handle.close()
 
 
 class InvalidContigName( Exception ):

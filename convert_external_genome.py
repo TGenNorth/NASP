@@ -81,15 +81,15 @@ def parse_delta_file( delta_filename, franken_genome, external_genome ):
         franken_genome.extend_contig( parser_state['contig_sizes'][current_contig], 'X', current_contig )
 
 def main():
-    from nasp_objects import Genome
+    from nasp_objects import Genome, GenomeMeta
     commandline_args = _parse_args()
-    external_nickname = Genome.generate_nickname_from_fasta_filename( commandline_args.external )
+    external_nickname = GenomeMeta.generate_nickname_from_filename( commandline_args.external )
     external_genome = Genome()
     external_genome.import_fasta_file( commandline_args.external )
     generate_delta_file( commandline_args.nucmerpath, commandline_args.nucmerargs, commandline_args.deltafilterpath, external_nickname, commandline_args.reference, commandline_args.external )
     franken_genome = Genome()
     parse_delta_file( ( external_nickname + ".filtered.delta" ), franken_genome, external_genome )
-    franken_genome.write_to_file( external_nickname + ".frankenfasta", "franken::" )
+    franken_genome.write_to_fasta_file( external_nickname + ".frankenfasta", "franken::" )
 
 
 if __name__ == "__main__": main()
