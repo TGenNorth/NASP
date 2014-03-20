@@ -36,11 +36,30 @@ def import_external_fasta( input_file ):
     #genome._genome._send_to_fasta_handle( stdout )
     return [ genome ]
 
-def read_vcf_file( input_file ):
+def check_vcf_coverage( vcf_record, sample_record, sample_count ):
+    sample_coverage = -1
+    if hasattr( sample_record.data, 'DP' ):
+        sample_coverage = sample_record.data.DP
+    elif 'DP' in vcf_record.INFO:
+        sample_coverage = int( vcf_record.INFO['DP'] / sample_count )
+    elif 'ADP' in vcf_record.INFO:
+        sample_coverage = int( vcf_record.INFO['ADP'] / sample_count )
+    return sample_coverage
+
+def check_vcf_proportion( vcf_record, sample_record, sample_coverage ):
+    sample_proportion = -1
+    if hasattr( sample_record.data, 'AD' ):
+        if isinstance( sample_record.data.AD, list ):
+            pass
+        else:
+            sample_proportion = sample_record.data.AD / sample_coverage
+    return sample_proportion
+
+def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
     genomes = {}
     file_path = get_file_path( input_file )
     with open( file_path, 'r' ) as vcf_filehandle:
-        from nasp_objects import VCFGenome
+        from nasp_objects import VCFGenome, Genome, ReferenceCallMismatch
         import vcf
         vcf_data_handle = vcf.Reader( vcf_filehandle )
         vcf_samples = vcf_data_handle.samples
@@ -50,10 +69,39 @@ def read_vcf_file( input_file ):
             set_genome_metadata( genomes[vcf_sample], input_file )
             genomes[vcf_sample].set_nickname( vcf_sample )
         for vcf_record in vcf_data_handle:
-            pass
-            #print( vcf_record, vcf_record.INFO )
+            current_contig = vcf_record.CHROM
+            current_pos = vcf_record.POS
+            if vcf_record.POS <= reference.get_contig_length( current_contig ):
+                reference_call = reference.get_call( current_pos, None, current_contig )
+                simplified_refcall = Genome.simple_call( reference_call )
+                #print( referencecall, vcf_record.REF )
+                if ( simplified_refcall != 'N' ) and ( simplified_refcall != Genome.simple_call( vcf_record.REF[0] ) ):
+                    raise ReferenceCallMismatch()
+                #print( vcf_record, vcf_record.INFO )
+                for vcf_sample in vcf_samples:
+                    sample_call = reference_call
+                    sample_record = vcf_record.genotype( vcf_sample )
+                    if vcf_record.ALT[0] is not None:
+                        sample_call = sample_record.gt_bases[0] # FIXME indels
+                        print( sample_record.gt_type )
+                    #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
+                    genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
+                    sample_coverage = check_vcf_coverage( vcf_record, sample_record, len( vcf_samples ) )
+                    if sample_coverage >= min_coverage:
+                        genomes[vcf_sample].coverage_pass( 'Y', current_pos, current_contig )
+                    elif sample_coverage >= 0:
+                        genomes[vcf_sample].coverage_pass( 'N', current_pos, current_contig )
+                    sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage )
+                    if sample_proportion >= min_proportion:
+                        genomes[vcf_sample].proportion_pass( 'Y', current_pos, current_contig )
+                    elif sample_proportion >= 0:
+                        genomes[vcf_sample].proportion_pass( 'N', current_pos, current_contig )
+                    #print( current_pos, sample_coverage, min_coverage, genomes[vcf_sample]._passed_coverage._status_data )
+                    #print( current_pos, sample_proportion, min_proportion, genomes[vcf_sample]._passed_proportion._status_data )
+        vcf_filehandle.close()
     return genomes.values()
 
+# FIXME These three functions should be combined?
 def determine_file_type( input_file ):
     import re
     file_type = None
@@ -87,7 +135,7 @@ def set_genome_metadata( genome, input_file ):
         genome.set_file_path( input_file )
     #print( genome.identifier() )
 
-def manage_input_thread( input_q, output_q ):
+def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q, finish_q ):
     while not input_q.empty():
         input_file = input_q.get()[0]
         new_genomes = []
@@ -95,27 +143,39 @@ def manage_input_thread( input_q, output_q ):
         if file_type == "frankenfasta":
             new_genomes = import_external_fasta( input_file )
         elif file_type == "vcf":
-            new_genomes = read_vcf_file( input_file )
+            new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
         for new_genome in new_genomes:
             output_q.put( [ new_genome ] )
+    finish_q.put( True )
+    input_q.close()
+    output_q.close()
+    finish_q.close()
 
-def parse_input_files( input_files, num_threads, genomes ):
+def parse_input_files( input_files, num_threads, genomes, min_coverage, min_proportion ):
     from multiprocessing import Process, Queue
+    from time import sleep
     input_q = Queue()
     output_q = Queue()
+    finish_q = Queue()
     for input_file in input_files:
         input_q.put( [ input_file ] )
+    sleep( 1 )
     if num_threads > input_q.qsize():
         num_threads = input_q.qsize()
     thread_list = []
     for current_thread in range( num_threads ):
-        current_thread = Process( target=manage_input_thread, args=[ input_q, output_q ] )
+        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q, finish_q ] )
         thread_list.append( current_thread )
         current_thread.start()
-    for current_thread in thread_list:
-        current_thread.join()
+    sleep( 1 )
     while not output_q.empty():
         genomes.add_genome( output_q.get()[0] )
+    sleep( 1 )
+    for current_thread in thread_list:
+        current_thread.join()
+
+def write_allcallable_matrix( genomes, master_matrix ):
+    genomes.write_to_matrix( master_matrix )
 
 
 def main():
@@ -125,8 +185,8 @@ def main():
     import_reference( reference, commandline_args.reference_fasta, commandline_args.reference_dups )
     genomes = GenomeCollection()
     genomes.set_reference( reference )
-    parse_input_files( commandline_args.input_files, commandline_args.num_threads, genomes )
-    #write_allcallable_matrix( genomes, commandline_args.master_matrix )
+    parse_input_files( commandline_args.input_files, commandline_args.num_threads, genomes, commandline_args.minimum_coverage, commandline_args.minimum_proportion )
+    write_allcallable_matrix( genomes, commandline_args.master_matrix )
 
 if __name__ == "__main__": main()
 

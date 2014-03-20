@@ -30,7 +30,7 @@ class GenomeStatus:
         if contig_name is None:
             contig_name = self._current_contig
         self.add_contig( contig_name, change_current_contig )
-        self._status_data[contig_name] = self._status_data[contig_name] + genome_data
+        self._status_data[contig_name] = '' + self._status_data[contig_name] + genome_data
 
     def get_contigs( self ):
         return sorted( self._status_data.keys() )
@@ -40,7 +40,7 @@ class GenomeStatus:
             contig_name = self._current_contig
         self.add_contig( contig_name, change_current_contig )
         if len( self._status_data[contig_name] ) < new_length:
-            self._status_data[contig_name] = self._status_data[contig_name] + ( missing_range_filler * ( new_length - len( self._status_data[contig_name] ) ) )
+            self._status_data[contig_name] = '' + self._status_data[contig_name] + ( missing_range_filler * ( new_length - len( self._status_data[contig_name] ) ) )
 
     def set_value( self, new_data, first_position, missing_range_filler = "!", contig_name = None, change_current_contig = False ):
         if contig_name is None:
@@ -48,9 +48,9 @@ class GenomeStatus:
         self.add_contig( contig_name, change_current_contig )
         first_position = first_position - 1
         self.extend_contig( first_position, missing_range_filler, contig_name )
-        self._status_data[contig_name] = self._status_data[contig_name][:first_position] + new_data + self._status_data[contig_name][( first_position + len( new_data ) ):]
+        self._status_data[contig_name] = '' + self._status_data[contig_name][:first_position] + new_data + self._status_data[contig_name][( first_position + len( new_data ) ):]
 
-    def get_value( self, first_position, last_position = None, contig_name = None ):
+    def get_value( self, first_position, last_position = None, contig_name = None, filler_value = None ):
         if contig_name is None:
             contig_name = self._current_contig
         if contig_name not in self.get_contigs():
@@ -60,7 +60,10 @@ class GenomeStatus:
         elif ( last_position is None ) or ( last_position < first_position ):
             last_position = first_position
         first_position = first_position - 1
-        return self._status_data[contig_name][first_position:last_position]
+        queried_value = filler_value
+        if first_position < len( self._status_data[contig_name] ):
+            queried_value = self._status_data[contig_name][first_position:last_position]
+        return queried_value
 
     def get_contig_length( self, contig_name = None ):
         if contig_name is None:
@@ -73,10 +76,10 @@ class GenomeStatus:
             if max_chars_per_line > 0:
                 i = 0
                 while ( max_chars_per_line * i ) < len( self._status_data[current_contig] ):
-                    output_handle.write( self._status_data[current_contig][( max_chars_per_line * i ):( max_chars_per_line * ( i + 1 ) )] + "\n" )
+                    output_handle.write( '' + self._status_data[current_contig][( max_chars_per_line * i ):( max_chars_per_line * ( i + 1 ) )] + "\n" )
                     i = i + 1
             else:
-                output_handle.write( self._status_data[current_contig] + "\n" )
+                output_handle.write( '' + self._status_data[current_contig] + "\n" )
 
     def write_to_fasta_file( self, output_filename, contig_prefix = "", max_chars_per_line = 80 ):
         output_handle = open( output_filename, 'w' )
@@ -107,8 +110,8 @@ class Genome:
     def set_call( self, new_data, first_position, missing_range_filler = "X", contig_name = None, change_current_contig = False ):
         self._genome.set_value( new_data, first_position, missing_range_filler, contig_name, change_current_contig )
 
-    def get_call( self, first_position, last_position = None, contig_name = None ):
-        return self._genome.get_value( first_position, last_position, contig_name )
+    def get_call( self, first_position, last_position = None, contig_name = None, filler_value = "X" ):
+        return self._genome.get_value( first_position, last_position, contig_name, filler_value )
 
     def _import_fasta_line( self, line_from_fasta, contig_prefix = "" ):
         import re
@@ -132,8 +135,25 @@ class Genome:
     def write_to_fasta_file( self, output_filename, contig_prefix = "", max_chars_per_line = 80 ):
         self._genome.write_to_fasta_file( output_filename, contig_prefix, max_chars_per_line )
 
+    @staticmethod
     def reverse_complement( dna_string ):
         return dna_string.translate( ''.maketrans( 'ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr' ) )[::-1]
+
+    @staticmethod
+    def simple_call( dna_string, allow_x = False, allow_del = False ):
+        simple_base = 'N'
+        if len( dna_string ) > 0:
+            simple_base = dna_string[0:1]
+        simple_base = simple_base.upper()
+        if simple_base == 'U':
+            simple_base = 'T'
+        if simple_base not in [ 'A', 'C', 'G', 'T', 'X', '.' ]:
+            simple_base = 'N'
+        if not allow_x and ( simple_base == 'X' ):
+            simple_base = 'N'
+        if not allow_del and ( simple_base == '.' ):
+            simple_base = 'N'
+        return( simple_base )
 
 
 class GenomeMeta:
@@ -170,18 +190,23 @@ class GenomeMeta:
     def identifier( self ):
         identifier = self._nickname
         if len( self._generators ) > 0:
-            identifier = identifier + "::" + ( ','.join( self._generators ) )
+            identifier = '' + identifier + "::" + ( ','.join( self._generators ) )
         return( identifier )
 
+    @staticmethod
     def generate_nickname_from_filename( filename ):
         import re
         import random
-        filename_match = re.match( r'^(?:.*\/)?([^\/]+?)(?:\.[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?|\.[Vv][Cc][Ff])?$', filename )
+        filename_match = re.match( r'^(?:.*\/)?([^\/]+?)(?:\.(?:[Ff][Rr][Aa][Nn][Kk][Ee][Nn])?[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?|\.[Vv][Cc][Ff])?$', filename )
         if filename_match:
             nickname = filename_match.group(1)
         else:
             nickname = "file_" + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) ) + str( random.randrange( 10 ) )
         return nickname
+
+    @staticmethod
+    def reverse_complement( dna_string ):
+        return dna_string.translate( ''.maketrans( 'ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr' ) )[::-1]
 
 
 class IndelList:
@@ -255,7 +280,7 @@ class VCFGenome( Genome ):
         Genome.__init__( self )
         self._meta = GenomeMeta()
         self._indels = IndelList()
-        self._passed_depth = GenomeStatus()
+        self._passed_coverage = GenomeStatus()
         self._passed_proportion = GenomeStatus()
 
     def set_file_path( self, file_path ):
@@ -282,6 +307,12 @@ class VCFGenome( Genome ):
     def identifier( self ):
         return( self._meta.identifier() )
 
+    def coverage_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
+        self._passed_coverage.set_value( pass_value, current_pos, "-", contig_name, change_current_contig )
+
+    def proportion_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
+        self._passed_proportion.set_value( pass_value, current_pos, "-", contig_name, change_current_contig )
+
 
 class GenomeCollection:
 
@@ -291,6 +322,9 @@ class GenomeCollection:
 
     def set_reference( self, reference ):
         self._reference = reference
+
+    def reference( self ):
+        return self._reference
 
     def add_genome( self, genome ):
         self._genomes.append( genome )
@@ -303,13 +337,36 @@ class GenomeCollection:
     def get_contigs( self ):
         return self._reference.get_contigs()
 
+    def _format_matrix_line( self, output_handle, current_contig, current_pos ):
+        matrix_line = '' + current_contig + "::" + str( current_pos ) + "\t"
+        matrix_line += '' + self._reference.get_call( current_pos, None, current_contig ) + "\t"
+        for genome in self._genomes:
+            matrix_line += '' + genome.get_call( current_pos, None, current_contig ) + "\t"
+        matrix_line += "\n"
+        return matrix_line
+
+    def _send_to_matrix_handle( self, output_handle ):
+        output_handle.write( "LocusID\tReference\t" )
+        for genome in self._genomes:
+            output_handle.write( '' + genome.identifier() + "\t" )
+        output_handle.write( "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\n" )
+        for current_contig in self._reference.get_contigs():
+            for current_pos in range( 1, self._reference.get_contig_length( current_contig ) + 1 ):
+                output_handle.write( self._format_matrix_line( output_handle, current_contig, current_pos ) )
+
     def write_to_matrix( self, output_filename ):
         output_handle = open( output_filename, 'w' )
         self._send_to_matrix_handle( output_handle )
         output_handle.close()
 
 
+# FIXME user feedback
 class InvalidContigName( Exception ):
+    pass
+
+
+# FIXME user feedback
+class ReferenceCallMismatch( Exception ):
     pass
 
 
