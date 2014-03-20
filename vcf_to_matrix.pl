@@ -474,7 +474,7 @@ if( open( my $matrixfilehandle, '>', $outputmatrixfile ) && open( my $bestsnpfil
       {
         $simplifiedrefcall = uc( $referencecall );
         if( $referencecall =~ /^[Uu]$/ ){ $simplifiedrefcall = "T"; }
-        $patternassignments->{$referencecall} = 1;
+        $patternassignments->{$simplifiedrefcall} = 1;
         $callpattern .= '1';
       } else { $callpattern .= 'N'; }
       my $nextassignmentnum = 2;
