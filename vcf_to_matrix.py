@@ -138,7 +138,7 @@ def set_genome_metadata( genome, input_file ):
         genome.set_file_path( input_file )
     #print( genome.identifier() )
 
-def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q ):
+def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q, finish_q ):
     while not input_q.empty():
         input_file = input_q.get()[0]
         new_genomes = []
@@ -149,26 +149,35 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
         for new_genome in new_genomes:
             output_q.put( [ new_genome ] )
+    finish_q.put( True )
     input_q.close()
     output_q.close()
+    finish_q.close()
 
 def parse_input_files( input_files, num_threads, genomes, min_coverage, min_proportion ):
     from multiprocessing import Process, Queue
+    from time import sleep
     input_q = Queue()
     output_q = Queue()
+    finish_q = Queue()
     for input_file in input_files:
         input_q.put( [ input_file ] )
+    sleep( 1 )
     if num_threads > input_q.qsize():
         num_threads = input_q.qsize()
     thread_list = []
     for current_thread in range( num_threads ):
-        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q ] )
+        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q, finish_q ] )
         thread_list.append( current_thread )
         current_thread.start()
     for current_thread in thread_list:
-        current_thread.join()
+        finish_q.get()
+    sleep( 1 )
     while not output_q.empty():
         genomes.add_genome( output_q.get()[0] )
+    sleep( 1 )
+    for current_thread in thread_list:
+        current_thread.join()
 
 def write_output_matrices( genomes, master_matrix, filter_matrix, matrix_format ):
     genomes.write_to_matrices( master_matrix, filter_matrix, matrix_format )

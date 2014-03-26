@@ -55,6 +55,7 @@ my $bcftoolspath = "bcftools";
 my $gigsofmemforbcftools = "2";
 my $numcpusforbcftools = "1";
 my $wallhoursforbcftools = "24";
+my $numcpustomakematrix = "12";
 my $gigsofmemtomakematrix = "4";
 my $wallhourstomakematrix = "96";
 my $matrixmakingscript = "vcf_to_matrix.py";
@@ -135,8 +136,8 @@ sub nasp
     print STDERR "Cannot continue because read folder '$readfilefolder' does not seem to exist!\n";
     die( "Cannot continue because read folder '$readfilefolder' does not seem to exist!\n" );
   }
-  print "Welcome to nasp version $naspversion.\n";
-  print "* Starred features might be broken.\n";
+  print "Welcome to the very experimental python nasp version $naspversion.\n";
+  print "* Starred features might be even more broken than non-starred features.\n";
 
   # This section is the interactive command-line user input section.
   # A web form or Java interface would replace this section.
@@ -728,6 +729,7 @@ sub nasp
       if( $findvcfs && ( $possiblereadfile =~ /\.[Vv][Cc][Ff]$/ ) ){ push( @vcffilelist, $possiblereadfile ); }
     }
     my @finalfilelist = map { "vcf,pre-aligned,pre-called,::$readfilefolder/" . $_ } @vcffilelist;
+    my $refdupsfile = "";
     closedir( $readfolderhandle );
     if( ( scalar( @fastafilelist ) + scalar( @fastqfilelist ) + scalar( @bamfilelist ) + scalar( @vcffilelist ) ) >= 1 )
     {
@@ -876,7 +878,7 @@ sub nasp
       if( $finddupregions )
       {
         $indexcommand .= "$finddupspath --nucmerpath $nucmerpath --reference $referencefastafile \n";
-        push( @finalfilelist, "dups,nucmer,::$outputfilefolder/reference/duplicates.txt" );
+        $refdupsfile = "$outputfilefolder/reference/duplicates.txt";
       }
       if( scalar( @bamfilelist ) >= 1 )
       {
@@ -1111,8 +1113,9 @@ sub nasp
             print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/distance_matrix.tsv' when job '$distancecalcqid' is complete.\n";
           } else
           {
-            my $commandtorun = "$matrixmakingscript $mincoverage $minproportion $referencefastafile $finalfilestring $outputfilefolder/allcallable_matrix.tsv $outputfilefolder/bestsnps_matrix.tsv $outputfilefolder/allsnps_matrix.tsv $outputfilefolder/allindels_matrix.tsv $outputfilefolder/bestsnps.snpfasta $outputfilefolder/statistics.tsv \n";
-            my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=1,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor - `;
+            if( length( $refdupsfile ) ){ $refdupsfile = "--reference-dups " . $refdupsfile; }
+            my $commandtorun = "$matrixmakingscript --reference-fasta $referencefastafile $refdupsfile --input-files $finalfilestring --minimum-coverage $mincoverage --minimum-proportion $minproportion --master-matrix $outputfilefolder/master_matrix.tsv --filter-matrix $outputfilefolder/filter_matrix.tsv --num-threads $numcpustomakematrix \n";
+            my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=$numcpustomakematrix,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor - `;
             chomp( $matrixmakingqid );
             print $loghandle "$matrixmakingqid:\n$commandtorun\n";
             print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/snp_matrix.tsv' when job '$matrixmakingqid' is complete.\n";
