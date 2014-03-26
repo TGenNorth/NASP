@@ -12,12 +12,13 @@ def _parse_args():
     parser.add_argument( "--reference-dups", help="Path to input reference dups file." )
     parser.add_argument( "--input-files", nargs="+", required=True, help="Path to input VCF/fasta files for matrix conversion." )
     parser.add_argument( "--master-matrix", default="master_matrix.tsv", help="Name of master matrix to create." )
+    parser.add_argument( "--filter-matrix", default="filter_matrix.tsv", help="Name of custom matrix to create." )
     parser.add_argument( "--general-stats", default="general_stats.tsv", help="Name of general statistics file to create." )
     parser.add_argument( "--contig-stats", default="contig_stats.tsv", help="Name of contig statistics file to create." )
     parser.add_argument( "--minimum-coverage", type=int, default=10, help="Minimum coverage depth at a position." )
     parser.add_argument( "--minimum-proportion", type=float, default=0.9, help="Minimum proportion of reads that must match the call at a position." )
     parser.add_argument( "--num-threads", type=int, default=1, help="Number of threads to use when processing input." )
-    return( parser.parse_args() )
+    return parser.parse_args()
 
 def import_reference( reference, reference_path, dups_path ):
     reference.import_fasta_file( reference_path )
@@ -55,6 +56,7 @@ def check_vcf_proportion( vcf_record, sample_record, sample_coverage ):
             sample_proportion = sample_record.data.AD / sample_coverage
     return sample_proportion
 
+# FIXME split into a larger number of smaller more testable functions
 def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
     genomes = {}
     file_path = get_file_path( input_file )
@@ -83,19 +85,20 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                     sample_record = vcf_record.genotype( vcf_sample )
                     if vcf_record.ALT[0] is not None:
                         sample_call = sample_record.gt_bases[0] # FIXME indels
-                        print( sample_record.gt_type )
                     #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
                     genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
                     sample_coverage = check_vcf_coverage( vcf_record, sample_record, len( vcf_samples ) )
                     if sample_coverage >= min_coverage:
-                        genomes[vcf_sample].coverage_pass( 'Y', current_pos, current_contig )
+                        genomes[vcf_sample].set_coverage_pass( 'Y', current_pos, current_contig )
                     elif sample_coverage >= 0:
-                        genomes[vcf_sample].coverage_pass( 'N', current_pos, current_contig )
+                        genomes[vcf_sample].set_coverage_pass( 'N', current_pos, current_contig )
                     sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage )
-                    if sample_proportion >= min_proportion:
-                        genomes[vcf_sample].proportion_pass( 'Y', current_pos, current_contig )
-                    elif sample_proportion >= 0:
-                        genomes[vcf_sample].proportion_pass( 'N', current_pos, current_contig )
+                    # FIXME broken
+                    genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
+                    #if sample_proportion >= min_proportion:
+                    #    genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
+                    #elif sample_proportion >= 0:
+                    #    genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
                     #print( current_pos, sample_coverage, min_coverage, genomes[vcf_sample]._passed_coverage._status_data )
                     #print( current_pos, sample_proportion, min_proportion, genomes[vcf_sample]._passed_proportion._status_data )
         vcf_filehandle.close()
@@ -135,7 +138,7 @@ def set_genome_metadata( genome, input_file ):
         genome.set_file_path( input_file )
     #print( genome.identifier() )
 
-def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q, finish_q ):
+def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q ):
     while not input_q.empty():
         input_file = input_q.get()[0]
         new_genomes = []
@@ -146,36 +149,29 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
         for new_genome in new_genomes:
             output_q.put( [ new_genome ] )
-    finish_q.put( True )
     input_q.close()
     output_q.close()
-    finish_q.close()
 
 def parse_input_files( input_files, num_threads, genomes, min_coverage, min_proportion ):
     from multiprocessing import Process, Queue
-    from time import sleep
     input_q = Queue()
     output_q = Queue()
-    finish_q = Queue()
     for input_file in input_files:
         input_q.put( [ input_file ] )
-    sleep( 1 )
     if num_threads > input_q.qsize():
         num_threads = input_q.qsize()
     thread_list = []
     for current_thread in range( num_threads ):
-        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q, finish_q ] )
+        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q ] )
         thread_list.append( current_thread )
         current_thread.start()
-    sleep( 1 )
-    while not output_q.empty():
-        genomes.add_genome( output_q.get()[0] )
-    sleep( 1 )
     for current_thread in thread_list:
         current_thread.join()
+    while not output_q.empty():
+        genomes.add_genome( output_q.get()[0] )
 
-def write_allcallable_matrix( genomes, master_matrix ):
-    genomes.write_to_matrix( master_matrix )
+def write_output_matrices( genomes, master_matrix, filter_matrix, matrix_format ):
+    genomes.write_to_matrices( master_matrix, filter_matrix, matrix_format )
 
 
 def main():
@@ -186,7 +182,7 @@ def main():
     genomes = GenomeCollection()
     genomes.set_reference( reference )
     parse_input_files( commandline_args.input_files, commandline_args.num_threads, genomes, commandline_args.minimum_coverage, commandline_args.minimum_proportion )
-    write_allcallable_matrix( genomes, commandline_args.master_matrix )
+    write_output_matrices( genomes, commandline_args.master_matrix, commandline_args.filter_matrix, None )
 
 if __name__ == "__main__": main()
 

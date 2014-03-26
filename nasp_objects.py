@@ -53,16 +53,17 @@ class GenomeStatus:
     def get_value( self, first_position, last_position = None, contig_name = None, filler_value = None ):
         if contig_name is None:
             contig_name = self._current_contig
-        if contig_name not in self.get_contigs():
-            raise InvalidContigName()
-        if last_position == -1:
-            last_position = len( self._status_data[contig_name] )
-        elif ( last_position is None ) or ( last_position < first_position ):
-            last_position = first_position
-        first_position = first_position - 1
         queried_value = filler_value
-        if first_position < len( self._status_data[contig_name] ):
-            queried_value = self._status_data[contig_name][first_position:last_position]
+        if contig_name in self.get_contigs():
+            if last_position == -1:
+                last_position = len( self._status_data[contig_name] )
+            elif ( last_position is None ) or ( last_position < first_position ):
+                last_position = first_position
+            first_position = first_position - 1
+            if first_position < len( self._status_data[contig_name] ):
+                queried_value = self._status_data[contig_name][first_position:last_position]
+        elif filler_value == None:
+            raise InvalidContigName()
         return queried_value
 
     def get_contig_length( self, contig_name = None ):
@@ -153,7 +154,7 @@ class Genome:
             simple_base = 'N'
         if not allow_del and ( simple_base == '.' ):
             simple_base = 'N'
-        return( simple_base )
+        return simple_base
 
 
 class GenomeMeta:
@@ -179,19 +180,19 @@ class GenomeMeta:
         self._generators.extend( generator_array )
 
     def file_path( self ):
-        return( self._file_path )
+        return self._file_path
 
     def file_type( self ):
-        return( self._file_type )
+        return self._file_type
 
     def nickname( self ):
-        return( self._nickname )
+        return self._nickname
 
     def identifier( self ):
         identifier = self._nickname
         if len( self._generators ) > 0:
             identifier = '' + identifier + "::" + ( ','.join( self._generators ) )
-        return( identifier )
+        return identifier
 
     @staticmethod
     def generate_nickname_from_filename( filename ):
@@ -222,7 +223,7 @@ class ReferenceGenome( Genome ):
         self._dups = GenomeStatus()
 
     def get_dups_call( self, first_position, last_position = None, contig_name = None ):
-        return self._dups.get_value( first_position, last_position, contig_name )
+        return self._dups.get_value( first_position, last_position, contig_name, "?" )
 
     def _import_dups_line( self, line_from_dups_file, contig_prefix = "" ):
         import re
@@ -262,16 +263,22 @@ class FastaGenome( Genome ):
         self._meta.add_generators( generator_name )
 
     def file_path( self ):
-        return( self._meta.file_path() )
+        return self._meta.file_path()
 
     def file_type( self ):
-        return( self._meta.file_type() )
+        return self._meta.file_type()
 
     def nickname( self ):
-        return( self._meta.nickname() )
+        return self._meta.nickname()
 
     def identifier( self ):
-        return( self._meta.identifier() )
+        return self._meta.identifier()
+
+    def get_coverage_pass( self, current_pos, contig_name = None ):
+        return "-"
+
+    def get_proportion_pass( self, current_pos, contig_name = None ):
+        return "-"
 
 
 class VCFGenome( Genome ):
@@ -296,22 +303,28 @@ class VCFGenome( Genome ):
         self._meta.add_generators( generator_name )
 
     def file_path( self ):
-        return( self._meta.file_path() )
+        return self._meta.file_path()
 
     def file_type( self ):
-        return( self._meta.file_type() )
+        return self._meta.file_type()
 
     def nickname( self ):
-        return( self._meta.nickname() )
+        return self._meta.nickname()
 
     def identifier( self ):
-        return( self._meta.identifier() )
+        return self._meta.identifier()
 
-    def coverage_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
+    def set_coverage_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
         self._passed_coverage.set_value( pass_value, current_pos, "-", contig_name, change_current_contig )
 
-    def proportion_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
+    def set_proportion_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
         self._passed_proportion.set_value( pass_value, current_pos, "-", contig_name, change_current_contig )
+
+    def get_coverage_pass( self, current_pos, contig_name = None ):
+        return self._passed_coverage.get_value( current_pos, None, contig_name, "?" )
+
+    def get_proportion_pass( self, current_pos, contig_name = None ):
+        return self._passed_proportion.get_value( current_pos, None, contig_name, "?" )
 
 
 class GenomeCollection:
@@ -326,6 +339,9 @@ class GenomeCollection:
     def reference( self ):
         return self._reference
 
+    def get_dups_call( self, first_position, last_position = None, contig_name = None ):
+        return self._reference.get_dups_call( first_position, last_position, contig_name )
+
     def add_genome( self, genome ):
         self._genomes.append( genome )
 
@@ -337,27 +353,96 @@ class GenomeCollection:
     def get_contigs( self ):
         return self._reference.get_contigs()
 
-    def _format_matrix_line( self, output_handle, current_contig, current_pos ):
-        matrix_line = '' + current_contig + "::" + str( current_pos ) + "\t"
-        matrix_line += '' + self._reference.get_call( current_pos, None, current_contig ) + "\t"
-        for genome in self._genomes:
-            matrix_line += '' + genome.get_call( current_pos, None, current_contig ) + "\t"
-        matrix_line += "\n"
-        return matrix_line
+    def get_genome_count( self ):
+        return len( self._genomes )
 
-    def _send_to_matrix_handle( self, output_handle ):
-        output_handle.write( "LocusID\tReference\t" )
+    # FIXME split into a larger number of smaller more testable functions
+    def _format_matrix_line( self, current_contig, current_pos, matrix_format ):
+        genome_count = self.get_genome_count()
+        matrix_line = '' + current_contig + "::" + str( current_pos ) + "\t"
+        reference_call = self._reference.get_call( current_pos, None, current_contig )
+        simplified_refcall = Genome.simple_call( reference_call )
+        matrix_line += '' + reference_call + "\t"
+        call_data = { 'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0, 'callstring': '', 'covstring': '', 'propstring': '', 'called': 0, 'passcov': 0, 'passprop': 0 }
+        consensus_check = {}
         for genome in self._genomes:
-            output_handle.write( '' + genome.identifier() + "\t" )
-        output_handle.write( "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\n" )
+            sample_call = genome.get_call( current_pos, None, current_contig, 'X' )
+            simplified_sample_call = Genome.simple_call( sample_call )
+            matrix_line += '' + sample_call + "\t"
+            call_data[simplified_sample_call] += 1
+            genome_nickname = genome.nickname()
+            if genome_nickname in consensus_check:
+                if consensus_check[genome_nickname] != simplified_sample_call:
+                    consensus_check[genome_nickname] = 'N'
+            else:
+                consensus_check[genome_nickname] = simplified_sample_call
+            was_called = False
+            if simplified_sample_call != 'N':
+                call_data['callstring'] += 'Y'
+                call_data['called'] += 1
+                was_called = True
+            else:
+                call_data['callstring'] += 'N'
+            passed_coverage = genome.get_coverage_pass( current_pos, current_contig )
+            call_data['covstring'] += '' + passed_coverage
+            if passed_coverage == 'Y' or passed_coverage == '-':
+                passed_coverage = True
+                call_data['passcov'] += 1
+            else:
+                passed_coverage = False
+            passed_proportion = genome.get_proportion_pass( current_pos, current_contig )
+            call_data['propstring'] += '' + passed_proportion
+            if passed_proportion == 'Y' or passed_proportion == '-':
+                passed_proportion = True
+                call_data['passprop'] += 1
+            else:
+                passed_proportion = False
+            if was_called and passed_coverage and passed_proportion and simplified_refcall != 'N':
+                if simplified_refcall == simplified_sample_call:
+                    call_data['refcall'] += 1
+                elif simplified_sample_call != 'N':
+                    call_data['snpcall'] += 1
+        matrix_line += '' + str( call_data['snpcall'] ) + "\t" + str( call_data['indelcall'] ) + "\t" + str( call_data['refcall'] ) + "\t"
+        matrix_line += '' + str( call_data['called'] ) + "/" + str( genome_count ) + "\t" + str( call_data['passcov'] ) + "/" + str( genome_count ) + "\t" + str( call_data['passprop'] ) + "/" + str( genome_count ) + "\t"
+        matrix_line += '' + str( call_data['A'] ) + "\t" + str( call_data['C'] ) + "\t" + str( call_data['G'] ) + "\t" + str( call_data['T'] ) + "\t" + str( call_data['indel'] ) + "\t" + str( call_data['N'] ) + "\t"
+        matrix_line += '' + current_contig + "\t" + str( current_pos ) + "\t"
+        dups_call = self._reference.get_dups_call( current_pos, None, current_contig )
+        if dups_call == 0:
+            dups_call = True
+        else:
+            dups_call = False
+        if 'N' in consensus_check.values():
+            consensus_check = False
+        else:
+            consensus_check = True
+        matrix_line += '' + str( dups_call ) + "\t" + str( consensus_check ) + "\t"
+        custom_line = None
+        if call_data['snpcall'] > 0 and call_data['indelcall'] == 0 and call_data['snpcall'] + call_data['refcall'] == genome_count and dups_call != True and consensus_check:
+            custom_line = '' + matrix_line + "\n"
+        matrix_line += '' + str( call_data['callstring'] ) + "\t" + str( call_data['covstring'] ) + "\t" + str( call_data['propstring'] ) + "\n"
+        return ( matrix_line, custom_line )
+
+    def _send_to_matrix_handles( self, master_handle, custom_handle, matrix_format ):
+        master_handle.write( "LocusID\tReference\t" )
+        custom_handle.write( "LocusID\tReference\t" )
+        for genome in self._genomes:
+            master_handle.write( '' + genome.identifier() + "\t" )
+            custom_handle.write( '' + genome.identifier() + "\t" )
+        master_handle.write( "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\n" )
+        custom_handle.write( "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tChromosome\tPosition\tInDupRegion\tSampleConsensus\n" )
         for current_contig in self._reference.get_contigs():
             for current_pos in range( 1, self._reference.get_contig_length( current_contig ) + 1 ):
-                output_handle.write( self._format_matrix_line( output_handle, current_contig, current_pos ) )
+                matrix_lines = self._format_matrix_line( current_contig, current_pos, matrix_format )
+                master_handle.write( matrix_lines[0] )
+                if matrix_lines[1] is not None:
+                    custom_handle.write( matrix_lines[1] )
 
-    def write_to_matrix( self, output_filename ):
-        output_handle = open( output_filename, 'w' )
-        self._send_to_matrix_handle( output_handle )
-        output_handle.close()
+    def write_to_matrices( self, master_filename, custom_filename, matrix_format ):
+        master_handle = open( master_filename, 'w' )
+        custom_handle = open( custom_filename, 'w' )
+        self._send_to_matrix_handles( master_handle, custom_handle, matrix_format )
+        master_handle.close()
+        custom_handle.close()
 
 
 # FIXME user feedback
