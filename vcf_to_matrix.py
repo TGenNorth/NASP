@@ -139,6 +139,7 @@ def set_genome_metadata( genome, input_file ):
     #print( genome.identifier() )
 
 def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q, finish_q ):
+    num_genomes = 0
     while not input_q.empty():
         input_file = input_q.get()[0]
         new_genomes = []
@@ -149,7 +150,8 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
         for new_genome in new_genomes:
             output_q.put( [ new_genome ] )
-    finish_q.put( True )
+            num_genomes += 1
+    finish_q.put( num_genomes )
     input_q.close()
     output_q.close()
     finish_q.close()
@@ -170,10 +172,11 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
         current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q, finish_q ] )
         thread_list.append( current_thread )
         current_thread.start()
+    num_genomes = 0
     for current_thread in thread_list:
-        finish_q.get()
+        num_genomes += finish_q.get()
     sleep( 1 )
-    while not output_q.empty():
+    for genome_num in range( num_genomes ):
         genomes.add_genome( output_q.get()[0] )
     sleep( 1 )
     for current_thread in thread_list:
