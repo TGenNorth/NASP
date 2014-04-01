@@ -910,7 +910,7 @@ sub nasp
             if( scalar( @{$externalfastadata} ) == 2 )
             {
               push( @snpcallerqids, $externalfastadata->[0] );
-              push( @finalfilelist, ( "external,nucmer,::" . $externalfastadata->[1] ) );
+              push( @finalfilelist, ( "frankenfasta,nucmer,::" . $externalfastadata->[1] ) );
             }
           }
         }

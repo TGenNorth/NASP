@@ -148,6 +148,8 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             new_genomes = import_external_fasta( input_file )
         elif file_type == "vcf":
             new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
+        else:
+            print( file_type )
         for new_genome in new_genomes:
             output_q.put( [ new_genome ] )
             num_genomes += 1
@@ -178,7 +180,6 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
     sleep( 1 )
     for genome_num in range( num_genomes ):
         genomes.add_genome( output_q.get()[0] )
-        #print( str( output_q.empty() ) )
     sleep( 1 )
     for current_thread in thread_list:
         current_thread.join()
