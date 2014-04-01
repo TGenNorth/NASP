@@ -178,7 +178,7 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
     sleep( 1 )
     for genome_num in range( num_genomes ):
         genomes.add_genome( output_q.get()[0] )
-        print( str( output_q.empty() ) )
+        #print( str( output_q.empty() ) )
     sleep( 1 )
     for current_thread in thread_list:
         current_thread.join()
