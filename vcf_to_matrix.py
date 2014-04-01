@@ -39,12 +39,12 @@ def import_external_fasta( input_file ):
 
 def check_vcf_coverage( vcf_record, sample_record, sample_count ):
     sample_coverage = -1
-    if hasattr( sample_record.data, 'DP' ):
+    if hasattr( sample_record.data, 'DP' ) and sample_record.data.DP is not None and sample_record.data.DP != '' and sample_record.data.DP >= 0:
         sample_coverage = sample_record.data.DP
-    elif 'DP' in vcf_record.INFO:
-        sample_coverage = int( vcf_record.INFO['DP'] / sample_count )
-    elif 'ADP' in vcf_record.INFO:
-        sample_coverage = int( vcf_record.INFO['ADP'] / sample_count )
+    elif 'DP' in vcf_record.INFO and vcf_record.INFO['DP'] is not None and vcf_record.INFO['DP'] != '' and vcf_record.INFO['DP'] >= 0:
+        sample_coverage = vcf_record.INFO['DP'] / sample_count
+    elif 'ADP' in vcf_record.INFO and vcf_record.INFO['ADP'] is not None and vcf_record.INFO['ADP'] != '' and vcf_record.INFO['ADP'] >= 0:
+        sample_coverage = vcf_record.INFO['ADP'] / sample_count
     return sample_coverage
 
 def check_vcf_proportion( vcf_record, sample_record, sample_coverage ):
@@ -178,6 +178,7 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
     sleep( 1 )
     for genome_num in range( num_genomes ):
         genomes.add_genome( output_q.get()[0] )
+        print( str( output_q.empty() ) )
     sleep( 1 )
     for current_thread in thread_list:
         current_thread.join()
