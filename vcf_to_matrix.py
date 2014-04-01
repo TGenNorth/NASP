@@ -49,7 +49,7 @@ def check_vcf_coverage( vcf_record, sample_record, sample_count ):
 
 def check_vcf_proportion( vcf_record, sample_record, sample_coverage ):
     sample_proportion = -1
-    if hasattr( sample_record.data, 'AD' ):
+    if hasattr( sample_record.data, 'AD' ) and sample_record.data.AD is not None and sample_record.data.AD != '' and sample_record.data.AD >= 0:
         if isinstance( sample_record.data.AD, list ):
             pass
         else:
