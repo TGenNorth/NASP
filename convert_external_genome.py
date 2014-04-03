@@ -13,6 +13,7 @@ def _parse_args():
     parser.add_argument( "--deltafilterpath", default="delta-filter", help="Path to the 'delta-filter' executable." )
     parser.add_argument( "--reference", required=True, help="Path to the reference fasta file." )
     parser.add_argument( "--external", required=True, help="Path to the external genome fasta file." )
+    parser.add_argement( "--name", default="", help="Name of this external genome." )
     return parser.parse_args()
 
 # This should eventually be moved to the main job manager section
@@ -83,7 +84,7 @@ def parse_delta_file( delta_filename, franken_genome, external_genome ):
 def main():
     from nasp_objects import Genome, GenomeMeta
     commandline_args = _parse_args()
-    external_nickname = GenomeMeta.generate_nickname_from_filename( commandline_args.external )
+    external_nickname = commandline_args.name if commandline_args.name else GenomeMeta.generate_nickname_from_filename( commandline_args.external )
     external_genome = Genome()
     external_genome.import_fasta_file( commandline_args.external )
     generate_delta_file( commandline_args.nucmerpath, commandline_args.nucmerargs, commandline_args.deltafilterpath, external_nickname, commandline_args.reference, commandline_args.external )

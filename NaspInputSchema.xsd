@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.tgen.org/NaspInputSchema" elementFormDefault="qualified" xmlns:nasp="http://www.tgen.org/NaspInputSchema">
+
+
+
+    <complexType name="ReadPair">
+    	<sequence>
+    		<element name="Read1Filename" type="string"></element>
+    		<element name="Read2Filename" type="string"></element>
+    	</sequence>
+    	<attribute name="sample" type="string"></attribute>
+    </complexType>
+    
+    <complexType name="JobParameters">
+    	<all>
+    		<element name="MemRequested" type="string"></element>
+    		<element name="NumCPUs" type="string"></element>
+    		<element name="Walltime" type="string"></element>
+    	</all>
+    	<attribute name="name" type="string"></attribute>
+    </complexType>
+
+    <complexType name="UtilityProgram">
+    	<sequence>
+    		<element name="ProgramType" type="nasp:ProgramType"></element>
+    		<element name="Path" type="string"></element>
+    	</sequence>
+    	<attribute name="ProgramName" type="string"></attribute>
+    </complexType>
+
+    <simpleType name="ProgramType">
+    	<restriction base="string">
+    		<enumeration value="Aligner"></enumeration>
+    		<enumeration value="SNPCaller"></enumeration>
+    	</restriction>
+    </simpleType>
+    
+
+    <element name="ReferenceGenome" type="nasp:ReferenceGenome"></element>
+    
+
+
+    <complexType name="ExternalGenome">
+    	<sequence>
+    		<element name="Path" type="string"></element>
+    	</sequence>
+    	<attribute name="SampleName" type="string"></attribute>
+    </complexType>
+
+    <element name="SetupParameters" type="string"></element>
+
+    <complexType name="ReferenceGenome">
+    	<complexContent>
+    		<extension base="nasp:ExternalGenome">
+    			<attribute name="FindDuplicates" type="boolean"></attribute>
+    		</extension>
+    	</complexContent>
+    </complexType>
+</schema>
