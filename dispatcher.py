@@ -22,7 +22,10 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None ):
     import subprocess
     output = status = None
     if job_submitter == "qsub":
-        waitfor = "-W depend=afterok:%s" % waitfor_id if waitfor_id else ""
+        waitfor = ""
+        if waitfor_id:
+            dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
+            waitfor = "-W depend=%s:%s" % (dependency_string, waitfor_id)
         submit_command = "qsub -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m ab -N \'%s\' %s" % (job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], job_parms['name'], waitfor)
         (status, output) = subprocess.getstatusoutput("`echo \"%s\" | %s - `" % (command, submit_command))
     else:
@@ -331,6 +334,25 @@ def _index_bams( configuration, index_job_id ):
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, index_job_id)
     return (bam_files, job_id)
 
+def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fastas, job_ids ):
+    import matrix_DTO
+    import os
+    output_dir = configuration['output_folder']
+    matrix_parms = {'reference-fasta':reference, 'reference-dups':dups_file}
+    matrix_parms['minimum-coverage'] = configuration['coverage_filter']
+    matrix_parms['minimum-proportion'] = configuration['proportion_filter']
+    matrix_parms['master-matrix'] = os.path.join(output_dir, 'master_matrix.tsv')
+    matrix_parms['filter-matrix'] = os.path.join(output_dir, 'filter_matrix.tsv')
+    matrix_parms['general-stats'] = os.path.join(output_dir, 'general_stats.tsv')
+    matrix_parms['contig-stats'] = os.path.join(output_dir, 'contig_stats.tsv')
+    dto_file = os.path.join(output_dir, "matrix_dto.xml")
+    matrix_DTO.write_dto(matrix_parms, franken_fastas, vcf_files, dto_file)
+    jobs_to_wait_for = ":".join(job_ids)
+    command = "vcf_to_matrix.py --dto-file %s --num-threads %s" % (dto_file, '12')
+    job_parms = {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'4', 'walltime':'96', 'work_dir':output_dir}
+    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'))    
+    return job_id
+
 def main():
     commandline_args = _parse_args()
     configuration = configuration_parser.parse_config( commandline_args.config )
@@ -359,5 +381,8 @@ def main():
             vcf_files.append(vcf_nickname, aligner, snpcaller, final_file)
     for (name, file) in configuration["vcfs"]:
         vcf_files.append((name, "pre-aligned", "pre-called", file))
+        
+    _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids)
+    
 
 if __name__ == "__main__": main()
