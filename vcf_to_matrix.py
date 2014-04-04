@@ -84,8 +84,9 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                     sample_call = reference_call
                     sample_record = vcf_record.genotype( vcf_sample )
                     if vcf_record.ALT[0] is not None:
+                        if sample_record.gt_bases is None:
+                            print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
                         sample_call = sample_record.gt_bases[0] # FIXME indels
-                    #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
                     genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
                     sample_coverage = check_vcf_coverage( vcf_record, sample_record, len( vcf_samples ) )
                     if sample_coverage >= min_coverage:
@@ -140,19 +141,26 @@ def set_genome_metadata( genome, input_file ):
 
 def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q, finish_q ):
     num_genomes = 0
-    while not input_q.empty():
-        input_file = input_q.get()[0]
-        new_genomes = []
-        file_type = determine_file_type( input_file )
-        if file_type == "frankenfasta":
-            new_genomes = import_external_fasta( input_file )
-        elif file_type == "vcf":
-            new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
-        else:
-            print( file_type )
-        for new_genome in new_genomes:
-            output_q.put( [ new_genome ] )
-            num_genomes += 1
+    try:
+        while not input_q.empty():
+            input_file = input_q.get()[0]
+            new_genomes = []
+            file_type = determine_file_type( input_file )
+            if file_type == "frankenfasta":
+                new_genomes = import_external_fasta( input_file )
+            elif file_type == "vcf":
+                new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
+            else:
+                print( file_type )
+            for new_genome in new_genomes:
+                output_q.put( [ new_genome ] )
+                num_genomes += 1
+    except:
+        finish_q.put( num_genomes )
+        input_q.close()
+        output_q.close()
+        finish_q.close()
+        raise
     finish_q.put( num_genomes )
     input_q.close()
     output_q.close()
