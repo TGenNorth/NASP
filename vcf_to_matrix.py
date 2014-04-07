@@ -8,9 +8,9 @@ __email__ = "dsmith@tgen.org"
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
-    parser.add_argument( "--reference-fasta", required=True, help="Path to input reference fasta file." )
+    parser.add_argument( "--reference-fasta", help="Path to input reference fasta file." )
     parser.add_argument( "--reference-dups", help="Path to input reference dups file." )
-    parser.add_argument( "--input-files", nargs="+", required=True, help="Path to input VCF/fasta files for matrix conversion." )
+    parser.add_argument( "--input-files", nargs="+", help="Path to input VCF/fasta files for matrix conversion." )
     parser.add_argument( "--master-matrix", default="master_matrix.tsv", help="Name of master matrix to create." )
     parser.add_argument( "--filter-matrix", default="filter_matrix.tsv", help="Name of custom matrix to create." )
     parser.add_argument( "--general-stats", default="general_stats.tsv", help="Name of general statistics file to create." )
@@ -18,7 +18,22 @@ def _parse_args():
     parser.add_argument( "--minimum-coverage", type=int, default=10, help="Minimum coverage depth at a position." )
     parser.add_argument( "--minimum-proportion", type=float, default=0.9, help="Minimum proportion of reads that must match the call at a position." )
     parser.add_argument( "--num-threads", type=int, default=1, help="Number of threads to use when processing input." )
+    parser.add_argument( "--dto-file", help="Path to a matrix_dto XML file that defines all the parameters." )
     return parser.parse_args()
+
+def _parse_input_config(commandline_args):
+    import matrix_DTO
+    (matrix_parms, input_files) = matrix_DTO.parse_dto(commandline_args.dto_file)
+    commandline_args.reference_fasta = matrix_parms['reference-fasta']
+    commandline_args.reference_dups = matrix_parms['reference-dups']
+    commandline_args.master_matrix = matrix_parms['master-matrix']
+    commandline_args.filter_matrix = matrix_parms['filter-matrix']
+    commandline_args.general_stats = matrix_parms['general-stats']
+    commandline_args.contig_stats = matrix_parms['contig-stats']
+    commandline_args.minimum_coverage = matrix_parms['minimum-coverage']
+    commandline_args.minimum_proportion = matrix_parms['minimum-proportion']
+    commandline_args.input_files = " ".join(input_files)
+    return commandline_args
 
 def import_reference( reference, reference_path, dups_path ):
     reference.import_fasta_file( reference_path )
@@ -198,6 +213,8 @@ def write_output_matrices( genomes, master_matrix, filter_matrix, matrix_format 
 
 def main():
     commandline_args = _parse_args()
+    if(commandline_args.dto_file):
+        commandline_args = _parse_input_config(commandline_args)
     from nasp_objects import ReferenceGenome, GenomeCollection
     reference = ReferenceGenome()
     import_reference( reference, commandline_args.reference_fasta, commandline_args.reference_dups )
