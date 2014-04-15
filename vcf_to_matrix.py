@@ -64,9 +64,12 @@ def check_vcf_coverage( vcf_record, sample_record, sample_count ):
 
 def check_vcf_proportion( vcf_record, sample_record, sample_coverage ):
     sample_proportion = -1
+    if 'AR' in vcf_record.INFO and vcf_record.INFO['AR'] is not None and vcf_record.INFO['AR'] != '' and isinstance( vcf_record.INFO['AR'], list ) and vcf_record.INFO['AR'][0] is not None and vcf_record.INFO['AR'][0] != '' and float( vcf_record.INFO['AR'][0] ) >= 0:
+        sample_proportion = float( vcf_record.INFO['AR'][0] )
     if hasattr( sample_record.data, 'AD' ) and sample_record.data.AD is not None and sample_record.data.AD != '':
-        if isinstance( sample_record.data.AD, list ):
-            pass
+        if isinstance( sample_record.data.AD, list ) and hasattr( sample_record.data, 'GT' ) and sample_record.data.GT is not None and sample_record.data.GT != '':
+            genome_num = int( sample_record.data.GT.split('/').split('|') )
+            sample_proportion = sample_record.data.AD[genome_num] / sample_coverage
         elif sample_record.data.AD >= 0:
             sample_proportion = sample_record.data.AD / sample_coverage
     return sample_proportion
@@ -99,8 +102,9 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                     sample_call = reference_call
                     sample_record = vcf_record.genotype( vcf_sample )
                     if vcf_record.ALT[0] is not None:
-                        if sample_record.gt_bases is None:
-                            print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
+                        #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
+                        #if sample_record.gt_bases is None:
+                            #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
                         sample_call = sample_record.gt_bases[0] # FIXME indels
                     genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
                     sample_coverage = check_vcf_coverage( vcf_record, sample_record, len( vcf_samples ) )
@@ -109,12 +113,12 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                     elif sample_coverage >= 0:
                         genomes[vcf_sample].set_coverage_pass( 'N', current_pos, current_contig )
                     sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage )
-                    # FIXME broken
-                    genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
-                    #if sample_proportion >= min_proportion:
-                    #    genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
-                    #elif sample_proportion >= 0:
-                    #    genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
+                    if sample_proportion >= min_proportion:
+                        genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
+                    elif sample_proportion >= 0:
+                        genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
+                    elif sample_proportion == -1 and vcf_record.ALT[0] is None:
+                        genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
                     #print( current_pos, sample_coverage, min_coverage, genomes[vcf_sample]._passed_coverage._status_data )
                     #print( current_pos, sample_proportion, min_proportion, genomes[vcf_sample]._passed_proportion._status_data )
         vcf_filehandle.close()
@@ -165,8 +169,6 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
                 new_genomes = import_external_fasta( input_file )
             elif file_type == "vcf":
                 new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
-            else:
-                print( file_type )
             for new_genome in new_genomes:
                 output_q.put( [ new_genome ] )
                 num_genomes += 1
