@@ -13,7 +13,7 @@ def _parse_args():
     parser.add_argument( "--deltafilterpath", default="delta-filter", help="Path to the 'delta-filter' executable." )
     parser.add_argument( "--reference", required=True, help="Path to the reference fasta file." )
     parser.add_argument( "--external", required=True, help="Path to the external genome fasta file." )
-    parser.add_argement( "--name", default="", help="Name of this external genome." )
+    parser.add_argument( "--name", default="", help="Name of this external genome." )
     return parser.parse_args()
 
 # This should eventually be moved to the main job manager section
