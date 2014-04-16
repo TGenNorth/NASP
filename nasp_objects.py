@@ -315,10 +315,10 @@ class VCFGenome( Genome ):
         return self._meta.identifier()
 
     def set_coverage_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
-        self._passed_coverage.set_value( pass_value, current_pos, "-", contig_name, change_current_contig )
+        self._passed_coverage.set_value( pass_value, current_pos, "?", contig_name, change_current_contig )
 
     def set_proportion_pass( self, pass_value, current_pos, contig_name = None, change_current_contig = False ):
-        self._passed_proportion.set_value( pass_value, current_pos, "-", contig_name, change_current_contig )
+        self._passed_proportion.set_value( pass_value, current_pos, "?", contig_name, change_current_contig )
 
     def get_coverage_pass( self, current_pos, contig_name = None ):
         return self._passed_coverage.get_value( current_pos, None, contig_name, "?" )
@@ -365,6 +365,7 @@ class GenomeCollection:
         matrix_line += '' + reference_call + "\t"
         call_data = { 'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0, 'callstring': '', 'covstring': '', 'propstring': '', 'called': 0, 'passcov': 0, 'passprop': 0 }
         consensus_check = {}
+        # The expensive loop
         for genome in self._genomes:
             sample_call = genome.get_call( current_pos, None, current_contig, 'X' )
             simplified_sample_call = Genome.simple_call( sample_call )

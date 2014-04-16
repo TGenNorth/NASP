@@ -62,16 +62,28 @@ def check_vcf_coverage( vcf_record, sample_record, sample_count ):
         sample_coverage = vcf_record.INFO['ADP'] / sample_count
     return sample_coverage
 
-def check_vcf_proportion( vcf_record, sample_record, sample_coverage ):
+def check_vcf_proportion( vcf_record, sample_record, sample_coverage, sample_count, is_a_snp ):
     sample_proportion = -1
-    if 'AR' in vcf_record.INFO and vcf_record.INFO['AR'] is not None and vcf_record.INFO['AR'] != '' and isinstance( vcf_record.INFO['AR'], list ) and vcf_record.INFO['AR'][0] is not None and vcf_record.INFO['AR'][0] != '' and float( vcf_record.INFO['AR'][0] ) >= 0:
+    # gatk, reliable and documented
+    if hasattr( sample_record.data, 'AD' ) and isinstance( sample_record.data.AD, list ):
+        genome_num = int( sample_record.data.GT.split('/')[0].split('|')[0] )
+        sample_proportion = sample_record.data.AD[genome_num] / sample_coverage
+    # varscan, reliable and documented
+    elif is_a_snp and hasattr( sample_record.data, 'AD' ):
+        sample_proportion = sample_record.data.AD / sample_coverage
+    elif not is_a_snp and hasattr( sample_record.data, 'RD' ):
+        sample_proportion = sample_record.data.RD / sample_coverage
+    # solsnp, undocumented
+    elif 'AR' in vcf_record.INFO:
         sample_proportion = float( vcf_record.INFO['AR'][0] )
-    if hasattr( sample_record.data, 'AD' ) and sample_record.data.AD is not None and sample_record.data.AD != '':
-        if isinstance( sample_record.data.AD, list ) and hasattr( sample_record.data, 'GT' ) and sample_record.data.GT is not None and sample_record.data.GT != '':
-            genome_num = int( sample_record.data.GT.split('/').split('|') )
-            sample_proportion = sample_record.data.AD[genome_num] / sample_coverage
-        elif sample_record.data.AD >= 0:
-            sample_proportion = sample_record.data.AD / sample_coverage
+        if not is_a_snp:
+            sample_proportion = 1 - sample_proportion
+    # samtools, estimate, dubious accuracy
+    elif 'DP4' in vcf_record.INFO:
+        if is_a_snp:
+            sample_proportion = ( vcf_record.INFO['DP4'][2] + vcf_record.INFO['DP4'][3] ) / ( sample_coverage * sample_count )
+        else:
+            sample_proportion = ( vcf_record.INFO['DP4'][0] + vcf_record.INFO['DP4'][1] ) / ( sample_coverage * sample_count )
     return sample_proportion
 
 # FIXME split into a larger number of smaller more testable functions
@@ -100,24 +112,27 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                 #print( vcf_record, vcf_record.INFO )
                 for vcf_sample in vcf_samples:
                     sample_call = reference_call
+                    is_a_snp = False
                     sample_record = vcf_record.genotype( vcf_sample )
                     if vcf_record.ALT[0] is not None:
                         #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
                         #if sample_record.gt_bases is None:
                             #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
                         sample_call = sample_record.gt_bases[0] # FIXME indels
+                        is_a_snp = True
                     genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
-                    sample_coverage = check_vcf_coverage( vcf_record, sample_record, len( vcf_samples ) )
+                    sample_count = len( vcf_samples )
+                    sample_coverage = check_vcf_coverage( vcf_record, sample_record, sample_count )
                     if sample_coverage >= min_coverage:
                         genomes[vcf_sample].set_coverage_pass( 'Y', current_pos, current_contig )
                     elif sample_coverage >= 0:
                         genomes[vcf_sample].set_coverage_pass( 'N', current_pos, current_contig )
-                    sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage )
+                    sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage, sample_count, is_a_snp )
                     if sample_proportion >= min_proportion:
                         genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
                     elif sample_proportion >= 0:
                         genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
-                    elif sample_proportion == -1 and vcf_record.ALT[0] is None:
+                    elif sample_proportion == -1 and not is_a_snp:
                         genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
                     #print( current_pos, sample_coverage, min_coverage, genomes[vcf_sample]._passed_coverage._status_data )
                     #print( current_pos, sample_proportion, min_proportion, genomes[vcf_sample]._passed_proportion._status_data )
