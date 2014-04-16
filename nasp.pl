@@ -111,7 +111,7 @@ my $bamfilefolder = $currentdirectory;
 if( @ARGV == 2 ){ $bamfilefolder = shift(); }
 $bamfilefolder =~ s/\/+$//;
 if( $bamfilefolder =~ /^[^\/~]/ ){ $bamfilefolder = "$currentdirectory/$bamfilefolder"; }
-my $outputfilefolder = "$bamfilefolder/nasp_results";
+my $outputfilefolder = "$bamfilefolder/nasp_ex_results";
 if( @ARGV > 0 ){ $outputfilefolder = shift(); }
 $outputfilefolder =~ s/\/+$//;
 if( $outputfilefolder =~ /^[^\/~]/ ){ $outputfilefolder = "$currentdirectory/$outputfilefolder"; }
@@ -1115,7 +1115,7 @@ sub nasp
           {
             if( length( $refdupsfile ) ){ $refdupsfile = "--reference-dups " . $refdupsfile; }
             my $commandtorun = "$matrixmakingscript --reference-fasta $referencefastafile $refdupsfile --input-files $finalfilestring --minimum-coverage $mincoverage --minimum-proportion $minproportion --master-matrix $outputfilefolder/master_matrix.tsv --filter-matrix $outputfilefolder/filter_matrix.tsv --num-threads $numcpustomakematrix \n";
-            my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=$numcpustomakematrix,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor - `;
+            my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=$numcpustomakematrix,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_ex_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor - `;
             chomp( $matrixmakingqid );
             print $loghandle "$matrixmakingqid:\n$commandtorun\n";
             print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/snp_matrix.tsv' when job '$matrixmakingqid' is complete.\n";
