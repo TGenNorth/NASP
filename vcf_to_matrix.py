@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "David Smith"
-__version__ = "0.9.2"
+__version__ = "0.9.3"
 __email__ = "dsmith@tgen.org"
 
 
@@ -114,10 +114,8 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                     sample_call = reference_call
                     is_a_snp = False
                     sample_record = vcf_record.genotype( vcf_sample )
-                    if vcf_record.ALT[0] is not None:
+                    if vcf_record.ALT[0] is not None and sample_record.gt_bases is not None:
                         #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
-                        #if sample_record.gt_bases is None:
-                            #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
                         sample_call = sample_record.gt_bases[0] # FIXME indels
                         is_a_snp = True
                     genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )

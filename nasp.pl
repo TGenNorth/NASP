@@ -7,7 +7,7 @@ use Cwd;
 
 # Some constants for tweaking.
 # Some of these should be set dynamically... someday.
-my $naspversion = "0.9.2";
+my $naspversion = "0.9.3";
 my $finddupspath = "find_duplicates.py";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
