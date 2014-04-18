@@ -365,7 +365,7 @@ class GenomeCollection:
         matrix_line += '' + reference_call + "\t"
         call_data = { 'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0, 'callstring': '', 'covstring': '', 'propstring': '', 'called': 0, 'passcov': 0, 'passprop': 0 }
         consensus_check = {}
-        # The expensive loop
+        # The expensive loop, single threaded and runs for every sample-chromosome-position
         for genome in self._genomes:
             sample_call = genome.get_call( current_pos, None, current_contig, 'X' )
             simplified_sample_call = Genome.simple_call( sample_call )
@@ -408,7 +408,7 @@ class GenomeCollection:
         matrix_line += '' + str( call_data['A'] ) + "\t" + str( call_data['C'] ) + "\t" + str( call_data['G'] ) + "\t" + str( call_data['T'] ) + "\t" + str( call_data['indel'] ) + "\t" + str( call_data['N'] ) + "\t"
         matrix_line += '' + current_contig + "\t" + str( current_pos ) + "\t"
         dups_call = self._reference.get_dups_call( current_pos, None, current_contig )
-        if dups_call == 0:
+        if dups_call == "1":
             dups_call = True
         else:
             dups_call = False

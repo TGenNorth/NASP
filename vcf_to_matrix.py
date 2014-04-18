@@ -71,7 +71,7 @@ def check_vcf_proportion( vcf_record, sample_record, sample_coverage, sample_cou
     # varscan, reliable and documented
     elif is_a_snp and hasattr( sample_record.data, 'AD' ):
         sample_proportion = sample_record.data.AD / sample_coverage
-    elif not is_a_snp and hasattr( sample_record.data, 'RD' ):
+    elif not is_a_snp and hasattr( sample_record.data, 'RD' ) and sample_record.data.RD is not None:
         sample_proportion = sample_record.data.RD / sample_coverage
     # solsnp, undocumented
     elif 'AR' in vcf_record.INFO:
