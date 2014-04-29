@@ -40,7 +40,7 @@ def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
             contig_0_end = int( line_match.group(2) )
             contig_1_start = int( line_match.group(3) )
             contig_1_end = int( line_match.group(4) )
-            if ( current_contigs[0] != current_contigs[1] ) or ( contig_0_start != contig_1_start ):
+            if ( current_contigs[0] != current_contigs[1] ) or ( ( contig_0_start != contig_1_start ) and ( contig_0_end != contig_1_end ) ):
                 if contig_0_end < contig_0_start:
                     contig_0_end, contig_0_start = contig_0_start, contig_0_end
                 if contig_1_end < contig_1_start:
