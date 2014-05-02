@@ -8,13 +8,15 @@ __email__ = "dsmith@tgen.org"
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
+    parser.add_argument( "--mode", required=True, choices=[ 'commandline', 'xml' ], help="Data passing mode, must be set to 'commandline' or 'xml'." )
     parser.add_argument( "--reference-fasta", help="Path to input reference fasta file." )
     parser.add_argument( "--reference-dups", help="Path to input reference dups file." )
     parser.add_argument( "--input-files", nargs="+", help="Path to input VCF/fasta files for matrix conversion." )
     parser.add_argument( "--master-matrix", default="master_matrix.tsv", help="Name of master matrix to create." )
     parser.add_argument( "--filter-matrix", default="filter_matrix.tsv", help="Name of custom matrix to create." )
+    parser.add_argument( "--filter-matrix-format", help="String describing the custom format of the filter matrix." )
     parser.add_argument( "--general-stats", default="general_stats.tsv", help="Name of general statistics file to create." )
-    parser.add_argument( "--contig-stats", default="contig_stats.tsv", help="Name of contig statistics file to create." )
+    parser.add_argument( "--sample-stats", default="sample_stats.tsv", help="Name of sample statistics file to create." )
     parser.add_argument( "--minimum-coverage", type=int, default=10, help="Minimum coverage depth at a position." )
     parser.add_argument( "--minimum-proportion", type=float, default=0.9, help="Minimum proportion of reads that must match the call at a position." )
     parser.add_argument( "--num-threads", type=int, default=1, help="Number of threads to use when processing input." )
@@ -119,6 +121,8 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                         sample_call = sample_record.gt_bases[0] # FIXME indels
                         is_a_snp = True
                     genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
+                    if sample_call != 'N':
+                        genomes[vcf_sample].set_was_called( 'Y', current_pos, current_contig )
                     sample_count = len( vcf_samples )
                     sample_coverage = check_vcf_coverage( vcf_record, sample_record, sample_count )
                     if sample_coverage >= min_coverage:
@@ -225,18 +229,26 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
 def write_output_matrices( genomes, master_matrix, filter_matrix, matrix_format ):
     genomes.write_to_matrices( master_matrix, filter_matrix, matrix_format )
 
+def write_stats_data( genomes, general_stats, sample_stats ):
+    genomes.write_to_stats_files( general_stats, sample_stats )
+
 
 def main():
     commandline_args = _parse_args()
     if(commandline_args.dto_file):
         commandline_args = _parse_input_config(commandline_args)
     from nasp_objects import ReferenceGenome, GenomeCollection
+    from datetime import datetime # debug removeme
     reference = ReferenceGenome()
     import_reference( reference, commandline_args.reference_fasta, commandline_args.reference_dups )
     genomes = GenomeCollection()
     genomes.set_reference( reference )
+    print( str( datetime.now() ) )
     parse_input_files( commandline_args.input_files, commandline_args.num_threads, genomes, commandline_args.minimum_coverage, commandline_args.minimum_proportion )
-    write_output_matrices( genomes, commandline_args.master_matrix, commandline_args.filter_matrix, None )
+    print( str( datetime.now() ) )
+    write_output_matrices( genomes, commandline_args.master_matrix, commandline_args.filter_matrix, commandline_args.filter_matrix_format )
+    write_stats_data( genomes, commandline_args.general_stats, commandline_args.sample_stats )
+    print( str( datetime.now() ) )
 
 if __name__ == "__main__": main()
 

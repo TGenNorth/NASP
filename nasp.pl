@@ -647,6 +647,14 @@ sub nasp
       }
     }
   }
+  my $includemissingdata = 0;
+  $userinput = 'X';
+  while( $userinput !~ /^$|^[YNyn]/ )
+  {
+    print "\nAllow uncalled and filtered positions in the filtered matrix [N]? ";
+    $userinput = <>;
+    if( $userinput =~ /^[Yy]/ ){ $includemissingdata = 1; }
+  }
   
   # Collect fasta/fastq/bam/vcf files for the pipeline.
   # We do it now so that we can give the user feedback about what we found.
@@ -1114,11 +1122,13 @@ sub nasp
           } else
           {
             if( length( $refdupsfile ) ){ $refdupsfile = "--reference-dups " . $refdupsfile; }
-            my $commandtorun = "$matrixmakingscript --reference-fasta $referencefastafile $refdupsfile --input-files $finalfilestring --minimum-coverage $mincoverage --minimum-proportion $minproportion --master-matrix $outputfilefolder/master_matrix.tsv --filter-matrix $outputfilefolder/filter_matrix.tsv --num-threads $numcpustomakematrix \n";
+            my $filtermatrixformat = "";
+            if( $includemissingdata ){ $filtermatrixformat = "--filter-matrix-format missingdata"; }
+            my $commandtorun = "$matrixmakingscript --mode commandline --reference-fasta $referencefastafile $refdupsfile --input-files $finalfilestring --minimum-coverage $mincoverage --minimum-proportion $minproportion --master-matrix $outputfilefolder/master_matrix.tsv --filter-matrix $outputfilefolder/filter_matrix.tsv $filtermatrixformat --num-threads $numcpustomakematrix \n";
             my $matrixmakingqid = `echo "$commandtorun" | qsub -d '$outputfilefolder' -w '$outputfilefolder' -l ncpus=$numcpustomakematrix,mem=${gigsofmemtomakematrix}gb,walltime=$wallhourstomakematrix:00:00 -m ae -N 'nasp_ex_matrix' -W depend=afterok:$pipelinestartqid -W depend=afterany:$jobidstowaitfor - `;
             chomp( $matrixmakingqid );
             print $loghandle "$matrixmakingqid:\n$commandtorun\n";
-            print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/snp_matrix.tsv' when job '$matrixmakingqid' is complete.\n";
+            print "\nThe pipeline has been submitted to PBS for batch execution.\nResults can be found in '$outputfilefolder/filter_matrix.tsv' when job '$matrixmakingqid' is complete.\n";
           }
         } else { print STDERR "No call files found for matrix transformation!\n"; }
       } else { print STDERR "Unable to schedule jobs!\n$pipelinestartqid\n"; }

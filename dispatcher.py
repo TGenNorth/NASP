@@ -348,7 +348,7 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     dto_file = os.path.join(output_dir, "matrix_dto.xml")
     matrix_DTO.write_dto(matrix_parms, franken_fastas, vcf_files, dto_file)
     jobs_to_wait_for = ":".join(job_ids)
-    command = "vcf_to_matrix.py --dto-file %s --num-threads %s" % (dto_file, '12')
+    command = "vcf_to_matrix.py --mode xml --dto-file %s --num-threads %s" % (dto_file, '12')
     job_parms = {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'4', 'walltime':'96', 'work_dir':output_dir}
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'))    
     return job_id
