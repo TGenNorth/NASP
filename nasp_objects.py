@@ -538,7 +538,7 @@ class GenomeCollection:
             else:
                 custom_line += "\n"
         elif matrix_format == "missingdata":
-            if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or dups_call
+            if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or dups_call:
                 custom_line = None
             else:
                 custom_line += '' + str( call_data['callstring'] ) + "\t" + str( call_data['covstring'] ) + "\t" + str( call_data['propstring'] ) + "\n"
