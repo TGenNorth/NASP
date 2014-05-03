@@ -17,7 +17,7 @@ def main():
     commandline_args = _parse_args()
     fasta_data = Genome()
     fasta_data.import_fasta_file( commandline_args.inputfasta )
-    fasta_data.write_to_file( commandline_args.outputfasta )
+    fasta_data.write_to_fasta_file( commandline_args.outputfasta )
 
 
 if __name__ == "__main__": main()

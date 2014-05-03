@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.3"
+__version__ = "0.9.4"
 __email__ = "dlemmer@tgen.org"
 
 '''

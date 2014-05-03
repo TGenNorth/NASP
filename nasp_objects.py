@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "David Smith"
-__version__ = "0.9.3"
+__version__ = "0.9.4"
 __email__ = "dsmith@tgen.org"
 
 
@@ -347,17 +347,12 @@ class CollectionStatistics:
     def __init__( self ):
         self._contig_stats = {}
         self._sample_stats = {}
-        self._position_cache = {}
+        self._cumulative_cache = {}
 
     def _increment_by_contig( self, stat_id, contig_name ):
         if ( stat_id, contig_name ) not in self._contig_stats:
             self._contig_stats[( stat_id, contig_name )] = 0
         self._contig_stats[( stat_id, contig_name )] += 1
-
-    def _increment_by_sample( self, stat_id, sample_nickname, sample_info, cum_type ):
-        if ( stat_id, sample_nickname, sample_info, cum_type ) not in self._sample_stats:
-            self._sample_stats[( stat_id, sample_nickname, sample_info, cum_type )] = 0
-        self._sample_stats[( stat_id, sample_nickname, sample_info, cum_type )] += 1
 
     def increment_contig_stat( self, stat_id, contig_name = None ):
         self._increment_by_contig( stat_id, contig_name )
@@ -370,8 +365,44 @@ class CollectionStatistics:
             return_value = self._contig_stats[( stat_id, contig_name )]
         return return_value
 
-    def increment_sample_stat( self, stat_id, sample_nickname = None, sample_identifier = None, sample_path = None ):
-        self._increment_by_sample( stat_id, sample_nickname, ( sample_identifier, sample_path ), None )
+    def _cache_cumulative_stats( self, stat_id, sample_nickname, did_pass ):
+        if ( stat_id, sample_nickname, 't' ) not in self._cumulative_cache:
+            self._cumulative_cache[( stat_id, sample_nickname, 't' )] = 0
+            self._cumulative_cache[( stat_id, sample_nickname, 'p' )] = 0
+        self._cumulative_cache[( stat_id, sample_nickname, 't' )] += 1
+        if did_pass:
+            self._cumulative_cache[( stat_id, sample_nickname, 'p' )] += 1
+
+    def _increment_by_sample( self, stat_id, sample_nickname, sample_info, cum_type ):
+        if ( stat_id, sample_nickname, sample_info, cum_type ) not in self._sample_stats:
+            self._sample_stats[( stat_id, sample_nickname, sample_info, cum_type )] = 0
+        self._sample_stats[( stat_id, sample_nickname, sample_info, cum_type )] += 1
+
+    def record_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path, did_pass ):
+        if did_pass:
+            self._increment_by_sample( stat_id, sample_nickname, ( sample_identifier, sample_path ), None )
+        self._cache_cumulative_stats( stat_id, sample_nickname, did_pass )
+        self._cache_cumulative_stats( stat_id, None, did_pass )
+
+    def get_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path ):
+        return_value = 0 
+        if ( stat_id, sample_nickname, ( sample_identifier, sample_path ), None ) in self._contig_stats:
+            return_value = self._contig_stats[( stat_id, sample_nickname, ( sample_identifier, sample_path ), None )]
+        return return_value
+
+    def get_cumulative_stat( self, stat_id, cum_type, sample_nickname = None ):
+        return_value = 0 
+        if ( stat_id, sample_nickname, None, cum_type ) in self._contig_stats:
+            return_value = self._contig_stats[( stat_id, sample_nickname, None, cum_type )]
+        return return_value
+
+    def flush_cumulative_stat_cache( self ):
+        for ( stat_id, sample_nickname, stat_type ) in self._cumulative_cache:
+            if stat_type == 'p':
+                if self._cumulative_cache[( stat_id, sample_nickname, 'p' )] == self._cumulative_cache[( stat_id, sample_nickname, 't' )]:
+                    self._increment_by_sample( stat_id, sample_nickname, None, 'all' )
+                if self._cumulative_cache[( stat_id, sample_nickname, 'p' )] > 0:
+                    self._increment_by_sample( stat_id, sample_nickname, None, 'any' )
 
 
 class GenomeCollection:
@@ -410,8 +441,17 @@ class GenomeCollection:
     def get_contig_stat( self, stat_id, contig_name = None ):
         return self._stats.get_contig_stat( stat_id, contig_name )
 
-    def increment_sample_stat( self, stat_id, sample_nickname = None, sample_identifier = None, sample_path = None ):
-        self._stats.increment_sample_stat( stat_id, sample_nickname, sample_identifier, sample_path )
+    def record_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path, did_pass ):
+        self._stats.record_sample_stat( stat_id, sample_nickname, sample_identifier, sample_path, did_pass )
+
+    def get_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path ):
+        return self._stats.get_sample_stat( stat_id, sample_nickname, sample_identifier, sample_path )
+
+    def get_cumulative_stat( self, stat_id, cum_type, sample_nickname = None ):
+        return self._stats.get_cumulative_stat( stat_id, cum_type, sample_nickname )
+
+    def flush_cumulative_stat_cache( self ):
+        self._stats.flush_cumulative_stat_cache()
 
     # FIXME split into a larger number of smaller more testable functions
     # FIXME Some of this doesn't belong here
@@ -427,7 +467,6 @@ class GenomeCollection:
         custom_line = '' + matrix_line
         call_data = { 'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0, 'callstring': '', 'covstring': '', 'propstring': '', 'called': 0, 'passcov': 0, 'passprop': 0 }
         consensus_check = {}
-        sample_checks = {}
         # The expensive loop, single threaded and runs for every sample-analysis-contig-position
         for genome in self._genomes:
             sample_call = genome.get_call( current_pos, None, current_contig, 'X' )
@@ -437,35 +476,30 @@ class GenomeCollection:
             genome_nickname = genome.nickname()
             genome_identifier = genome.identifier()
             genome_path = genome.file_path()
-            if genome_nickname not in sample_checks:
-                sample_checks[genome_nickname] = {}
             was_called = genome.get_was_called( current_pos, current_contig )
             call_data['callstring'] += '' + was_called
             if was_called == 'Y':
                 was_called = True
                 call_data['called'] += 1
-                self.increment_sample_stat( 'was_called', genome_nickname, genome_identifier, genome_path )
             else:
                 was_called = False
-                sample_checks[genome_nickname]['notcalled'] = True
+            self.record_sample_stat( 'was_called', genome_nickname, genome_identifier, genome_path, was_called )
             passed_coverage = genome.get_coverage_pass( current_pos, current_contig )
             call_data['covstring'] += '' + passed_coverage
             if passed_coverage == 'Y' or passed_coverage == '-':
                 passed_coverage = True
                 call_data['passcov'] += 1
-                self.increment_sample_stat( 'passed_coverage_filter', genome_nickname, genome_identifier, genome_path )
             else:
                 passed_coverage = False
-                sample_checks[genome_nickname]['failcov'] = True
+            self.record_sample_stat( 'passed_coverage_filter', genome_nickname, genome_identifier, genome_path, passed_coverage )
             passed_proportion = genome.get_proportion_pass( current_pos, current_contig )
             call_data['propstring'] += '' + passed_proportion
             if passed_proportion == 'Y' or passed_proportion == '-':
                 passed_proportion = True
                 call_data['passprop'] += 1
-                self.increment_sample_stat( 'passed_proportion_filter', genome_nickname, genome_identifier, genome_path )
             else:
                 passed_proportion = False
-                sample_checks[genome_nickname]['failprop'] = True
+            self.record_sample_stat( 'passed_proportion_filter', genome_nickname, genome_identifier, genome_path, passed_proportion )
             if was_called and passed_coverage and passed_proportion:
                 if genome_nickname in consensus_check:
                     if consensus_check[genome_nickname] != simplified_sample_call:
@@ -488,15 +522,11 @@ class GenomeCollection:
                     custom_line += "X\t"
                 else:
                     custom_line += "N\t"
-        for genome_nickname in sample_checks:
+        for genome_nickname in consensus_check:
             if consensus_check[genome_nickname] != 'N':
-                self.increment_sample_stat( 'consensus', genome_nickname )
-            if 'notcalled' not in sample_checks[genome_nickname]:
-                self.increment_sample_stat( 'was_called', genome_nickname )
-            if 'failcov' not in sample_checks[genome_nickname]:
-                self.increment_sample_stat( 'passed_coverage_filter', genome_nickname )
-            if 'failprop' not in sample_checks[genome_nickname]:
-                self.increment_sample_stat( 'passed_proportion_filter', genome_nickname )
+                self.record_sample_stat( 'consensus', genome_nickname, None, None, True )
+            else:
+                self.record_sample_stat( 'consensus', genome_nickname, None, None, False )
         # FIXME The hard way? Why?
         matrix_line += '' + str( call_data['snpcall'] ) + "\t" + str( call_data['indelcall'] ) + "\t" + str( call_data['refcall'] ) + "\t"
         custom_line += '' + str( call_data['snpcall'] ) + "\t" + str( call_data['indelcall'] ) + "\t" + str( call_data['refcall'] ) + "\t"
@@ -542,6 +572,7 @@ class GenomeCollection:
                 custom_line = None
             else:
                 custom_line += '' + str( call_data['callstring'] ) + "\t" + str( call_data['covstring'] ) + "\t" + str( call_data['propstring'] ) + "\n"
+        self.flush_cumulative_stat_cache()
         return ( matrix_line, custom_line )
 
     def _send_to_matrix_handles( self, master_handle, custom_handle, matrix_format ):

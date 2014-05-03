@@ -7,7 +7,7 @@ use Cwd;
 
 # Some constants for tweaking.
 # Some of these should be set dynamically... someday.
-my $naspversion = "0.9.3";
+my $naspversion = "0.9.4";
 my $finddupspath = "find_duplicates.py";
 my $gigsofmemforindex = "2";
 my $wallhoursforindex = "1";
@@ -64,6 +64,7 @@ my $wallhoursfordistancecalc = "36";
 my $distancecalcscript = "matrix_distance.pl";
 my $nucmerpath = "nucmer";
 my $deltafilterpath = "delta-filter";
+my $fastaformatter = "format_fasta.py";
 
 # Standalone executables will be checked for in the
 # $PATH by default, using the normal methods.
@@ -849,12 +850,13 @@ sub nasp
       if( $findvcfs ){ print "\n    " . join( "\n    ", @vcffilelist ) . "\n"; } else { print "none\n"; }
       print $loghandle "\nCommands submitted:\n\n";
 
-      # This is the main core of the pipeline.
+      # This is the dispatcher.
       # This section prepares the jobs and then submits them to PBS.
       # From there, this script exits and relies on the downstream components to finish the job.
       if( !( -e( $outputfilefolder ) ) ){ mkdir( $outputfilefolder ); }
       if( !( -e( "$outputfilefolder/reference" ) ) ){ mkdir( "$outputfilefolder/reference" ); }
-      `ln -s -f $referencefastafile $outputfilefolder/reference/reference.fasta`;
+      #`ln -s -f $referencefastafile $outputfilefolder/reference/reference.fasta`;
+      my $indexcommand = "$fastaformatter --inputfasta $referencefastafile --outputfasta $outputfilefolder/reference/reference.fasta \n";
       $referencefastafile = "$outputfilefolder/reference/reference.fasta";
       if( scalar( @fastafilelist ) && $findexternalfastas ){ mkdir( "$outputfilefolder/external" ); }
       if( scalar( @fastqfilelist ) )
@@ -873,7 +875,6 @@ sub nasp
         if( $runsamtools && !( -e( "$outputfilefolder/samtools" ) ) ){ mkdir( "$outputfilefolder/samtools" ); }
       }
   
-      my $indexcommand = "";
       if( ( $runbwa || $runbwamem ) && ( scalar( @fastqfilelist ) >= 1 ) ){ $indexcommand .= "$bwapath index $referencefastafile \n"; }
       if( $runnovo && ( scalar( @fastqfilelist ) >= 1 ) ){ $indexcommand .= "$novoindexpath $referencefastafile.idx $referencefastafile \n"; }
       if( $runsnap && ( scalar( @fastqfilelist ) >= 1 ) ){ $indexcommand .= "$snappath index $referencefastafile $outputfilefolder/reference/snap \n"; }
@@ -1148,7 +1149,8 @@ sub _submit_external_fasta
   my $fastafilename = shift();
   my $fastafilenickname = shift();
   my $loghandle = shift();
-  my $commandtorun = "$convertexternalpath --nucmerpath $nucmerpath --nucmerargs '$defaultexternalnucmerargs' --deltafilterpath $deltafilterpath --reference $referencefastafile --external $inputfilefolder/$fastafilename \n";
+  my $commandtorun = "$fastaformatter --inputfasta $inputfilefolder/$fastafilename --outputfasta $outputfilefolder/external/$fastafilenickname.fasta \n";
+  $commandtorun .= "$convertexternalpath --nucmerpath $nucmerpath --nucmerargs '$defaultexternalnucmerargs' --deltafilterpath $deltafilterpath --reference $referencefastafile --external $outputfilefolder/external/$fastafilenickname.fasta \n";
   my $snpcallerqid = `echo "$commandtorun" | qsub -d '$outputfilefolder/external' -w '$outputfilefolder/external' -l ncpus=1,mem=${gigsofmemforexternal}gb,walltime=$wallhoursforexternal:00:00 -m a -N 'nasp_external_$fastafilename' -W depend=afterok:$jobtodependon - `;
   chomp( $snpcallerqid );
   print $loghandle "$snpcallerqid:\n$commandtorun\n";
