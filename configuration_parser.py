@@ -97,7 +97,7 @@ def _parse_files( files_node ):
 def _get_application( app_node, name=None ):
     name = name or app_node.get('name')
     path = app_node.get('path')
-    args = app_node.find('AdditionalArgs').text
+    args = app_node.find('AdditionalArgs').text or ""
     job_parms = {}
     job_node = app_node.find('JobParameters')
     if ( job_node is not None ):

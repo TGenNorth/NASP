@@ -34,6 +34,7 @@ def _parse_files( node ):
         input_files.append("%s,%s,::%s" % ("frankenfasta", frankenfasta.get("aligner"), frankenfasta.text))
     for vcf in node.iter("vcf"):
         input_files.append("%s,%s,%s::%s" % ("vcf", vcf.get("aligner"), vcf.get("snpcaller"), vcf.text))
+    return input_files
 
 def write_dto( matrix_parms, franken_fastas, vcf_files, xml_file ):
     root = ElementTree.Element("matrix_data")
