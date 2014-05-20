@@ -42,15 +42,13 @@ def _index_reference( configuration ):
     output_folder = configuration["output_folder"]
     ref_path = configuration["reference"][1]
     ref_folder = os.path.join(output_folder, "reference")
-    index_commands = ['sleep 1'] #In case there is nothing to do, make sure we still have a command to run
     if not os.path.exists(ref_folder):
-        #os.makedirs(ref_folder, exist_ok=True)
         os.makedirs(ref_folder)
-    #Create a symlink to the reference as $output_folder/reference/reference.fasta. Replace it if it already exists.
+    #Copy the reference as $output_folder/reference/reference.fasta, verifying its format first. Replace it if it already exists.
     reference = os.path.join(ref_folder, "reference.fasta")
     if os.path.exists(reference):
         os.remove(reference)
-    os.symlink(ref_path, reference)
+    index_commands = ["format_fasta.py --inputfasta %s --outputfasta %s" % (ref_path, reference)] 
     
     #Gather all of the index commands that need to be run
     bwa_done = False
@@ -289,10 +287,13 @@ def _convert_external_genome( assembly, configuration, index_job_id, reference )
     (nucmer_path, nucmer_args) = configuration["dup_finder"][1:3]
     (name, fasta) = assembly
     extraargs = "\'%s\'" % args
-    command = "convert_external_genome.py --nucmerpath %s --nucmerargs %s --deltafilterpath %s --reference %s --external %s --name %s" % (nucmer_path, extraargs, path, reference, fasta, name)
     work_dir = os.path.join(configuration["output_folder"], "external")
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
+    new_fasta = os.path.join(work_dir, os.path.basename(fasta))
+    command_parts = ["format_fasta.py --inputfasta %s --outputfasta %s" % (fasta, new_fasta)]
+    command_parts.append("convert_external_genome.py --nucmerpath %s --nucmerargs %s --deltafilterpath %s --reference %s --external %s --name %s" % (nucmer_path, extraargs, path, reference, fasta, name))
+    command = "\n".join(command_parts)
     final_file = os.path.join(work_dir, "%s.frankenfasta" % name)
     job_parms['name'] = "nasp_%s_%s" % (tool, name)
     job_parms['work_dir'] = work_dir
