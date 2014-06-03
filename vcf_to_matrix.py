@@ -37,7 +37,6 @@ def _parse_input_config(commandline_args):
     commandline_args.minimum_coverage = int(matrix_parms['minimum-coverage'])
     commandline_args.minimum_proportion = float(matrix_parms['minimum-proportion'])
     commandline_args.input_files = input_files
-    print(input_files)
     return commandline_args
 
 def import_reference( reference, reference_path, dups_path ):
