@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NaspInputData>
+	<Options>
+		<OutputFolder>/home/dlemmer/nasp_test</OutputFolder>
+		<RunName>NASPTestRun</RunName>
+		<Reference name="MRSA252" path="/scratch/dlemmer/nasp_test/MRSA252.fasta">
+			<FindDups>true</FindDups>
+		</Reference>
+		<Filters>
+			<CoverageFilter>10</CoverageFilter>
+			<ProportionFilter>0.9</ProportionFilter>
+		</Filters>
+		<JobSubmitter>qsub</JobSubmitter>
+	</Options>
+	<Files>
+		<ReadFolder path="/scratch/dlemmer/nasp_test/reads">
+		</ReadFolder>
+		<AssemblyFolder path="/scratch/dlemmer/nasp_test/assemblies">
+			<Assembly sample="ST398">ST398.fasta</Assembly>
+		</AssemblyFolder>
+<!--		<AlignmentFolder path="/scratch/dlemmer/nasp_test/bwa">
+			<Alignment sample="USA100-OR-10_bwa">USA100-OR-10-bwa.bam</Alignment>
+			<Alignment sample="USA300-OR-54_bwa">USA300-OR-54-bwa.bam</Alignment>
+			<Alignment sample="USA1000-CA-629_bwa">USA1000-CA-629-bwa.bam</Alignment>
+			<Alignment sample="USA100-CA-126_bwa">USA100-CA-126-bwa.bam</Alignment>
+			<Alignment sample="USA800-NY-313_bwa">USA800-NY-313-bwa.bam</Alignment>
+		</AlignmentFolder>
+		<VCFFolder path="/scratch/dlemmer/nasp_test/gatk">
+			<VCFFile sample="USA100-OR-10_bwa_gatk">USA100-OR-10-bwa-gatk.vcf</VCFFile>
+			<VCFFile sample="USA300-OR-54_bwa_gatk">USA300-OR-54-bwa-gatk.vcf</VCFFile>
+			<VCFFile sample="USA1000-CA-629_bwa_gatk">USA1000-CA-629-bwa-gatk.vcf</VCFFile>
+			<VCFFile sample="USA100-CA-126_bwa_gatk">USA100-CA-126-bwa-gatk.vcf</VCFFile>
+			<VCFFile sample="USA800-NY-313_bwa_gatk">USA800-NY-313-bwa-gatk.vcf</VCFFile>
+		</VCFFolder> -->
+	</Files>
+	<ExternalApplications>
+		<Picard path="/packages/tnorth/bin/">
+			<AdditionalArgs></AdditionalArgs>
+		</Picard>
+		<Samtools path="/packages/tnorth/bin/samtools">
+			<AdditionalArgs></AdditionalArgs>
+		</Samtools>
+		<DupFinder path="/packages/tnorth/bin/nucmer">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>1</Walltime>
+			</JobParameters>
+		</DupFinder>
+		<AssemblyImporter path="/packages/tnorth/bin/delta-filter">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>1</Walltime>
+			</JobParameters>
+		</AssemblyImporter>
+		<Aligner name="SNAP" path="/packages/tnorth/bin/snap">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>10</MemRequested>
+				<NumCPUs>4</NumCPUs>
+				<Walltime>36</Walltime>
+			</JobParameters>
+		</Aligner>
+		<Aligner name="Novoalign" path="/packages/tnorth/bin/novoalign">
+			<AdditionalArgs>-r all</AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>10</MemRequested>
+				<NumCPUs>4</NumCPUs>
+				<Walltime>36</Walltime>
+			</JobParameters>
+		</Aligner>
+		<Aligner name="BWA sampe" path="/packages/tnorth/bin/bwa">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>10</MemRequested>
+				<NumCPUs>4</NumCPUs>
+				<Walltime>36</Walltime>
+			</JobParameters>
+		</Aligner>
+		<Aligner name="BWA mem" path="/packages/tnorth/bin/bwa">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>10</MemRequested>
+				<NumCPUs>4</NumCPUs>
+				<Walltime>36</Walltime>
+			</JobParameters>
+		</Aligner>
+		<SNPCaller name="GATK" path="/packages/tnorth/bin/GenomeAnalysisTK.jar">
+			<AdditionalArgs>-stand_call_conf 100 -stand_emit_conf 100</AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>10</MemRequested>
+				<NumCPUs>4</NumCPUs>
+				<Walltime>36</Walltime>
+			</JobParameters>
+		</SNPCaller>			
+		<SNPCaller name="SolSNP" path="/packages/tnorth/bin/SolSNP.jar">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>10</MemRequested>
+				<NumCPUs>4</NumCPUs>
+				<Walltime>36</Walltime>
+			</JobParameters>
+		</SNPCaller>			
+		<SNPCaller name="VarScan" path="/packages/tnorth/bin/VarScan.jar">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>24</Walltime>
+			</JobParameters>
+		</SNPCaller>			
+		<SNPCaller name="Samtools" path="/packages/tnorth/bin/bcftools">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>24</Walltime>
+			</JobParameters>
+		</SNPCaller>			
+	</ExternalApplications>
+</NaspInputData>
