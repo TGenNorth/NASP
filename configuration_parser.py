@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.4"
+__version__ = "0.9.5"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -9,6 +9,8 @@ Created on Feb 18, 2014
 
 @author: dlemmer
 '''
+
+import logging
 
 configuration = {}
 read_list = []
@@ -97,7 +99,7 @@ def _parse_files( files_node ):
 def _get_application( app_node, name=None ):
     name = name or app_node.get('name')
     path = app_node.get('path')
-    args = app_node.find('AdditionalArgs').text
+    args = app_node.find('AdditionalArgs').text or ""
     job_parms = {}
     job_node = app_node.find('JobParameters')
     if ( job_node is not None ):

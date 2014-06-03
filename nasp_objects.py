@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 __author__ = "David Smith"
-__version__ = "0.9.4"
+__version__ = "0.9.5"
 __email__ = "dsmith@tgen.org"
+
+import logging
 
 
 class GenomeStatus:
@@ -412,6 +414,11 @@ class GenomeCollection:
         self._genomes = []
         self._stats = CollectionStatistics()
 
+    # To preserve sample-analysis order across different runs
+    @staticmethod
+    def _get_key( genome ):
+        return genome.identifier()
+
     def set_reference( self, reference ):
         self._reference = reference
 
@@ -423,6 +430,7 @@ class GenomeCollection:
 
     def add_genome( self, genome ):
         self._genomes.append( genome )
+        self._genomes.sort( key=GenomeCollection._get_key )
 
     def set_current_contig( self, contig_name ):
         self._reference.set_current_contig( contig_name )
@@ -634,6 +642,154 @@ class GenomeCollection:
         sample_handle.close()
         #print( self._stats._contig_stats )
         #print( self._stats._sample_stats )
+
+
+class VCFRecord:
+
+    def __init__( self, file_path ):
+        self._file_path = file_path
+        self._file_handle = open( self._file_path, 'r' )
+        self._header_list = []
+        self._sample_list = []
+        self._current_record = {}
+        self._get_header_map()
+
+    def _get_header_map( self ):
+        current_line = ''
+        while current_line[0:6] != "#CHROM":
+            current_line = self._file_handle.readline()
+        header_list = current_line.rstrip()[1:].split( "\t" )
+        sample_headers_started = False
+        for current_header in header_list:
+            self._header_list.append( current_header )
+            if sample_headers_started:
+                self._sample_list.append( current_header )
+            elif current_header == "FORMAT":
+                sample_headers_started = True
+        if sample_headers_started == False:
+            self._sample_list.append( 'vcf_sample' )
+        #print( self._header_list )
+        #print( self._sample_list )
+
+    def _get_record_alts( self ):
+        self._current_record['alts'] = [ self._current_record['global']['REF'] ]
+        if self._current_record['global']['ALT'] != '.':
+            self._current_record['alts'] += self._current_record['global']['ALT'].split( ',' )
+
+    def _get_record_info( self ):
+        self._current_record['info'] = {}
+        info_strings = self._current_record['global']['INFO'].split( ';' )
+        for info_string in info_strings:
+            info_keyval = info_string.split( '=', 1 )
+            if len( info_keyval ) > 1:
+                self._current_record['info'][info_keyval[0]] = info_keyval[1]
+            else:
+                self._current_record['info'][info_keyval[0]] = None
+
+    def _get_record_samples( self ):
+        if 'FORMAT' in self._current_record['global']:
+            self._current_record['samples'] = {}
+            sample_header = self._current_record['global']['FORMAT'].split( ':' )
+            for current_sample in self._sample_list:
+                self._current_record['samples'][current_sample] = dict( zip( sample_header, self._current_record['global'][current_sample].split( ':' ) ) )
+
+    def fetch_next_record( self ):
+        current_line = "#"
+        while current_line[0:1] == "#":
+            current_line = self._file_handle.readline()
+        return_value = False
+        if current_line != '':
+            record_list = current_line.rstrip().split( "\t" )
+            self._current_record['global'] = dict( zip( self._header_list, record_list ) )
+            self._get_record_alts()
+            self._get_record_info()
+            self._get_record_samples()
+            return_value = True
+        #print( self._current_record )
+        return return_value
+
+    def get_samples( self ):
+        return self._sample_list
+
+    def get_contig( self ):
+        return self._current_record['global']['CHROM']
+
+    def get_position( self ):
+        return int( self._current_record['global']['POS'] )
+
+    def get_reference_call( self ):
+        return self._current_record['global']['REF']
+
+    def get_sample_call( self, current_sample ):
+        return_value = None
+        if len( self._current_record['alts'] ) == 1:
+            return_value = self._current_record['alts'][0]
+        elif 'FORMAT' in self._current_record['global']:
+            if 'GT' in self._current_record['samples'][current_sample]:
+                alt_number = self._current_record['samples'][current_sample]['GT'].split( '/', 1 )[0].split( '|', 1 )[0]
+                if alt_number.isdigit():
+                    return_value = self._current_record['alts'][int( alt_number )]
+                    # OMG varscan
+                    if len( self._current_record['global']['REF'] ) > 1 and ( len( self._current_record['global']['REF'] ) - 1 ) == len( return_value ) and self._current_record['global']['REF'][:len( return_value )] != return_value and self._current_record['global']['REF'][-len( return_value ):] == return_value:
+                        return_value = self._current_record['alts'][0]
+        elif len( self._current_record['alts'] ) > 1:
+            return_value = self._current_record['alts'][1]
+        return return_value
+
+    def get_coverage( self, current_sample ):
+        sample_coverage = None
+        if 'FORMAT' in self._current_record['global'] and 'DP' in self._current_record['samples'][current_sample] and self._current_record['samples'][current_sample]['DP'] is not None and self._current_record['samples'][current_sample]['DP'].isdigit():
+            sample_coverage = int( self._current_record['samples'][current_sample]['DP'] )
+        elif 'DP' in self._current_record['info'] and self._current_record['info']['DP'] is not None and self._current_record['info']['DP'].isdigit():
+            sample_coverage = int( self._current_record['info']['DP'] ) / len( self._sample_list )
+        elif 'ADP' in self._current_record['info'] and self._current_record['info']['ADP'] is not None and self._current_record['info']['ADP'].isdigit():
+            sample_coverage = int( self._current_record['info']['ADP'] ) / len( self._sample_list )
+        return sample_coverage
+    
+    def get_proportion( self, current_sample, sample_coverage, is_a_snp ):
+        sample_proportion = None
+        if 'FORMAT' in self._current_record['global'] and 'AD' in self._current_record['samples'][current_sample]:
+            call_depths = self._current_record['samples'][current_sample]['AD'].split( ',' )
+        # gatk, reliable and documented
+            if len( call_depths ) > 1:
+                alt_number = self._current_record['samples'][current_sample]['GT'].split( '/', 1 )[0].split( '|', 1 )[0]
+                if alt_number.isdigit():
+                   sample_proportion = int( call_depths[int( alt_number )] ) / sample_coverage
+        # varscan, reliable and documented
+            elif is_a_snp:
+                sample_proportion = int( call_depths[0] ) / sample_coverage
+            elif not is_a_snp and 'RD' in self._current_record['samples'][current_sample]:
+                sample_proportion = int( self._current_record['samples'][current_sample]['RD'] ) / sample_coverage
+        # solsnp, undocumented, no multi-sample support
+        elif 'AR' in self._current_record['info']:
+            sample_proportion = float( self._current_record['info']['AR'] )
+            if not is_a_snp:
+                sample_proportion = 1 - sample_proportion
+        # samtools, estimate, dubious accuracy
+        elif 'DP4' in self._current_record['info']:
+            call_depths = self._current_record['info']['DP4'].split( ',' )
+            if is_a_snp:
+                sample_proportion = ( int( call_depths[2] ) + int( call_depths[3] ) ) / ( sample_coverage * len( self._sample_list ) )
+            else:
+                sample_proportion = ( int( call_depths[0] ) + int( call_depths[1] ) ) / ( sample_coverage * len( self._sample_list ) )
+        return sample_proportion
+    
+    def get_sample_info( self, current_sample ):
+        sample_info = {}
+        sample_info['call'] = self.get_sample_call( current_sample )
+        sample_info['was_called'] = False
+        sample_info['is_a_snp'] = False
+        if sample_info['call'] is not None and sample_info['call'][0] != 'N':
+            sample_info['was_called'] = True
+            if Genome.simple_call( sample_info['call'][0] ) != Genome.simple_call( self._current_record['global']['REF'] ):
+                sample_info['is_a_snp'] = True
+        sample_info['is_a_snp']
+        # FIXME indels
+        sample_info['is_an_insert'] = None
+        sample_info['is_a_delete'] = None
+        sample_info['coverage'] = self.get_coverage( current_sample )
+        sample_info['proportion'] = self.get_proportion( current_sample, sample_info['coverage'], sample_info['is_a_snp'] )
+        return sample_info
 
 
 # FIXME user feedback

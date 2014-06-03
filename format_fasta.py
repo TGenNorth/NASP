@@ -4,6 +4,8 @@ __author__ = "David Smith"
 __version__ = "1"
 __email__ = "dsmith@tgen.org"
 
+import logging
+
 
 def _parse_args():
     import argparse

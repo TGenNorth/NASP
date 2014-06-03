@@ -4,6 +4,7 @@ Created on Nov 19, 2013
 @author: dlemmer
 '''
 
+import logging
 import convert_external_genome
 import unittest
 import os

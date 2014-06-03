@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 __author__ = "David Smith"
-__version__ = "0.9.4"
+__version__ = "0.9.5"
 __email__ = "dsmith@tgen.org"
+
+import logging
 
 
 def _parse_args():

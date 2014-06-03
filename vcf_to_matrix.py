@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 __author__ = "David Smith"
-__version__ = "0.9.4"
+__version__ = "0.9.5"
 __email__ = "dsmith@tgen.org"
+
+import logging
 
 
 def _parse_args():
@@ -32,9 +34,10 @@ def _parse_input_config(commandline_args):
     commandline_args.filter_matrix = matrix_parms['filter-matrix']
     commandline_args.general_stats = matrix_parms['general-stats']
     commandline_args.contig_stats = matrix_parms['contig-stats']
-    commandline_args.minimum_coverage = matrix_parms['minimum-coverage']
-    commandline_args.minimum_proportion = matrix_parms['minimum-proportion']
-    commandline_args.input_files = " ".join(input_files)
+    commandline_args.minimum_coverage = int(matrix_parms['minimum-coverage'])
+    commandline_args.minimum_proportion = float(matrix_parms['minimum-proportion'])
+    commandline_args.input_files = input_files
+    print(input_files)
     return commandline_args
 
 def import_reference( reference, reference_path, dups_path ):
@@ -93,52 +96,97 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
     genomes = {}
     file_path = get_file_path( input_file )
     with open( file_path, 'r' ) as vcf_filehandle:
-        from nasp_objects import VCFGenome, Genome, ReferenceCallMismatch
-        import vcf
-        vcf_data_handle = vcf.Reader( vcf_filehandle )
-        vcf_samples = vcf_data_handle.samples
+        from nasp_objects import VCFGenome, Genome, ReferenceCallMismatch, VCFRecord
+        #import vcf
+        vcf_record = VCFRecord( file_path )
+        #vcf_data_handle = vcf.Reader( vcf_filehandle )
+        vcf_samples = vcf_record.get_samples()
         #print( vcf_samples )
         for vcf_sample in vcf_samples:
             genomes[vcf_sample] = VCFGenome()
             set_genome_metadata( genomes[vcf_sample], input_file )
             genomes[vcf_sample].set_nickname( vcf_sample )
-        for vcf_record in vcf_data_handle:
-            current_contig = vcf_record.CHROM
-            current_pos = vcf_record.POS
-            if vcf_record.POS <= reference.get_contig_length( current_contig ):
+        while vcf_record.fetch_next_record():
+            current_contig = vcf_record.get_contig()
+            current_pos = vcf_record.get_position()
+            if current_pos <= reference.get_contig_length( current_contig ):
                 reference_call = reference.get_call( current_pos, None, current_contig )
                 simplified_refcall = Genome.simple_call( reference_call )
-                #print( referencecall, vcf_record.REF )
-                if ( simplified_refcall != 'N' ) and ( simplified_refcall != Genome.simple_call( vcf_record.REF[0] ) ):
+                if ( simplified_refcall != 'N' ) and ( simplified_refcall != Genome.simple_call( vcf_record.get_reference_call()[0] ) ):
                     raise ReferenceCallMismatch()
-                #print( vcf_record, vcf_record.INFO )
                 for vcf_sample in vcf_samples:
-                    sample_call = reference_call
-                    is_a_snp = False
-                    sample_record = vcf_record.genotype( vcf_sample )
-                    if vcf_record.ALT[0] is not None and sample_record.gt_bases is not None:
-                        #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
-                        sample_call = sample_record.gt_bases[0] # FIXME indels
-                        is_a_snp = True
-                    genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
-                    if sample_call != 'N':
+                    sample_info = vcf_record.get_sample_info( vcf_sample )
+                    if sample_info['call'] is not None:
+                        genomes[vcf_sample].set_call( sample_info['call'], current_pos, 'X', current_contig )
+                    if sample_info['was_called']:
                         genomes[vcf_sample].set_was_called( 'Y', current_pos, current_contig )
-                    sample_count = len( vcf_samples )
-                    sample_coverage = check_vcf_coverage( vcf_record, sample_record, sample_count )
-                    if sample_coverage >= min_coverage:
-                        genomes[vcf_sample].set_coverage_pass( 'Y', current_pos, current_contig )
-                    elif sample_coverage >= 0:
-                        genomes[vcf_sample].set_coverage_pass( 'N', current_pos, current_contig )
-                    sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage, sample_count, is_a_snp )
-                    if sample_proportion >= min_proportion:
-                        genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
-                    elif sample_proportion >= 0:
-                        genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
-                    elif sample_proportion == -1 and not is_a_snp:
+                    if sample_info['coverage'] is not None:
+                        if sample_info['coverage'] >= min_coverage:
+                            genomes[vcf_sample].set_coverage_pass( 'Y', current_pos, current_contig )
+                        else:
+                            genomes[vcf_sample].set_coverage_pass( 'N', current_pos, current_contig )
+                    if sample_info['proportion'] is not None:
+                        if sample_info['proportion'] >= min_proportion:
+                            genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
+                        else:
+                            genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
+                    elif not sample_info['is_a_snp']:
                         genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
-                    #print( current_pos, sample_coverage, min_coverage, genomes[vcf_sample]._passed_coverage._status_data )
-                    #print( current_pos, sample_proportion, min_proportion, genomes[vcf_sample]._passed_proportion._status_data )
-        vcf_filehandle.close()
+        #for vcf_record in vcf_data_handle:
+        #    current_contig = vcf_record.CHROM
+        #    current_pos = vcf_record.POS
+        #    if vcf_record.POS <= reference.get_contig_length( current_contig ):
+        #        reference_call = reference.get_call( current_pos, None, current_contig )
+        #        simplified_refcall = Genome.simple_call( reference_call )
+        #        #print( referencecall, vcf_record.REF )
+        #        if ( simplified_refcall != 'N' ) and ( simplified_refcall != Genome.simple_call( vcf_record.REF[0] ) ):
+        #            raise ReferenceCallMismatch()
+        #        #print( vcf_record, vcf_record.INFO )
+        #        for vcf_sample in vcf_samples:
+        #            sample_call = reference_call
+        #            is_a_snp = False
+        #            sample_record = vcf_record.genotype( vcf_sample )
+        #            if vcf_record.ALT[0] is not None and sample_record.gt_bases is not None:
+        #                #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
+        #                sample_call = sample_record.gt_bases[0] # FIXME indels
+        #                is_a_snp = True
+        #            debug_check_val = genomes[vcf_sample].get_call( current_pos, None, current_contig )
+        #            if debug_check_val != sample_call:
+        #                print( "OMG! " + file_path + str( debug_check_val ) + str( sample_call ) + str( current_pos ) )
+        #            genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
+        #            if sample_call != 'N':
+        #                genomes[vcf_sample].set_was_called( 'Y', current_pos, current_contig )
+        #            sample_count = len( vcf_samples )
+        #            sample_coverage = check_vcf_coverage( vcf_record, sample_record, sample_count )
+        #            if sample_coverage >= min_coverage:
+        #                debug_check_val = genomes[vcf_sample].get_coverage_pass( current_pos, current_contig )
+        #                if debug_check_val != 'Y':
+        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'Y' + str( current_pos ) )
+        #                genomes[vcf_sample].set_coverage_pass( 'Y', current_pos, current_contig )
+        #            elif sample_coverage >= 0:
+        #                debug_check_val = genomes[vcf_sample].get_coverage_pass( current_pos, current_contig )
+        #                if debug_check_val != 'N':
+        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'N' + str( current_pos ) )
+        #                genomes[vcf_sample].set_coverage_pass( 'N', current_pos, current_contig )
+        #            sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage, sample_count, is_a_snp )
+        #            if sample_proportion >= min_proportion:
+        #                debug_check_val = genomes[vcf_sample].get_proportion_pass( current_pos, current_contig )
+        #                if debug_check_val != 'Y':
+        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'Y' + str( current_pos ) )
+        #                genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
+        #            elif sample_proportion >= 0:
+        #                debug_check_val = genomes[vcf_sample].get_proportion_pass( current_pos, current_contig )
+        #                if debug_check_val != 'N':
+        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'N' + str( current_pos ) )
+        #                genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
+        #            elif sample_proportion == -1 and not is_a_snp:
+        #                debug_check_val = genomes[vcf_sample].get_proportion_pass( current_pos, current_contig )
+        #                if debug_check_val != '-':
+        #                    print( "OMG! " + file_path + str( debug_check_val ) + '-' + str( current_pos ) )
+        #                genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
+        #            #print( current_pos, sample_coverage, min_coverage, genomes[vcf_sample]._passed_coverage._status_data )
+        #            #print( current_pos, sample_proportion, min_proportion, genomes[vcf_sample]._passed_proportion._status_data )
+        #vcf_filehandle.close()
     return genomes.values()
 
 # FIXME These three functions should be combined?
@@ -177,9 +225,9 @@ def set_genome_metadata( genome, input_file ):
 
 def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q, finish_q ):
     num_genomes = 0
-    try:
-        while not input_q.empty():
-            input_file = input_q.get()[0]
+    while not input_q.empty():
+        input_file = input_q.get()[0]
+        try:
             new_genomes = []
             file_type = determine_file_type( input_file )
             if file_type == "frankenfasta":
@@ -189,12 +237,8 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             for new_genome in new_genomes:
                 output_q.put( [ new_genome ] )
                 num_genomes += 1
-    except:
-        finish_q.put( num_genomes )
-        input_q.close()
-        output_q.close()
-        finish_q.close()
-        raise
+        except:
+            logging.exception( "Unable to read in data from '{}'!".format( get_file_path( input_file ) ) )
     finish_q.put( num_genomes )
     input_q.close()
     output_q.close()
@@ -237,6 +281,7 @@ def main():
     commandline_args = _parse_args()
     if(commandline_args.dto_file):
         commandline_args = _parse_input_config(commandline_args)
+    logging.basicConfig( level=logging.WARNING )
     from nasp_objects import ReferenceGenome, GenomeCollection
     from datetime import datetime # debug removeme
     reference = ReferenceGenome()

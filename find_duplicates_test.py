@@ -5,6 +5,7 @@ Created on Oct 18, 2013
 
 @author: dlemmer
 '''
+import logging
 import find_duplicates
 import unittest
 import os
