@@ -658,7 +658,7 @@ class VCFRecord:
         current_line = ''
         while current_line[0:6] != "#CHROM":
             current_line = self._file_handle.readline()
-            if current_line = '':
+            if current_line == '':
                 raise MalformedInputFile()
         header_list = current_line.rstrip()[1:].split( "\t" )
         sample_headers_started = False
