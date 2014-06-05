@@ -222,10 +222,9 @@ def set_genome_metadata( genome, input_file ):
         genome.set_file_path( input_file )
     #print( genome.identifier() )
 
-def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q, finish_q ):
-    num_genomes = 0
-    while not input_q.empty():
-        input_file = input_q.get()[0]
+def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q ):
+    input_file = input_q.get()
+    while input_file is not None:
         try:
             new_genomes = []
             file_type = determine_file_type( input_file )
@@ -234,39 +233,37 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             elif file_type == "vcf":
                 new_genomes = read_vcf_file( reference, min_coverage, min_proportion, input_file )
             for new_genome in new_genomes:
-                output_q.put( [ new_genome ] )
-                num_genomes += 1
+                output_q.put( new_genome )
         except:
             logging.exception( "Unable to read in data from '{0}'!".format( get_file_path( input_file ) ) )
-    finish_q.put( num_genomes )
-    input_q.close()
-    output_q.close()
-    finish_q.close()
+        input_file = input_q.get()
+    output_q.put( None )
 
 def parse_input_files( input_files, num_threads, genomes, min_coverage, min_proportion ):
     from multiprocessing import Process, Queue
-    #from Queue import Queue
+    #from queue import Queue
     from time import sleep
     input_q = Queue()
     output_q = Queue()
-    finish_q = Queue()
     for input_file in input_files:
-        input_q.put( [ input_file ] )
-    sleep( 1 )
+        input_q.put( input_file )
     if num_threads > input_q.qsize():
         num_threads = input_q.qsize()
+    sleep( 1 )
     thread_list = []
     for current_thread in range( num_threads ):
-        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q, finish_q ] )
-        #manage_input_thread( genomes.reference(), min_coverage, min_proportion, input_q, output_q, finish_q )
+        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q ] )
+        #manage_input_thread( genomes.reference(), min_coverage, min_proportion, input_q, output_q )
         thread_list.append( current_thread )
+        input_q.put( None )
         current_thread.start()
-    num_genomes = 0
-    for current_thread in thread_list:
-        num_genomes += finish_q.get()
     sleep( 1 )
-    for genome_num in range( num_genomes ):
-        genomes.add_genome( output_q.get()[0] )
+    while num_threads > 0:
+        new_genome = output_q.get()
+        if new_genome is None:
+            num_threads -= 1
+        else:
+            genomes.add_genome( new_genome )
     sleep( 1 )
     for current_thread in thread_list:
         current_thread.join()
