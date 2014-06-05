@@ -252,10 +252,10 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
     sleep( 1 )
     thread_list = []
     for current_thread in range( num_threads ):
-        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q ] )
-        #manage_input_thread( genomes.reference(), min_coverage, min_proportion, input_q, output_q )
         thread_list.append( current_thread )
         input_q.put( None )
+        #manage_input_thread( genomes.reference(), min_coverage, min_proportion, input_q, output_q )
+        current_thread = Process( target=manage_input_thread, args=[ genomes.reference(), min_coverage, min_proportion, input_q, output_q ] )
         current_thread.start()
     sleep( 1 )
     while num_threads > 0:
