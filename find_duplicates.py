@@ -29,12 +29,12 @@ def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
         current_contigs = ( line_match.group(1), line_match.group(2) )
         contig_0_end = int( line_match.group(3) )
         contig_1_end = int( line_match.group(4) )
-        dups_data.add_contig( current_contigs[0], False )
-        dups_data.add_contig( current_contigs[1], False )
+        dups_data.add_contig( current_contigs[0] )
+        dups_data.add_contig( current_contigs[1] )
         if contig_0_end > dups_data.get_contig_length( current_contigs[0] ):
-            dups_data.append_contig( ( "0" * ( contig_0_end - dups_data.get_contig_length( current_contigs[0] ) ) ), current_contigs[0] )
+            dups_data.extend_contig( contig_0_end, "0", current_contigs[0] )
         if contig_0_end > dups_data.get_contig_length( current_contigs[1] ):
-            dups_data.append_contig( ( "0" * ( contig_1_end - dups_data.get_contig_length( current_contigs[1] ) ) ), current_contigs[1] )
+            dups_data.extend_contig( contig_1_end, "0", current_contigs[1] )
     else:
         line_match = re.match( r'^(\d+) (\d+) (\d+) (\d+) \d+ \d+ \d+\s*$', line_from_delta_file )
         if line_match:

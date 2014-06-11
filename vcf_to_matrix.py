@@ -56,41 +56,8 @@ def import_external_fasta( input_file ):
     #genome._genome._send_to_fasta_handle( stdout )
     return [ genome ]
 
-#def check_vcf_coverage( vcf_record, sample_record, sample_count ):
-#    sample_coverage = -1
-#    if hasattr( sample_record.data, 'DP' ) and sample_record.data.DP is not None and sample_record.data.DP != '' and sample_record.data.DP >= 0:
-#        sample_coverage = sample_record.data.DP
-#    elif 'DP' in vcf_record.INFO and vcf_record.INFO['DP'] is not None and vcf_record.INFO['DP'] != '' and vcf_record.INFO['DP'] >= 0:
-#        sample_coverage = vcf_record.INFO['DP'] / sample_count
-#    elif 'ADP' in vcf_record.INFO and vcf_record.INFO['ADP'] is not None and vcf_record.INFO['ADP'] != '' and vcf_record.INFO['ADP'] >= 0:
-#        sample_coverage = vcf_record.INFO['ADP'] / sample_count
-#    return sample_coverage
-#
-#def check_vcf_proportion( vcf_record, sample_record, sample_coverage, sample_count, is_a_snp ):
-#    sample_proportion = -1
-#    # gatk, reliable and documented
-#    if hasattr( sample_record.data, 'AD' ) and isinstance( sample_record.data.AD, list ):
-#        genome_num = int( sample_record.data.GT.split('/')[0].split('|')[0] )
-#        sample_proportion = sample_record.data.AD[genome_num] / sample_coverage
-#    # varscan, reliable and documented
-#    elif is_a_snp and hasattr( sample_record.data, 'AD' ):
-#        sample_proportion = sample_record.data.AD / sample_coverage
-#    elif not is_a_snp and hasattr( sample_record.data, 'RD' ) and sample_record.data.RD is not None:
-#        sample_proportion = sample_record.data.RD / sample_coverage
-#    # solsnp, undocumented
-#    elif 'AR' in vcf_record.INFO:
-#        sample_proportion = float( vcf_record.INFO['AR'][0] )
-#        if not is_a_snp:
-#            sample_proportion = 1 - sample_proportion
-#    # samtools, estimate, dubious accuracy
-#    elif 'DP4' in vcf_record.INFO:
-#        if is_a_snp:
-#            sample_proportion = ( vcf_record.INFO['DP4'][2] + vcf_record.INFO['DP4'][3] ) / ( sample_coverage * sample_count )
-#        else:
-#            sample_proportion = ( vcf_record.INFO['DP4'][0] + vcf_record.INFO['DP4'][1] ) / ( sample_coverage * sample_count )
-#    return sample_proportion
-
 # FIXME split into a larger number of smaller more testable functions
+# FIXME This belongs in VCFGenome object perhaps?
 def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
     genomes = {}
     file_path = get_file_path( input_file )
@@ -112,7 +79,7 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                 reference_call = reference.get_call( current_pos, None, current_contig )
                 simplified_refcall = Genome.simple_call( reference_call )
                 if ( simplified_refcall != 'N' ) and ( simplified_refcall != Genome.simple_call( vcf_record.get_reference_call()[0] ) ):
-                    raise ReferenceCallMismatch()
+                    raise ReferenceCallMismatch( reference_call, vcf_record.get_reference_call(), file_path, current_contig, current_pos )
                 for vcf_sample in vcf_samples:
                     sample_info = vcf_record.get_sample_info( vcf_sample )
                     if sample_info['call'] is not None:
@@ -131,61 +98,9 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                             genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
                     elif not sample_info['is_a_snp']:
                         genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
-        #for vcf_record in vcf_data_handle:
-        #    current_contig = vcf_record.CHROM
-        #    current_pos = vcf_record.POS
-        #    if vcf_record.POS <= reference.get_contig_length( current_contig ):
-        #        reference_call = reference.get_call( current_pos, None, current_contig )
-        #        simplified_refcall = Genome.simple_call( reference_call )
-        #        #print( referencecall, vcf_record.REF )
-        #        if ( simplified_refcall != 'N' ) and ( simplified_refcall != Genome.simple_call( vcf_record.REF[0] ) ):
-        #            raise ReferenceCallMismatch()
-        #        #print( vcf_record, vcf_record.INFO )
-        #        for vcf_sample in vcf_samples:
-        #            sample_call = reference_call
-        #            is_a_snp = False
-        #            sample_record = vcf_record.genotype( vcf_sample )
-        #            if vcf_record.ALT[0] is not None and sample_record.gt_bases is not None:
-        #                #print( vcf_record, vcf_record.INFO, sample_record, sample_record.data )
-        #                sample_call = sample_record.gt_bases[0] # FIXME indels
-        #                is_a_snp = True
-        #            debug_check_val = genomes[vcf_sample].get_call( current_pos, None, current_contig )
-        #            if debug_check_val != sample_call:
-        #                print( "OMG! " + file_path + str( debug_check_val ) + str( sample_call ) + str( current_pos ) )
-        #            genomes[vcf_sample].set_call( sample_call, current_pos, 'X', current_contig )
-        #            if sample_call != 'N':
-        #                genomes[vcf_sample].set_was_called( 'Y', current_pos, current_contig )
-        #            sample_count = len( vcf_samples )
-        #            sample_coverage = check_vcf_coverage( vcf_record, sample_record, sample_count )
-        #            if sample_coverage >= min_coverage:
-        #                debug_check_val = genomes[vcf_sample].get_coverage_pass( current_pos, current_contig )
-        #                if debug_check_val != 'Y':
-        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'Y' + str( current_pos ) )
-        #                genomes[vcf_sample].set_coverage_pass( 'Y', current_pos, current_contig )
-        #            elif sample_coverage >= 0:
-        #                debug_check_val = genomes[vcf_sample].get_coverage_pass( current_pos, current_contig )
-        #                if debug_check_val != 'N':
-        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'N' + str( current_pos ) )
-        #                genomes[vcf_sample].set_coverage_pass( 'N', current_pos, current_contig )
-        #            sample_proportion = check_vcf_proportion( vcf_record, sample_record, sample_coverage, sample_count, is_a_snp )
-        #            if sample_proportion >= min_proportion:
-        #                debug_check_val = genomes[vcf_sample].get_proportion_pass( current_pos, current_contig )
-        #                if debug_check_val != 'Y':
-        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'Y' + str( current_pos ) )
-        #                genomes[vcf_sample].set_proportion_pass( 'Y', current_pos, current_contig )
-        #            elif sample_proportion >= 0:
-        #                debug_check_val = genomes[vcf_sample].get_proportion_pass( current_pos, current_contig )
-        #                if debug_check_val != 'N':
-        #                    print( "OMG! " + file_path + str( debug_check_val ) + 'N' + str( current_pos ) )
-        #                genomes[vcf_sample].set_proportion_pass( 'N', current_pos, current_contig )
-        #            elif sample_proportion == -1 and not is_a_snp:
-        #                debug_check_val = genomes[vcf_sample].get_proportion_pass( current_pos, current_contig )
-        #                if debug_check_val != '-':
-        #                    print( "OMG! " + file_path + str( debug_check_val ) + '-' + str( current_pos ) )
-        #                genomes[vcf_sample].set_proportion_pass( '-', current_pos, current_contig )
-        #            #print( current_pos, sample_coverage, min_coverage, genomes[vcf_sample]._passed_coverage._status_data )
-        #            #print( current_pos, sample_proportion, min_proportion, genomes[vcf_sample]._passed_proportion._status_data )
-        #vcf_filehandle.close()
+    #from sys import stdout
+    #for genome in genomes:
+    #    genomes[genome]._genome._send_to_fasta_handle( stdout )
     return genomes.values()
 
 # FIXME These three functions should be combined?
