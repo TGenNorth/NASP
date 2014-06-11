@@ -1,0 +1,145 @@
+ nasp changelog
+================
+
+ 0.9.1:
+--------
+ * External genomes are no longer concatenated before import.
+ * Perl and python external genome importers now produce identical output.
+ * Added an option to give custom arguments to NUCmer during external genome import.
+ * Duplicate checking and external genome import are now implemented in python.
+ * External genome segments now only align to one place on the reference, even if they match in multiple places.
+ * Support for the 'SNAP' aligner has been added, but the SNP callers do not like the VCF files.
+
+ 0.9:
+------
+ * Select portions of the pipeline now in python instead of perl.
+
+ 0.8.7:
+--------
+ * Various portability changes made.
+ * Additional statistics now included in stats file.
+ * Removed "read_folder" argument, now always assumes current working folder.
+
+ 0.8.6:
+--------
+ * External fasta files in DOS format should no longer try to align calls of "carriage return"; turns out most DNA doesn't contain carriage returns.
+ * Cryptic warning messages will no longer be produced when a sample had no reads that aligned to a particular reference contig/chromosome.
+ * Removed samtools filtering of unmapped reads and low-quality reads from bam files during alignment.
+ * The allvariant matrix has been split into an allsnp and an allindel matrix.
+ * Statistics file format changed drastically.
+ * Statistics file now breaks values up by both sample and contig/chromosome.
+ * Statistics are now broken up into two-dimensional tables instead of one statistic per line.
+ * Now gives an immediate error if you give it a blank or nonexistent reference, rather than 1.4 million errors after 17 hours.
+
+ 0.8.5:
+--------
+ * Fix for corrupt files released with broken 0.8.4 release.
+ * Support for more platforms, easier installation process.
+
+ 0.8.3:
+--------
+ * Undocumented super-secret changes (I lost the changelog for 0.8.3)...
+
+ 0.8.2:
+--------
+ * Added a column "SampleConsensus", which is a yes/no based on whether all analyses matched (intersection).
+ * Calls from VCFs and external genomes that are explicitly "N" are now considered uncalled.
+ * The bestsnps_matrix no longer contains columns CallWasMade, PassedDepthFilter, PassedProportionFilter.
+ * Modified the depth filter to not use any "incorrect" calculation methods.
+ * Some changes to statistics file.
+ * Added the requested data to the statistics file.
+
+ 0.8.1:
+--------
+ * Matrix format specification changes.
+
+ 0.8:
+------
+ * Several minor bugfixes.
+ * Fixed a problem that would break duplicated region checking in rare conditions*.
+ * Fixed a bug that was omitting the last position in the all-matrix in rare conditions*.
+ * Made file naming improvements.
+ * Pipeline now makes an intersection matrix of SNP calls where every caller agrees.
+ * Fixed a bug that inserts an underscore randomly into bam names in rare conditions*.
+ * Pipeline now makes a statistics file.
+ * Fixed a bug where varscan would accidentally trigger kitten-killing on delete calls.
+ * Vastly improved support for indels.
+    * always
+
+ 0.7:
+------
+ * Added support for finding duplicated regions.
+ * Made heading names produced from SolSNP output more understandable.
+ * Fixed VarScan.
+ * Creates a configuration log that lists options selected and commands queued.
+ * Fixed issue with bam indexes being created in the input folder.
+
+ 0.6.1:
+--------
+ * Fixed a bug where chromosome descriptions were included in the identifier.
+ * Fixed a bug where fasta headings were being written to the wrong snpfasta file.
+ * Removed a feature where Jason gets 3,000,000 bonus SNPs for his help debugging.
+ * Fixed a bug where inversions in external genomes were not reverse complemented.
+ * Fixed a bug where unpaired reads would have confusing heading names.
+
+ 0.6:
+------
+ * Added BWA mem support, but it seems like it broke samp/se.
+ * Created a script for removing columns from a finished matrix.
+ * Created a script for combining two finished matrices.
+ * Created a script for removing a list of positions from a finished matrix.
+ * Fixed a bug where choosing to only run BWA mem would not look for fastq files.
+ * Added support for external genomes, but it is not well-tested.
+ * Changed the format of matrix sample names to be more readable.
+ * Questions that lead to options that may be broken are now starred.
+ * Choosing at least one aligner and SNP caller is no longer required.
+ * Changed the call made by the low-coverage filter from "X" to "N".
+ * Changed the call representing an uncallable position from "N" to "X".
+ * Fixed a bug where "T" and "U" match each other sometimes but not others.
+ * Fixed a bug where "A" and "a" would be considered different calls in the pattern column.
+ * Degeneracies are now all listed as "N" in the pattern column.
+ * Added a matrix column "InDupRegion" that always has the value "unchecked".
+ * Pipeline murders kittens if you give it files pre-aligned to disagreeing references.
+ * Allcallable matrix now fills fully-uncalled regions with "X", rather than skipping them.
+ * Memory requirements for matrix building are significantly reduced.
+
+ 0.5:
+------
+ * Added VarScan support, but it is not well-tested.
+ * Fixed bam header information to not be randomly-generated ID's.
+ * Fixed a bug that would cause corrupt VCF files to kill the matrix step.
+ * Moved bam indexing to the end of the alignment step so it's only done once.
+ * Fixed VarScan so it wouldn't name every output "Sample1".
+ * Added reference line to SNP fasta output.
+ * Now yells at you if multiple samples have the same name, but continues.
+ * Doesn't print VCF file name in matrix sample names anymore.
+ * Sample names more reliably contain the aligner and SNP caller name.
+
+ 0.4:
+------
+ * The matrix-building step will no longer abort or fail if an aligner or SNP caller fails.
+ * Creates .dict file during indexing step, to keep GATK from stepping on itself and dying.
+ * Changed the heading previously called "Chromosome" in the matrix file to "Contig".
+ * Changed default CPU/RAM/walltime requests to be more optimal for clusters.
+
+ 0.3:
+------
+ * Now outputs matrices in the new matrix format.
+ * Choosing advanced options for aligners and SNP callers actually gives you options!
+ * What I assume are John's suggested options for GATK are on by default.
+ * Does reference indexing in an output subfolder, not in some arbitrary folder.
+ * Pattern numbers don't skip to match the allcallable file anymore.
+ * Outputs matrices in fasta format as well as matrix format.
+
+ Initial Release:
+------------------
+ * Can use BWA and Novoalign.
+ * Can use GATK and SolSNP.
+ * Can include pre-aligned bam files, and pre-called vcf files.
+ * Uses allcallable, and does not have problems with incorrect reference calls.
+ * Understands and properly handles multiple contigs/chromosomes in one reference.
+ * Correctly handles degenerate bases.
+ * Handles indels gracefully (but not necessarily correctly)...
+ * Automatically pairs your read files, if you have paired reads.
+
+

@@ -1,0 +1,67 @@
+ The Northern Arizona SNP Pipeline (NASP)
+==========================================
+
+
+ INSTALLATION:
+---------------
+NASP itself is a set of python scripts with no special requirements for use.
+No "Makefile" or "setup.py" script is required, as no special steps need be
+taken.  The following files should have their execute flag set, and then be
+placed in, or symbolically linked to, a folder within the user's PATH:
+
+ * nasp.pl
+ * vcf_to_matrix.pl
+ * Vcf.pm
+ * nasp_objects.py
+ * format_fasta.py
+ * convert_external_genome.py
+ * find_duplicates.py
+
+The three most common installation scenarios are:
+
+Single user:
+  If you do not have administrator access to the system you wish to install on,
+  or are installing to a system that is not Unix-based (untested), you will
+  probably want to copy the files listed above to your home bin (usually ~/bin)
+  and make sure your PATH includes that.  A common set of commands to do this
+  would be:
+
+    mkdir ~/nasp_pipeline
+    mv nasp.tar.gz ~/nasp_pipeline
+    cd ~/nasp_pipeline
+    tar xzvf nasp.tar.gz
+    mkdir ~/bin
+    cd ~/bin
+    ln -s ../nasp_pipeline/*.pl ../nasp_pipeline/*.py ./
+    echo 'PATH="$HOME/bin:$PATH"' >> ~/.profile
+
+Multi-user:
+  If you have administrator access to the system you wish to install on, and
+  wish to install NASP for all users, you would usually place the python files
+  in a system-wide bin folder located E.G. in /opt or /usr/local.  A common set
+  of commands to do this would be:
+
+    mkdir /usr/local/src/nasp_pipeline
+    mv nasp.tar.gz /usr/local/src/nasp_pipeline/
+    cd /usr/local/src/nasp_pipeline/
+    tar xzvf nasp.tar.gz
+    cd /usr/local/bin
+    ln -s ../src/nasp_pipeline/*.pl ../src/nasp_pipeline/*.py ./
+
+Using the "module load" system:
+  If you have configured a module system on your high-performance compute
+  cluster, you can create a NASP module for your users to load.  Refer to your
+  operating system documentation for specifics.  Do not forget to include the
+  software dependencies, as described below.
+
+
+ DEPENDENCIES:
+---------------
+[ section in progress ]
+
+
+ USAGE:
+--------
+See the included "README" document.
+
+
