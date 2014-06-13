@@ -11,7 +11,6 @@ Created on Mar 4, 2014
 '''
 
 import logging
-import configuration_parser
 
 def _parse_args():
     import argparse
@@ -374,6 +373,8 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     matrix_parms['filter-matrix'] = os.path.join(output_dir, 'filter_matrix.tsv')
     matrix_parms['general-stats'] = os.path.join(output_dir, 'general_stats.tsv')
     matrix_parms['contig-stats'] = os.path.join(output_dir, 'contig_stats.tsv')
+    if configuration['filter_matrix_format']:
+        matrix_parms['filter-matrix-format'] = configuration['filter_matrix_format']
     dto_file = os.path.join(output_dir, "matrix_dto.xml")
     matrix_DTO.write_dto(matrix_parms, franken_fastas, vcf_files, dto_file)
     jobs_to_wait_for = ":".join(job_ids)
@@ -382,9 +383,7 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'))    
     return job_id
 
-def main():
-    commandline_args = _parse_args()
-    configuration = configuration_parser.parse_config( commandline_args.config )
+def begin( configuration ):
     (index_job_id, reference) = _index_reference( configuration )
     dups_file = None
     job_ids = []
@@ -415,6 +414,11 @@ def main():
         vcf_files.append((name, "pre-aligned", "pre-called", vcf))
         
     _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids)
-    
+
+def main():
+    import configuration_parser
+    commandline_args = _parse_args()
+    configuration = configuration_parser.parse_config( commandline_args.config )
+    begin( configuration )        
 
 if __name__ == "__main__": main()
