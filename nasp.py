@@ -316,7 +316,7 @@ def _get_user_input(reference, output_folder):
     
     if using_gatk:
         picard_path = _get_java_path("CreateSequenceDictionary.jar")
-        configuration["picard"] = ("picard", picard_path, "", {})
+        configuration["picard"] = ("picard", os.path.dirname(picard_path), "", {})
 
     include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
     if re.match('^[Yy]', include_missing):

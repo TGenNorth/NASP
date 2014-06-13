@@ -373,7 +373,7 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     matrix_parms['filter-matrix'] = os.path.join(output_dir, 'filter_matrix.tsv')
     matrix_parms['general-stats'] = os.path.join(output_dir, 'general_stats.tsv')
     matrix_parms['contig-stats'] = os.path.join(output_dir, 'contig_stats.tsv')
-    if configuration['filter_matrix_format']:
+    if 'filter_matrix_format' in configuration:
         matrix_parms['filter-matrix-format'] = configuration['filter_matrix_format']
     dto_file = os.path.join(output_dir, "matrix_dto.xml")
     matrix_DTO.write_dto(matrix_parms, franken_fastas, vcf_files, dto_file)
