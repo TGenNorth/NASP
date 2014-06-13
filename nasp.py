@@ -293,12 +293,12 @@ def _get_user_input(reference, output_folder):
     coverage_filter = input("\nThis pipeline can do filtering based on coverage.\nIf you do not want filtering based on coverage, enter 0.\nWhat is your minimum coverage threshold [10]? ")
     if not coverage_filter:
         coverage_filter = 10
-    configuration["coverage_filter"] = coverage_filter
+    configuration["coverage_filter"] = str(coverage_filter)
     
     proportion_filter = input("\nThis pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.\nIf you do not want filtering based on proportion, enter 0.\nWhat is the minimum acceptable proportion [0.9]? ")    
     if not proportion_filter:
         proportion_filter = 0.9
-    configuration["proportion_filter"] = proportion_filter
+    configuration["proportion_filter"] = str(proportion_filter)
 
     configuration["job_submitter"] = "qsub"
     name_match = re.search('^.*/(.*)$', output_folder) #Warning, not OS-independent! Should find a better way to do this.
