@@ -68,7 +68,6 @@ def _find_reads(path):
     for file in os.listdir(path):
         is_read = re.search('(.*)(\.fastq(?:\.gz)?)$', file, re.IGNORECASE)
         if is_read:
-            read = ""
             sample_name = is_read.group(1)
             is_paired = re.search('^(.*)(_[R]?)([12])(.*)$', sample_name, re.IGNORECASE)
             if is_paired:
@@ -78,12 +77,14 @@ def _find_reads(path):
                     read2 = "%s%s2%s%s" % (is_paired.group(1), is_paired.group(2), is_paired.group(4), is_read.group(2))
                     if os.path.exists(os.path.join(path, read2)):
                         read = (sample_name, os.path.join(path, read1), os.path.join(path, read2))
+                        read_list.append(read)
+                        logging.info(read)
                     else:
-                        print("Cannot find %s, the matching read to %s. Skipping..." % (read2, read1))
+                        logging.warning("Cannot find %s, the matching read to %s. Skipping..." % (read2, read1))
             else:
                 read = (sample_name, os.path.join(path, file))
-            read_list.append(read)
-            logging.info(read)
+                read_list.append(read)
+                logging.info(read)
     return read_list
 
 def _get_bams(cwd):
