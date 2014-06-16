@@ -28,12 +28,14 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None ):
             dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
             waitfor = "-W depend=%s:%s" % (dependency_string, waitfor_id[0])
         submit_command = "qsub -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s" % (job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], job_parms['name'], waitfor)
-        print("command = %s" % command)
+        logging.info("command = %s", command)
+        logging.debug("submit_command = %s", submit_command)
         output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
+        logging.debug("output = %s", output)
         jobid = re.search('^(\d+)\..*$', output).group(1)
     else:
         pass
-    print("jobid = %s" % jobid)
+    logging.info("jobid = %s", jobid)
     return(jobid)
 
 def _index_reference( configuration ):
