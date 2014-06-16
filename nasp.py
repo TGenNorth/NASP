@@ -68,6 +68,7 @@ def _find_reads(path):
     for file in os.listdir(path):
         is_read = re.search('(.*)(\.fastq(?:\.gz)?)$', file, re.IGNORECASE)
         if is_read:
+            read = ""
             sample_name = is_read.group(1)
             is_paired = re.search('^(.*)(_[R]?)([12])(.*)$', sample_name, re.IGNORECASE)
             if is_paired:
