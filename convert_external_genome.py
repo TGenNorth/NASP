@@ -41,7 +41,7 @@ def _update_genome_from_delta_data( franken_genome, external_genome, parser_stat
             matching_segment = Genome.reverse_complement( ''.join( external_genome.get_call( ( parser_state['external_pos'] - distance_covered + 1 ), parser_state['external_pos'] ) ) )
         else:
             matching_segment = ''.join( external_genome.get_call( parser_state['external_pos'], ( parser_state['external_pos'] + distance_covered - 1 ) ) )
-        franken_genome.set_call( matching_segment, parser_state['reference_pos'], 'X' )
+        franken_genome.set_call( list( matching_segment ), parser_state['reference_pos'], 'X' )
     parser_state['reference_pos'] = parser_state['reference_pos'] + distance_covered
     parser_state['external_pos'] = parser_state['external_pos'] + ( -distance_covered if parser_state['external_is_reversed'] else distance_covered )
     if is_external_insert:
