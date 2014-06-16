@@ -11,6 +11,7 @@ Created on Jun 11, 2014
 '''
 
 nasp_version = __version__
+import logging
 
 def _parse_args():
     import argparse
@@ -42,6 +43,7 @@ def _find_files(path, extension):
         if is_type:
             sample_name = is_type.group(1)
             file_list.append((sample_name, os.path.join(path, file)))
+            logging.info((sample_name, os.path.join(path, file)))
     return file_list
 
 def _find_executable(application): #This method is not OS-independent. Should work on a better way
@@ -74,11 +76,13 @@ def _find_reads(path):
                     read1 = file
                     read2 = "%s%s2%s%s" % (is_paired.group(1), is_paired.group(2), is_paired.group(4), is_read.group(2))
                     if os.path.exists(os.path.join(path, read2)):
-                        read_list.append((sample_name, os.path.join(path, read1), os.path.join(path, read2)))
+                        read = (sample_name, os.path.join(path, read1), os.path.join(path, read2))
                     else:
                         print("Cannot find %s, the matching read to %s. Skipping..." % (read2, read1))
             else:
-                read_list.append((sample_name, os.path.join(path, file)))
+                read = (sample_name, os.path.join(path, file))
+            read_list.append(read)
+            logging.info(read)
     return read_list
 
 def _get_bams(cwd):
@@ -88,6 +92,7 @@ def _get_bams(cwd):
     if re.match('^[Yy]', response):
         path = input("Where are these files located [%s]? " % cwd)
         path = _expand_path(path) if path else cwd
+        logging.info("Looking for sams/bams in %s...", path)
         bam_list = _find_files(path, "bam")
         bam_list.extend(_find_files(path, "sam"))
     return bam_list
@@ -99,6 +104,7 @@ def _get_vcfs(cwd):
     if re.match('^[Yy]', response):
         path = input("Where are these files located [%s]? " % cwd)
         path = _expand_path(path) if path else cwd
+        logging.info("Looking for vcfs in %s...", path)
         vcf_list = _find_files(path, "vcf")
     return vcf_list
 
@@ -109,6 +115,7 @@ def _get_external_fastas(cwd):
     if not re.match('^[Nn]', response):
         path = input("Where are these files located [%s]? " % cwd)
         path = _expand_path(path) if path else cwd
+        logging.info("Looking for external fastas in %s...", path)
         fasta_list = _find_files(path, "fasta")
     return fasta_list
 
@@ -119,6 +126,7 @@ def _get_reads(cwd):
     if not re.match('^[Nn]', response):
         path = input("Where are these files located [%s]? " % cwd)
         path = _expand_path(path) if path else cwd
+        logging.info("Looking for read files in %s...", path)
         read_list = _find_reads(path)
     return read_list
 
@@ -193,22 +201,26 @@ def _get_aligners():
         bwa_path = _get_application_path("bwa")
         bwa_sampe_settings = _get_advanced_settings("BWA sampe", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         aligner_list.append(bwa_sampe_settings)
+        logging.info(bwa_sampe_settings)
     response = input("\nWould you like to run BWA mem [Y]? ")
     if not re.match('^[Nn]', response):
         if not bwa_path:
             bwa_path = _get_application_path("bwa")
         bwa_mem_settings = _get_advanced_settings("BWA mem", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         aligner_list.append(bwa_mem_settings)
+        logging.info(bwa_mem_settings)
     response = input("\nWould you like to run Novoalign [Y]? ")
     if not re.match('^[Nn]', response):
         novo_path = _get_application_path("novoalign")
         novo_settings = _get_advanced_settings("Novoalign", novo_path, "-r all", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         aligner_list.append(novo_settings)
+        logging.info(novo_settings)
     response = input("\nWould you like to run SNAP [N]?* ")
     if re.match('^[Yy]', response):
         snap_path = _get_application_path("snap")
         snap_settings = _get_advanced_settings("SNAP", snap_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         aligner_list.append(snap_settings)
+        logging.info(snap_settings)
     return aligner_list
 
 def _get_snpcallers():
@@ -221,22 +233,26 @@ def _get_snpcallers():
         gatk_path = _get_java_path("GenomeAnalysisTK.jar")
         gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         snpcaller_list.append(gatk_settings)
+        logging.info(gatk_settings)
         using_gatk = True
     response = input("\nWould you like to run SolSNP [Y]? ")
     if not re.match('^[Nn]', response):
         solsnp_path = _get_java_path("SolSNP.jar")
         solsnp_settings = _get_advanced_settings("SolSNP", solsnp_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         snpcaller_list.append(solsnp_settings)
+        logging.info(solsnp_settings)
     response = input("\nWould you like to run VarScan [Y]? ")
     if not re.match('^[Nn]', response):
         varscan_path = _get_java_path("VarScan.jar")
         varscan_settings = _get_advanced_settings("VarScan", varscan_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         snpcaller_list.append(varscan_settings)
+        logging.info(varscan_settings)
     response = input("\nWould you like to run SAMtools [Y]? ")
     if not re.match('^[Nn]', response):
         samtools_path = _get_application_path("bcftools")
         samtools_settings = _get_advanced_settings("SAMtools", samtools_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
         snpcaller_list.append(samtools_settings)
+        logging.info(samtools_settings)
     return (snpcaller_list, using_gatk)
 
 def _get_user_input(reference, output_folder):
@@ -259,6 +275,13 @@ def _get_user_input(reference, output_folder):
     else:
         os.makedirs(output_folder)
     configuration["output_folder"] = output_folder
+    
+    logfile = os.path.join(output_folder, "runlog.txt")
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(levelname)-8s %(message)s',
+                        datefmt='%m/%d/%Y %H:%M:%S',
+                        filename=logfile,
+                        filemode='w')
 
     if not reference:
         reference = input("\nWhere is the reference fasta file you would like to use? ")
@@ -267,9 +290,11 @@ def _get_user_input(reference, output_folder):
         print("\nCannot continue because reference file %s does not seem to exist!" % reference) 
         quit()
     configuration["reference"] = _create_file_tuple(reference)
+    logging.info("Reference = %s", configuration["reference"])
 
     response = input("\nDo you want to check the reference for duplicated regions\nand skip SNPs that fall in those regions [Y]? ")
     configuration["find_dups"] = False if re.match('^[Nn]', response) else True
+    logging.info("FindDups = %s", configuration["find_dups"])
 
     read_list = _get_reads(cwd)
     configuration["reads"] = read_list
@@ -288,39 +313,50 @@ def _get_user_input(reference, output_folder):
                 nucmer_args = input("  What additional arguments would you like to pass to 'nucmer' while importing external genomes? ")
                 deltafilter_args = input("  What additional arguments would you like to pass to 'delta-filter' while importing external genomes? ")
             configuration["assembly_importer"] = ("assemblyImporter", deltafilter_path, deltafilter_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1'})
+            logging.info("AssemblyImporter = %s", configuration["assembly_importer"])
         configuration["dup_finder"] = ("dupFinder", nucmer_path, nucmer_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1'})
+        logging.info("DupFinder = %s", configuration["dup_finder"])
     
     coverage_filter = input("\nThis pipeline can do filtering based on coverage.\nIf you do not want filtering based on coverage, enter 0.\nWhat is your minimum coverage threshold [10]? ")
     if not coverage_filter:
         coverage_filter = 10
     configuration["coverage_filter"] = str(coverage_filter)
+    logging.info("CoverageFilter = %s", configuration["coverage_filter"])
     
     proportion_filter = input("\nThis pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.\nIf you do not want filtering based on proportion, enter 0.\nWhat is the minimum acceptable proportion [0.9]? ")    
     if not proportion_filter:
         proportion_filter = 0.9
     configuration["proportion_filter"] = str(proportion_filter)
+    logging.info("ProportionFilter = %s", configuration["proportion_filter"])
 
     configuration["job_submitter"] = "qsub"
+    logging.info("JobSubmitter = %s", configuration["job_submitter"])
     name_match = re.search('^.*/(.*)$', output_folder) #Warning, not OS-independent! Should find a better way to do this.
     configuration["run_name"] = name_match.group(1) #Temporary: setting the run name to be whatever the the output folder is named. Should ask user.
+    logging.info("RunName = %s", configuration["run_name"])
     
     samtools_path = _find_executable("samtools")
     samtools_args = ""
     configuration["samtools"] = ("samtools", samtools_path, samtools_args, {})
+    logging.info("Samtools = %s", configuration["samtools"])
     
+    logging.info("Getting Aligners...")
     configuration["aligners"] = _get_aligners()
     configuration["alignments"] = _get_bams(cwd)
     
+    logging.info("Getting SNP Callers...")
     (configuration["snpcallers"], using_gatk) = _get_snpcallers()
     configuration["vcfs"] = _get_vcfs(cwd)
     
     if using_gatk:
         picard_path = _get_java_path("CreateSequenceDictionary.jar")
         configuration["picard"] = ("picard", os.path.dirname(picard_path), "", {})
+        logging.info("Picard = %s", configuration["picard"])
 
     include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
     if re.match('^[Yy]', include_missing):
         configuration["filter_matrix_format"] = "missingdata"
+        logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])
 
     return configuration
 
