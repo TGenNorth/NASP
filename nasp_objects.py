@@ -317,14 +317,14 @@ class CollectionStatistics:
 
     def get_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path ):
         return_value = 0 
-        if ( stat_id, sample_nickname, ( sample_identifier, sample_path ), None ) in self._contig_stats:
-            return_value = self._contig_stats[( stat_id, sample_nickname, ( sample_identifier, sample_path ), None )]
+        if ( stat_id, sample_nickname, ( sample_identifier, sample_path ), None ) in self._sample_stats:
+            return_value = self._sample_stats[( stat_id, sample_nickname, ( sample_identifier, sample_path ), None )]
         return return_value
 
     def get_cumulative_stat( self, stat_id, cum_type, sample_nickname = None ):
         return_value = 0 
-        if ( stat_id, sample_nickname, None, cum_type ) in self._contig_stats:
-            return_value = self._contig_stats[( stat_id, sample_nickname, None, cum_type )]
+        if ( stat_id, sample_nickname, None, cum_type ) in self._sample_stats:
+            return_value = self._sample_stats[( stat_id, sample_nickname, None, cum_type )]
         return return_value
 
     def flush_cumulative_stat_cache( self ):
@@ -336,12 +336,13 @@ class CollectionStatistics:
                     self._increment_by_sample( stat_id, sample_nickname, None, 'any' )
 
 
-class GenomeCollection:
+class GenomeCollection( CollectionStatistics ):
 
     def __init__( self ):
+        CollectionStatistics.__init__( self )
         self._reference = None
         self._genomes = []
-        self._stats = CollectionStatistics()
+        self._genome_identifiers = {}
 
     # To preserve sample-analysis order across different runs
     @staticmethod
@@ -359,6 +360,10 @@ class GenomeCollection:
 
     def add_genome( self, genome ):
         self._genomes.append( genome )
+        genome_nickname = genome.nickname()
+        if genome_nickname not in self._genome_identifiers:
+            self._genome_identifiers[genome_nickname] = {}
+        self._genome_identifiers[genome_nickname][ ( genome.identifier(), genome.file_path() ) ] = True
         self._genomes.sort( key=GenomeCollection._get_key )
 
     def set_current_contig( self, contig_name ):
@@ -373,26 +378,7 @@ class GenomeCollection:
     def get_genome_count( self ):
         return len( self._genomes )
 
-    def increment_contig_stat( self, stat_id, contig_name = None ):
-        self._stats.increment_contig_stat( stat_id, contig_name )
-
-    def get_contig_stat( self, stat_id, contig_name = None ):
-        return self._stats.get_contig_stat( stat_id, contig_name )
-
-    def record_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path, did_pass ):
-        self._stats.record_sample_stat( stat_id, sample_nickname, sample_identifier, sample_path, did_pass )
-
-    def get_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path ):
-        return self._stats.get_sample_stat( stat_id, sample_nickname, sample_identifier, sample_path )
-
-    def get_cumulative_stat( self, stat_id, cum_type, sample_nickname = None ):
-        return self._stats.get_cumulative_stat( stat_id, cum_type, sample_nickname )
-
-    def flush_cumulative_stat_cache( self ):
-        self._stats.flush_cumulative_stat_cache()
-
     # FIXME split into a larger number of smaller more testable functions
-    # FIXME Some of this doesn't belong here
     def _format_matrix_line( self, current_contig, current_pos, matrix_format ):
         genome_count = self.get_genome_count()
         matrix_line = '' + current_contig + "::" + str( current_pos ) + "\t"
@@ -561,13 +547,43 @@ class GenomeCollection:
             general_handle.write( "\n" )
 
     def _write_sample_stats( self, sample_handle ):
-        pass
+        sample_stat_array = [ 'was_called', 'passed_coverage_filter', 'passed_proportion_filter' ]
+        #denominator_stat = 'reference_length'
+        #denominator_value = self.get_contig_stat( denominator_stat )
+        sample_handle.write( "Sample\tSample Analysis\t" )
+        for current_stat in sample_stat_array:
+            sample_handle.write( '' + current_stat + "\t" )
+            #sample_handle.write( '' + current_stat + " (%)\t" )
+        sample_handle.write( "\n" )
+        sample_handle.write( "\tstat descriptions go here\n\n" )
+        for current_sample in ( [ None ] + sorted( self._genome_identifiers.keys() ) ):
+            for current_analysis in [ 'any', 'all' ]:
+                if current_sample is not None:
+                    sample_handle.write( "{0}\t".format( current_sample ) )
+                sample_handle.write( "[{0}]\t".format( current_analysis ) )
+                if current_sample is None:
+                    sample_handle.write( "\t" )
+                for current_stat in sample_stat_array:
+                    sample_handle.write( '' + str( self.get_cumulative_stat( current_stat, current_analysis, current_sample ) ) + "\t" )
+                    #if current_stat != denominator_stat:
+                    #    sample_handle.write( "%.2f%%\t" % ( self.get_contig_stat( current_stat, current_contig ) / denominator_value * 100 ) )
+                sample_handle.write( "\n" )
+            if current_sample is not None:
+                for current_analysis in sorted( self._genome_identifiers[current_sample].keys() ):
+                    ( sample_identifier, sample_path ) = current_analysis
+                    sample_handle.write( "{0}\t{1}\t".format( current_sample, sample_identifier ) )
+                    for current_stat in sample_stat_array:
+                        sample_handle.write( '' + str( self.get_sample_stat( current_stat, current_sample, sample_identifier, sample_path ) ) + "\t" )
+                        #if current_stat != denominator_stat:
+                        #    sample_handle.write( "%.2f%%\t" % ( self.get_contig_stat( current_stat, current_contig ) / denominator_value * 100 ) )
+                    sample_handle.write( "\n" )
+            sample_handle.write( "\n" )
 
     def write_to_stats_files( self, general_filename, sample_filename ):
         general_handle = open( general_filename, 'w' )
         sample_handle = open( sample_filename, 'w' )
         self._write_general_stats( general_handle )
-        self._write_sample_stats( sample_handle )
+        #self._write_sample_stats( sample_handle )
         general_handle.close()
         sample_handle.close()
         #print( self._stats._contig_stats )

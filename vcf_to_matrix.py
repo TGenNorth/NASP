@@ -198,17 +198,13 @@ def main():
         commandline_args = _parse_input_config(commandline_args)
     logging.basicConfig( level=logging.WARNING )
     from nasp_objects import ReferenceGenome, GenomeCollection
-    from datetime import datetime # debug removeme
     reference = ReferenceGenome()
     import_reference( reference, commandline_args.reference_fasta, commandline_args.reference_dups )
     genomes = GenomeCollection()
     genomes.set_reference( reference )
-    print( str( datetime.now() ) )
     parse_input_files( commandline_args.input_files, commandline_args.num_threads, genomes, commandline_args.minimum_coverage, commandline_args.minimum_proportion )
-    print( str( datetime.now() ) )
     write_output_matrices( genomes, commandline_args.master_matrix, commandline_args.filter_matrix, commandline_args.filter_matrix_format )
     write_stats_data( genomes, commandline_args.general_stats, commandline_args.sample_stats )
-    print( str( datetime.now() ) )
 
 if __name__ == "__main__": main()
 
