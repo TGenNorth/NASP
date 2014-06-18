@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 __author__ = "David Smith"
-__version__ = "0.9.1"
+__version__ = "0.9.5"
 __email__ = "dsmith@tgen.org"
 
+import logging
 
 def _parse_args():
     import argparse
@@ -13,6 +14,7 @@ def _parse_args():
     parser.add_argument( "--deltafilterpath", default="delta-filter", help="Path to the 'delta-filter' executable." )
     parser.add_argument( "--reference", required=True, help="Path to the reference fasta file." )
     parser.add_argument( "--external", required=True, help="Path to the external genome fasta file." )
+    parser.add_argument( "--name", default="", help="Name of this external genome." )
     return parser.parse_args()
 
 # This should eventually be moved to the main job manager section
@@ -35,10 +37,10 @@ def _update_genome_from_delta_data( franken_genome, external_genome, parser_stat
         is_external_insert = True
     if distance_covered > 0:
         if parser_state['external_is_reversed']:
-            matching_segment = Genome.reverse_complement( external_genome.get_call( ( parser_state['external_pos'] - distance_covered + 1 ), parser_state['external_pos'] ) )
+            matching_segment = Genome.reverse_complement( ''.join( external_genome.get_call( ( parser_state['external_pos'] - distance_covered + 1 ), parser_state['external_pos'] ) ) )
         else:
-            matching_segment = external_genome.get_call( parser_state['external_pos'], ( parser_state['external_pos'] + distance_covered - 1 ) )
-        franken_genome.set_call( matching_segment, parser_state['reference_pos'], 'X' )
+            matching_segment = ''.join( external_genome.get_call( parser_state['external_pos'], ( parser_state['external_pos'] + distance_covered - 1 ) ) )
+        franken_genome.set_call( list( matching_segment ), parser_state['reference_pos'], 'X' )
     parser_state['reference_pos'] = parser_state['reference_pos'] + distance_covered
     parser_state['external_pos'] = parser_state['external_pos'] + ( -distance_covered if parser_state['external_is_reversed'] else distance_covered )
     if is_external_insert:
@@ -81,15 +83,15 @@ def parse_delta_file( delta_filename, franken_genome, external_genome ):
         franken_genome.extend_contig( parser_state['contig_sizes'][current_contig], 'X', current_contig )
 
 def main():
-    from nasp_objects import Genome
+    from nasp_objects import Genome, GenomeMeta
     commandline_args = _parse_args()
-    external_nickname = Genome.generate_nickname_from_fasta_filename( commandline_args.external )
+    external_nickname = commandline_args.name if commandline_args.name else GenomeMeta.generate_nickname_from_filename( commandline_args.external )
     external_genome = Genome()
     external_genome.import_fasta_file( commandline_args.external )
     generate_delta_file( commandline_args.nucmerpath, commandline_args.nucmerargs, commandline_args.deltafilterpath, external_nickname, commandline_args.reference, commandline_args.external )
     franken_genome = Genome()
     parse_delta_file( ( external_nickname + ".filtered.delta" ), franken_genome, external_genome )
-    franken_genome.write_to_file( external_nickname + ".frankenfasta", "franken::" )
+    franken_genome.write_to_fasta_file( external_nickname + ".frankenfasta", "franken::" )
 
 
 if __name__ == "__main__": main()
