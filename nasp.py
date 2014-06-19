@@ -406,8 +406,8 @@ def main():
         dispatcher.begin(configuration)
     else:
         configuration = _get_user_input( commandline_args.reference_fasta, commandline_args.output_folder )
-        print(configuration)
+        #print(configuration)
         #configuration_parser.write_config(configuration)
-        #dispatcher.begin(configuration)
+        dispatcher.begin(configuration)
 
 if __name__ == "__main__": main()
