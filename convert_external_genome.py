@@ -6,7 +6,6 @@ __email__ = "dsmith@tgen.org"
 
 import logging
 
-
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )

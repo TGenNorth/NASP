@@ -6,7 +6,6 @@ __email__ = "dsmith@tgen.org"
 
 import logging
 
-
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
@@ -57,7 +56,6 @@ def parse_delta_file( delta_filename, dups_data ):
     for line_from_delta_file in delta_handle:
         current_contigs = _parse_delta_line( line_from_delta_file, dups_data, current_contigs )
     delta_handle.close()
-
 
 def main():
     from nasp_objects import GenomeStatus
