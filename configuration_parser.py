@@ -185,16 +185,21 @@ def _get_application( app_node, name=None ):
     job_parms = {}
     job_node = app_node.find('JobParameters')
     if ( job_node is not None ):
-        job_parms['name'] = job_node.get("name")
-        job_parms['mem_requested'] = job_node.find('MemRequested').text
-        job_parms['num_cpus'] = job_node.find('NumCPUs').text
-        job_parms['walltime'] = job_node.find('Walltime').text
+        job_parms['name'] = job_node.get("name") if job_node.get("name") else ""
+        job_parms['mem_requested'] = job_node.find('MemRequested').text if job_node.find('MemRequested') else ""
+        job_parms['num_cpus'] = job_node.find('NumCPUs').text if job_node.find('NumCPUs') else ""
+        job_parms['walltime'] = job_node.find('Walltime').text if job_node.find('Walltime') else ""
+        job_parms['gueue'] = job_node.find('Queue').text if job_node.find('Queue') else ""
+        job_parms['args'] = job_node.find('JobSubmitterArgs').text if job_node.find('JobSubmitterArgs') else ""
     return (name, path, args, job_parms)
 
 def _parse_applications( applications_node ):
     configuration["picard"] = _get_application(applications_node.find('Picard'), "picard")
     configuration["samtools"] = _get_application(applications_node.find('Samtools'), "samtools")
     configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "dupFinder")
+    configuration["index"] = _get_application(applications_node.find('Index'), "index")
+    configuration["bam_index"] = _get_application(applications_node.find('BamIndex'), "bamIndex")
+    configuration["matrix_generator"] = _get_application(applications_node.find('MatrixGenerator'), "matrixGenerator")
     configuration["assembly_importer"] = _get_application(applications_node.find('AssemblyImporter'), "assemblyImporter")
     for aligner in applications_node.findall('Aligner'):
         aligner_list.append(_get_application(aligner))

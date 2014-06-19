@@ -193,7 +193,7 @@ def _get_advanced_settings(app_name, app_path, app_args, job_parms):
             app_args = args
     return (app_name, app_path, app_args, job_parms)
 
-def _get_aligners():
+def _get_aligners(queue, args):
     import re
     aligner_list = []
     bwa_path = ""
@@ -201,31 +201,31 @@ def _get_aligners():
     response = input("\nWould you like to run BWA samp/se [N]?* ")
     if re.match('^[Yy]', response):
         bwa_path = _get_application_path("bwa")
-        bwa_sampe_settings = _get_advanced_settings("BWA sampe", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        bwa_sampe_settings = _get_advanced_settings("BWA sampe", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(bwa_sampe_settings)
         logging.info(bwa_sampe_settings)
     response = input("\nWould you like to run BWA mem [Y]? ")
     if not re.match('^[Nn]', response):
         if not bwa_path:
             bwa_path = _get_application_path("bwa")
-        bwa_mem_settings = _get_advanced_settings("BWA mem", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        bwa_mem_settings = _get_advanced_settings("BWA mem", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(bwa_mem_settings)
         logging.info(bwa_mem_settings)
     response = input("\nWould you like to run Novoalign [Y]? ")
     if not re.match('^[Nn]', response):
         novo_path = _get_application_path("novoalign")
-        novo_settings = _get_advanced_settings("Novoalign", novo_path, "-r all", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        novo_settings = _get_advanced_settings("Novoalign", novo_path, "-r all", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(novo_settings)
         logging.info(novo_settings)
     response = input("\nWould you like to run SNAP [N]?* ")
     if re.match('^[Yy]', response):
         snap_path = _get_application_path("snap")
-        snap_settings = _get_advanced_settings("SNAP", snap_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        snap_settings = _get_advanced_settings("SNAP", snap_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(snap_settings)
         logging.info(snap_settings)
     return aligner_list
 
-def _get_snpcallers():
+def _get_snpcallers(queue, args):
     import re
     snpcaller_list = []
     using_gatk = False
@@ -233,35 +233,53 @@ def _get_snpcallers():
     response = input("\nWould you like to run GATK [Y]? ")
     if not re.match('^[Nn]', response):
         gatk_path = _get_java_path("GenomeAnalysisTK.jar")
-        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         snpcaller_list.append(gatk_settings)
         logging.info(gatk_settings)
         using_gatk = True
-    response = input("\nWould you like to run SolSNP [Y]? ")
-    if not re.match('^[Nn]', response):
+    response = input("\nWould you like to run SolSNP [N]? ")
+    if re.match('^[Yy]', response):
         solsnp_path = _get_java_path("SolSNP.jar")
-        solsnp_settings = _get_advanced_settings("SolSNP", solsnp_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        solsnp_settings = _get_advanced_settings("SolSNP", solsnp_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         snpcaller_list.append(solsnp_settings)
         logging.info(solsnp_settings)
     response = input("\nWould you like to run VarScan [Y]? ")
     if not re.match('^[Nn]', response):
         varscan_path = _get_java_path("VarScan.jar")
-        varscan_settings = _get_advanced_settings("VarScan", varscan_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        varscan_settings = _get_advanced_settings("VarScan", varscan_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         snpcaller_list.append(varscan_settings)
         logging.info(varscan_settings)
     response = input("\nWould you like to run SAMtools [Y]? ")
     if not re.match('^[Nn]', response):
         samtools_path = _get_application_path("bcftools")
-        samtools_settings = _get_advanced_settings("SAMtools", samtools_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36'})
+        samtools_settings = _get_advanced_settings("SAMtools", samtools_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         snpcaller_list.append(samtools_settings)
         logging.info(samtools_settings)
     return (snpcaller_list, using_gatk)
 
+def _get_job_submitter():
+    import re
+    job_submitter = "invalid"
+    response = input("\nWhat system do you use for job management (PBS/Torque and SLURM are currently supported) [PBS]? ")
+    while job_submitter == "invalid":
+        if re.match('^(PBS|Torque|qsub|)$', response, re.IGNORECASE):
+            job_submitter = "PBS"
+        elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
+            job_submitter = "SLURM"
+        else:
+            response = input("  %s is not a valid job management system, please enter another [PBS]? " % response)
+    queue = input("  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? ")
+    args = input("  What additional arguments do you need to pass to the job management system []? ")
+    return (job_submitter, queue, args)
+
 def _get_user_input(reference, output_folder):
     import os
     import re
+    import sys
     configuration = {}
     cwd = os.getcwd()
+    queue = ""
+    args = ""
     
     print( "Welcome to the very experimental python nasp version %s." % nasp_version )
     print( "* Starred features might be even more broken than non-starred features." )
@@ -298,6 +316,10 @@ def _get_user_input(reference, output_folder):
     configuration["find_dups"] = False if re.match('^[Nn]', response) else True
     logging.info("FindDups = %s", configuration["find_dups"])
 
+    (job_submitter, queue, args) = _get_job_submitter()
+    configuration["job_submitter"] = job_submitter
+    logging.info("JobSubmitter = %s", configuration["job_submitter"])
+    
     read_list = _get_reads(cwd)
     configuration["reads"] = read_list
     
@@ -314,9 +336,9 @@ def _get_user_input(reference, output_folder):
             if re.match('^[Yy]', response):
                 nucmer_args = input("  What additional arguments would you like to pass to 'nucmer' while importing external genomes? ")
                 deltafilter_args = input("  What additional arguments would you like to pass to 'delta-filter' while importing external genomes? ")
-            configuration["assembly_importer"] = ("assemblyImporter", deltafilter_path, deltafilter_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1'})
+            configuration["assembly_importer"] = ("assemblyImporter", deltafilter_path, deltafilter_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1', 'queue':queue, 'args':args})
             logging.info("AssemblyImporter = %s", configuration["assembly_importer"])
-        configuration["dup_finder"] = ("dupFinder", nucmer_path, nucmer_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1'})
+        configuration["dup_finder"] = ("dupFinder", nucmer_path, nucmer_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1', 'queue':queue, 'args':args})
         logging.info("DupFinder = %s", configuration["dup_finder"])
     
     coverage_filter = input("\nThis pipeline can do filtering based on coverage.\nIf you do not want filtering based on coverage, enter 0.\nWhat is your minimum coverage threshold [10]? ")
@@ -331,29 +353,42 @@ def _get_user_input(reference, output_folder):
     configuration["proportion_filter"] = str(proportion_filter)
     logging.info("ProportionFilter = %s", configuration["proportion_filter"])
 
-    configuration["job_submitter"] = "qsub"
-    logging.info("JobSubmitter = %s", configuration["job_submitter"])
     name_match = re.search('^.*/(.*)$', output_folder) #Warning, not OS-independent! Should find a better way to do this.
     configuration["run_name"] = name_match.group(1) #Temporary: setting the run name to be whatever the the output folder is named. Should ask user.
     logging.info("RunName = %s", configuration["run_name"])
     
     samtools_path = _find_executable("samtools")
-    samtools_args = ""
-    configuration["samtools"] = ("samtools", samtools_path, samtools_args, {})
+    configuration["samtools"] = ("samtools", samtools_path, "", {})
     logging.info("Samtools = %s", configuration["samtools"])
     
-    logging.info("Getting Aligners...")
-    configuration["aligners"] = _get_aligners()
-    configuration["alignments"] = _get_bams(cwd)
+    run_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    configuration["index"] = ("index", run_path, "", {'name':'nasp_index', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'queue':queue, 'args':args})
+    logging.info("Index = %s", configuration["index"])
+    configuration["bam_index"] = ("bamIndex", run_path, "", {'name':'nasp_bamindex', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'queue':queue, 'args':args})
+    logging.info("BamIndex = %s", configuration["bam_index"])
+    matrix_path = os.path.join(run_path, "vcf_to_matrix.py")
+    if not os.path.exists(matrix_path):
+        matrix_path = "vcf_to_matrix.py"
+    configuration["matrix_generator"] = ("matrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
+    logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
+
+    if len(read_list) > 0:
+        logging.info("Getting Aligners...")
+        configuration["aligners"] = _get_aligners(queue, args)
     
-    logging.info("Getting SNP Callers...")
-    (configuration["snpcallers"], using_gatk) = _get_snpcallers()
+    bam_list = _get_bams(cwd)    
+    configuration["alignments"] = bam_list
+    
+    if len(read_list) > 0 or len(bam_list) > 0:
+        logging.info("Getting SNP Callers...")
+        (configuration["snpcallers"], using_gatk) = _get_snpcallers(queue, args)
+    
+        if using_gatk:
+            picard_path = _get_java_path("CreateSequenceDictionary.jar")
+            configuration["picard"] = ("picard", os.path.dirname(picard_path), "", {})
+            logging.info("Picard = %s", configuration["picard"])
+        
     configuration["vcfs"] = _get_vcfs(cwd)
-    
-    if using_gatk:
-        picard_path = _get_java_path("CreateSequenceDictionary.jar")
-        configuration["picard"] = ("picard", os.path.dirname(picard_path), "", {})
-        logging.info("Picard = %s", configuration["picard"])
 
     include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
     if re.match('^[Yy]', include_missing):
@@ -371,8 +406,8 @@ def main():
         dispatcher.begin(configuration)
     else:
         configuration = _get_user_input( commandline_args.reference_fasta, commandline_args.output_folder )
-        #print(configuration)
+        print(configuration)
         #configuration_parser.write_config(configuration)
-        dispatcher.begin(configuration)
+        #dispatcher.begin(configuration)
 
 if __name__ == "__main__": main()
