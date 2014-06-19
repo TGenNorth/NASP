@@ -18,30 +18,79 @@ def _parse_args():
     parser.add_argument( "--config", required=True, help="Path to the configuration xml file." )
     return parser.parse_args()
 
-def _submit_job( job_submitter, command, job_parms, waitfor_id=None ):
+def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False, notify=False ):
     import subprocess
     import re
     output = jobid = None
-    if job_submitter == "qsub":
+    logging.info("command = %s", command)
+    if job_submitter == "PBS":
         waitfor = ""
         if waitfor_id:
             dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
             waitfor = "-W depend=%s:%s" % (dependency_string, waitfor_id[0])
-        submit_command = "qsub -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s" % (job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], job_parms['name'], waitfor)
-        logging.info("command = %s", command)
+        queue = ""
+        if job_parms["queue"]:
+            queue = "-q %s" % job_parms["queue"]
+        args = job_parms["args"]
+        if hold:
+            args += " -h"
+        if notify:
+            args += " -m e"
+        submit_command = "qsub -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s %s %s" % (job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s", submit_command)
         output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
         logging.debug("output = %s", output)
-        jobid = re.search('^(\d+)\..*$', output).group(1)
+        job_match = re.search('^(\d+)\..*$', output)
+        if job_match:
+            jobid = job_match.group(1)
+        else:
+            logging.warning("Job not submitted!!")
+            print("WARNING: Job not submitted: %s" % output)
+    elif job_submitter == "SLURM":
+        waitfor = ""
+        if waitfor_id:
+            dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
+            waitfor = "-d %s:%s" % (dependency_string, waitfor_id[0])
+        queue = ""
+        if job_parms["queue"]:
+            queue = "-p %s" % job_parms["queue"]
+        args = job_parms["args"]
+        if hold:
+            args += " -H"
+        if notify:
+            args += " --mail-type=END"
+        submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --mail-type=FAIL -J \'%s\' %s %s %s" % (job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['name'], waitfor, queue, args)
+        logging.debug("submit_command = %s", submit_command)
+        output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
+        logging.debug("output = %s", output)
+        job_match = re.search('^Submitted batch job (\d+)$', output)
+        if job_match:
+            jobid = job_match.group(1)
+        else:
+            logging.warning("Job not submitted!!")
+            print("WARNING: Job not submitted: %s" % output)
     else:
         pass
     logging.info("jobid = %s", jobid)
     return(jobid)
 
+def _release_hold( job_submitter, job_id ):
+    import subprocess
+    if job_submitter == "PBS":
+        command = "qrls %s" % job_id
+    elif job_submitter == "SLURM":
+        command = "scontrol release %s" % job_id
+    else:
+        return
+    logging.info("command = %s", command)
+    output = subprocess.getoutput(command)
+    logging.debug("output = %s", output)
+
 def _index_reference( configuration ):
     import os
     import re
     output_folder = configuration["output_folder"]
+    job_parms = configuration["index"][3]
     ref_path = configuration["reference"][1]
     ref_folder = os.path.join(output_folder, "reference")
     if not os.path.exists(ref_folder):
@@ -82,8 +131,8 @@ def _index_reference( configuration ):
         index_commands.append("%s faidx %s" % (samtools_path, reference))
     
     command = "\n".join(index_commands)
-    job_parms = {'name':'nasp_index', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'work_dir':ref_folder}
-    job_id = _submit_job(configuration["job_submitter"], command, job_parms)
+    job_parms['work_dir'] = ref_folder
+    job_id = _submit_job(configuration["job_submitter"], command, job_parms, hold=True)
     return (job_id, reference)
 
 def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
@@ -348,6 +397,7 @@ def _index_bams( configuration, index_job_id ):
     import os
     alignments = configuration["alignments"]
     output_folder = configuration["output_folder"]
+    job_parms = configuration["bam_index"][3]
     sampath = configuration["samtools"][1]
     bam_folder = os.path.join(output_folder, "bams")
     if not os.path.exists(bam_folder):
@@ -360,7 +410,7 @@ def _index_bams( configuration, index_job_id ):
         command_parts.append("ln -s -f %s %s" % (bam, new_file))
         command_parts.append("%s index %s" % (sampath, new_file))
     command = "\n".join(command_parts)
-    job_parms = {'name':'nasp_bamindex', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'work_dir':bam_folder}
+    job_parms['work_dir'] = bam_folder
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
     return (bam_files, job_id)
 
@@ -368,6 +418,8 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     import matrix_DTO
     import os
     output_dir = configuration['output_folder']
+    path = configuration["matrix_generator"][1]
+    job_parms = configuration["matrix_generator"][3]
     matrix_parms = {'reference-fasta':reference, 'reference-dups':dups_file}
     matrix_parms['minimum-coverage'] = configuration['coverage_filter']
     matrix_parms['minimum-proportion'] = configuration['proportion_filter']
@@ -380,9 +432,9 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     dto_file = os.path.join(output_dir, "matrix_dto.xml")
     matrix_DTO.write_dto(matrix_parms, franken_fastas, vcf_files, dto_file)
     jobs_to_wait_for = ":".join(job_ids)
-    command = "vcf_to_matrix.py --mode xml --dto-file %s --num-threads %s" % (dto_file, '10')
-    job_parms = {'name':'nasp_matrix', 'num_cpus':'10', 'mem_requested':'4', 'walltime':'96', 'work_dir':output_dir}
-    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'))    
+    command = "%s --mode xml --dto-file %s --num-threads %s" % (path, dto_file, job_parms['num_cpus'])
+    job_parms['work_dir'] = output_dir
+    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'), notify=True)    
     return job_id
 
 def begin( configuration ):
@@ -415,7 +467,8 @@ def begin( configuration ):
     for (name, vcf) in configuration["vcfs"]:
         vcf_files.append((name, "pre-aligned", "pre-called", vcf))
         
-    _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids)
+    _create_matrices( configuration, reference, dups_file, vcf_files, franken_fastas, job_ids )
+    _release_hold( configuration["job_submitter"], index_job_id )
 
 def main():
     import configuration_parser

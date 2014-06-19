@@ -10,7 +10,7 @@
 			<CoverageFilter>10</CoverageFilter>
 			<ProportionFilter>0.9</ProportionFilter>
 		</Filters>
-		<JobSubmitter>qsub</JobSubmitter>
+		<JobSubmitter>PBS</JobSubmitter>
 	</Options>
 	<Files>
 		<ReadFolder path="/home/dlemmer/nasp_test/reads">
@@ -54,6 +54,36 @@
 		</VCFFolder>
 	</Files>
 	<ExternalApplications>
+		<Index path="/lumberyard/bin/nasp_python/">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="nasp_index">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>4</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
+			</JobParameters>
+		</Index>
+		<BamIndex path="/lumberyard/bin/nasp_python/">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="nasp_bamindex">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>4</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
+			</JobParameters>
+		</BamIndex>
+		<MatrixGeneration path="/lumberyard/bin/nasp_python/vcf_to_matrix.py">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="nasp_matrix">
+				<MemRequested>45</MemRequested>
+				<NumCPUs>12</NumCPUs>
+				<Walltime>48</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
+			</JobParameters>
+		</MatrixGeneration>
 		<Picard path="/usr/share/java/">
 			<AdditionalArgs></AdditionalArgs>
 		</Picard>
@@ -66,6 +96,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>1</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</DupFinder>
 		<AssemblyImporter path="/usr/bin/delta-filter">
@@ -74,6 +106,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>1</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</AssemblyImporter>
 		<Aligner name="SNAP" path="/usr/local/bin/snap">
@@ -82,6 +116,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
 		<Aligner name="Novoalign" path="/usr/local/bin/novoalign">
@@ -90,6 +126,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
 		<Aligner name="BWA sampe" path="/usr/local/bin/bwa">
@@ -98,6 +136,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
 		<Aligner name="BWA mem" path="/usr/local/bin/bwa">
@@ -106,6 +146,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
 		<SNPCaller name="GATK" path="/usr/share/java/GenomeAnalysisTK.jar">
@@ -114,6 +156,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 		<SNPCaller name="SolSNP" path="/usr/share/java/SolSNP.jar">
@@ -122,6 +166,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 		<SNPCaller name="VarScan" path="/usr/share/java/VarScan.jar">
@@ -130,6 +176,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>24</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 		<SNPCaller name="Samtools" path="/usr/local/bin/bcftools">
@@ -138,6 +186,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>24</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 	</ExternalApplications>

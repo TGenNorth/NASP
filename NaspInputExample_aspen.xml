@@ -10,7 +10,7 @@
 			<CoverageFilter>10</CoverageFilter>
 			<ProportionFilter>0.9</ProportionFilter>
 		</Filters>
-		<JobSubmitter>qsub</JobSubmitter>
+		<JobSubmitter>PBS</JobSubmitter>
 	</Options>
 	<Files>
 		<ReadFolder path="/scratch/dlemmer/nasp_test/reads">
@@ -18,22 +18,42 @@
 		<AssemblyFolder path="/scratch/dlemmer/nasp_test/assemblies">
 			<Assembly sample="ST398">ST398.fasta</Assembly>
 		</AssemblyFolder>
-<!--		<AlignmentFolder path="/scratch/dlemmer/nasp_test/bwa">
-			<Alignment sample="USA100-OR-10_bwa">USA100-OR-10-bwa.bam</Alignment>
-			<Alignment sample="USA300-OR-54_bwa">USA300-OR-54-bwa.bam</Alignment>
-			<Alignment sample="USA1000-CA-629_bwa">USA1000-CA-629-bwa.bam</Alignment>
-			<Alignment sample="USA100-CA-126_bwa">USA100-CA-126-bwa.bam</Alignment>
-			<Alignment sample="USA800-NY-313_bwa">USA800-NY-313-bwa.bam</Alignment>
+		<AlignmentFolder path="/scratch/dlemmer/nasp_test/alignments">
 		</AlignmentFolder>
-		<VCFFolder path="/scratch/dlemmer/nasp_test/gatk">
-			<VCFFile sample="USA100-OR-10_bwa_gatk">USA100-OR-10-bwa-gatk.vcf</VCFFile>
-			<VCFFile sample="USA300-OR-54_bwa_gatk">USA300-OR-54-bwa-gatk.vcf</VCFFile>
-			<VCFFile sample="USA1000-CA-629_bwa_gatk">USA1000-CA-629-bwa-gatk.vcf</VCFFile>
-			<VCFFile sample="USA100-CA-126_bwa_gatk">USA100-CA-126-bwa-gatk.vcf</VCFFile>
-			<VCFFile sample="USA800-NY-313_bwa_gatk">USA800-NY-313-bwa-gatk.vcf</VCFFile>
-		</VCFFolder> -->
+		<VCFFolder path="/scratch/dlemmer/nasp_test/vcfs">
+		</VCFFolder>
 	</Files>
 	<ExternalApplications>
+		<Index path="/packages/tnorth/bin/nasp_python/">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="nasp_index">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>4</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
+			</JobParameters>
+		</Index>
+		<BamIndex path="/packages/tnorth/bin/nasp_python/">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="nasp_bamindex">
+				<MemRequested>2</MemRequested>
+				<NumCPUs>1</NumCPUs>
+				<Walltime>4</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
+			</JobParameters>
+		</BamIndex>
+		<MatrixGeneration path="/packages/tnorth/bin/nasp_python/vcf_to_matrix.py">
+			<AdditionalArgs></AdditionalArgs>
+			<JobParameters name="nasp_matrix">
+				<MemRequested>45</MemRequested>
+				<NumCPUs>12</NumCPUs>
+				<Walltime>48</Walltime>
+				<Queue>hmem</Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
+			</JobParameters>
+		</MatrixGeneration>
 		<Picard path="/packages/tnorth/bin/">
 			<AdditionalArgs></AdditionalArgs>
 		</Picard>
@@ -46,6 +66,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>1</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</DupFinder>
 		<AssemblyImporter path="/packages/tnorth/bin/delta-filter">
@@ -54,6 +76,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>1</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</AssemblyImporter>
 		<Aligner name="SNAP" path="/packages/tnorth/bin/snap">
@@ -62,6 +86,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
 		<Aligner name="Novoalign" path="/packages/tnorth/bin/novoalign">
@@ -78,6 +104,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
 		<Aligner name="BWA mem" path="/packages/tnorth/bin/bwa">
@@ -86,6 +114,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
 		<SNPCaller name="GATK" path="/packages/tnorth/bin/GenomeAnalysisTK.jar">
@@ -94,6 +124,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 		<SNPCaller name="SolSNP" path="/packages/tnorth/bin/SolSNP.jar">
@@ -102,6 +134,8 @@
 				<MemRequested>10</MemRequested>
 				<NumCPUs>4</NumCPUs>
 				<Walltime>36</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 		<SNPCaller name="VarScan" path="/packages/tnorth/bin/VarScan.jar">
@@ -110,6 +144,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>24</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 		<SNPCaller name="Samtools" path="/packages/tnorth/bin/bcftools">
@@ -118,6 +154,8 @@
 				<MemRequested>2</MemRequested>
 				<NumCPUs>1</NumCPUs>
 				<Walltime>24</Walltime>
+				<Queue></Queue>
+				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</SNPCaller>			
 	</ExternalApplications>
