@@ -157,10 +157,6 @@ def _get_java_path(jarfile):
     for path, dirs, files in os.walk(os.getcwd):
         for filename in fnmatch.filter(files, jarfile):
             return os.path.join(path, filename)
-    #Finally, start at the file system root
-    for path, dirs, files in os.walk(os.path.abspath(os.sep)):
-        for filename in fnmatch.filter(files, jarfile):
-            return os.path.join(path, filename)
     #Let's ask the user
     jar_path = input("\nUnable to find '%s', please enter the full path to '%s': " % (jarfile, jarfile))
     while not os.access(jar_path, os.R_OK):
@@ -375,6 +371,8 @@ def _get_user_input(reference, output_folder):
     if len(read_list) > 0:
         logging.info("Getting Aligners...")
         configuration["aligners"] = _get_aligners(queue, args)
+    else:
+        configuration["aligners"] = None
     
     bam_list = _get_bams(cwd)    
     configuration["alignments"] = bam_list
@@ -387,6 +385,8 @@ def _get_user_input(reference, output_folder):
             picard_path = _get_java_path("CreateSequenceDictionary.jar")
             configuration["picard"] = ("picard", os.path.dirname(picard_path), "", {})
             logging.info("Picard = %s", configuration["picard"])
+    else:
+        configuration["snpcallers"] = None
         
     configuration["vcfs"] = _get_vcfs(cwd)
 
