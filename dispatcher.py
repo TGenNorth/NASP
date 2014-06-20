@@ -358,13 +358,16 @@ def _align_reads( read_tuple, configuration, index_job_id, reference ):
         name = aligner[0]
         if re.search('bwa', name, re.IGNORECASE):
             (bam_nickname, job_id, final_file) = _run_bwa(read_tuple, aligner, configuration["samtools"], configuration["job_submitter"], index_job_id, reference, configuration["output_folder"])
-            aligner_output.append((bam_nickname, job_id, final_file, name))
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
         elif re.search('novo', name, re.IGNORECASE):
             (bam_nickname, job_id, final_file) = _run_novoalign(read_tuple, aligner, configuration["samtools"], configuration["job_submitter"], index_job_id, reference, configuration["output_folder"])
-            aligner_output.append((bam_nickname, job_id, final_file, name))
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
         elif re.search('snap', name, re.IGNORECASE):
             (bam_nickname, job_id, final_file) = _run_snap(read_tuple, aligner, configuration["samtools"], configuration["job_submitter"], index_job_id, reference, configuration["output_folder"])
-            aligner_output.append((bam_nickname, job_id, final_file, name))
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
         else:
             print("Unknown aligner \'%s\' found, don't know what to do. Skipping..." % name)
     return aligner_output
@@ -372,25 +375,28 @@ def _align_reads( read_tuple, configuration, index_job_id, reference ):
 def _call_snps( aligner_output, configuration, reference ):
     import re
     snpcaller_output = []
-    print(aligner_output)
-    print(len(aligner_output))
     for (nickname, aligner_job_id, bam_file, aligner_name) in aligner_output:
-        for snpcaller in configuration["snpcallers"]:
-            name = snpcaller[0]
-            if re.search('gatk', name, re.IGNORECASE):
-                (vcf_nickname, job_id, final_file) = _run_gatk(nickname, bam_file, snpcaller, configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
-                snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
-            elif re.search('solsnp', name, re.IGNORECASE):
-                (vcf_nickname, job_id, final_file) = _run_solsnp(nickname, bam_file, snpcaller, configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
-                snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
-            elif re.search('varscan', name, re.IGNORECASE):
-                (vcf_nickname, job_id, final_file) = _run_varscan(nickname, bam_file, snpcaller, configuration["samtools"], configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
-                snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
-            elif re.search('samtools', name, re.IGNORECASE):
-                (vcf_nickname, job_id, final_file) = _run_samtools(nickname, bam_file, snpcaller, configuration["samtools"], configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
-                snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
-            else:
-                print("Unknown SNP caller \'%s\' found, don't know what to do. Skipping..." % name)
+        if aligner_job_id:
+            for snpcaller in configuration["snpcallers"]:
+                name = snpcaller[0]
+                if re.search('gatk', name, re.IGNORECASE):
+                    (vcf_nickname, job_id, final_file) = _run_gatk(nickname, bam_file, snpcaller, configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
+                    if job_id:
+                        snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
+                elif re.search('solsnp', name, re.IGNORECASE):
+                    (vcf_nickname, job_id, final_file) = _run_solsnp(nickname, bam_file, snpcaller, configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
+                    if job_id:
+                        snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
+                elif re.search('varscan', name, re.IGNORECASE):
+                    (vcf_nickname, job_id, final_file) = _run_varscan(nickname, bam_file, snpcaller, configuration["samtools"], configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
+                    if job_id:
+                        snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
+                elif re.search('samtools', name, re.IGNORECASE):
+                    (vcf_nickname, job_id, final_file) = _run_samtools(nickname, bam_file, snpcaller, configuration["samtools"], configuration["job_submitter"], aligner_job_id, reference, configuration["output_folder"])
+                    if job_id:
+                        snpcaller_output.append((vcf_nickname, job_id, final_file, aligner_name, name))
+                else:
+                    print("Unknown SNP caller \'%s\' found, don't know what to do. Skipping..." % name)
     return snpcaller_output
 
 def _index_bams( configuration, index_job_id ):
@@ -439,6 +445,9 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
 
 def begin( configuration ):
     (index_job_id, reference) = _index_reference( configuration )
+    if not index_job_id:
+        print("Failed to submit the index job, there is no point in continuing. Please try again.")
+        raise SystemExit()
     dups_file = None
     job_ids = []
     vcf_files = []
@@ -447,8 +456,9 @@ def begin( configuration ):
         (job_id, dups_file) = _find_dups( configuration, index_job_id, reference )
     for assembly in configuration["assemblies"]:
         (job_id, final_file) = _convert_external_genome( assembly, configuration, index_job_id, reference )
-        job_ids.append(job_id)
-        franken_fastas.append((assembly[0], "nucmer", final_file))
+        if job_id:
+            job_ids.append(job_id)
+            franken_fastas.append((assembly[0], "nucmer", final_file))
     if configuration["alignments"]:
         pre_aligned = []
         (bam_files, bamindex_job_id) = _index_bams(configuration, index_job_id)
@@ -456,14 +466,16 @@ def begin( configuration ):
             pre_aligned.append((name, bamindex_job_id, bam, "pre-aligned"))
         snpcaller_output = _call_snps( pre_aligned, configuration, reference )
         for (vcf_nickname, job_id, final_file, aligner, snpcaller) in snpcaller_output:
-            job_ids.append(job_id)
-            vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
+            if job_id:
+                job_ids.append(job_id)
+                vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
     for read_tuple in configuration["reads"]:
         aligner_output = _align_reads( read_tuple, configuration, index_job_id, reference )
         snpcaller_output = _call_snps( aligner_output, configuration, reference )
         for (vcf_nickname, job_id, final_file, aligner, snpcaller) in snpcaller_output:
-            job_ids.append(job_id)
-            vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
+            if job_id:
+                job_ids.append(job_id)
+                vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
     for (name, vcf) in configuration["vcfs"]:
         vcf_files.append((name, "pre-aligned", "pre-called", vcf))
         
