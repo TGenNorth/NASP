@@ -669,6 +669,7 @@ class VCFRecord:
         return self._current_record['global']['REF']
 
     def get_sample_call( self, current_sample ):
+        # FIXME indels
         return_value = None
         if len( self._current_record['alts'] ) == 1:
             return_value = self._current_record['alts'][0]
@@ -725,13 +726,15 @@ class VCFRecord:
     def get_sample_info( self, current_sample ):
         sample_info = {}
         sample_info['call'] = self.get_sample_call( current_sample )
+        # FIXME indels
+        if length( sample_info['call'] ) > 1:
+            sample_info['call'] = sample_info['call'][0]
         sample_info['was_called'] = False
         sample_info['is_a_snp'] = False
         if sample_info['call'] is not None and sample_info['call'][0] != 'N':
             sample_info['was_called'] = True
             if Genome.simple_call( sample_info['call'][0] ) != Genome.simple_call( self._current_record['global']['REF'] ):
                 sample_info['is_a_snp'] = True
-        sample_info['is_a_snp']
         # FIXME indels
         sample_info['is_an_insert'] = None
         sample_info['is_a_delete'] = None

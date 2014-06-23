@@ -84,6 +84,7 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
                     raise ReferenceCallMismatch( reference_call, vcf_record.get_reference_call(), file_path, current_contig, current_pos )
                 for vcf_sample in vcf_samples:
                     sample_info = vcf_record.get_sample_info( vcf_sample )
+                    # FIXME indels
                     if sample_info['call'] is not None:
                         genomes[vcf_sample].set_call( sample_info['call'], current_pos, 'X', current_contig )
                     if sample_info['was_called']:
