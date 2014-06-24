@@ -727,7 +727,7 @@ class VCFRecord:
         sample_info = {}
         sample_info['call'] = self.get_sample_call( current_sample )
         # FIXME indels
-        if length( sample_info['call'] ) > 1:
+        if len( sample_info['call'] ) > 1:
             sample_info['call'] = sample_info['call'][0]
         sample_info['was_called'] = False
         sample_info['is_a_snp'] = False
