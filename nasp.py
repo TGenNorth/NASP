@@ -372,7 +372,7 @@ def _get_user_input(reference, output_folder):
         logging.info("Getting Aligners...")
         configuration["aligners"] = _get_aligners(queue, args)
     else:
-        configuration["aligners"] = None
+        configuration["aligners"] = ""
     
     bam_list = _get_bams(cwd)    
     configuration["alignments"] = bam_list
@@ -386,7 +386,7 @@ def _get_user_input(reference, output_folder):
             configuration["picard"] = ("picard", os.path.dirname(picard_path), "", {})
             logging.info("Picard = %s", configuration["picard"])
     else:
-        configuration["snpcallers"] = None
+        configuration["snpcallers"] = ""
         
     configuration["vcfs"] = _get_vcfs(cwd)
 
