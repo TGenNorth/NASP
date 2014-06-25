@@ -110,7 +110,7 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
 def determine_file_type( input_file ):
     import re
     file_type = None
-    filename_match = re.match( r'^((?:[A-Za-z0-9._ -]+,)+)::.*$', input_file )
+    filename_match = re.match( r'^((?:[^,:]+,)+)::.*$', input_file )
     if filename_match:
         generator_array = filename_match.group(1).split( ',' )
         file_type = generator_array[0]
@@ -120,7 +120,7 @@ def determine_file_type( input_file ):
 def get_file_path( input_file ):
     import re
     file_path = None
-    filename_match = re.match( r'^(?:[A-Za-z0-9._ -]+,)+::(.*)$', input_file )
+    filename_match = re.match( r'^(?:[^,:]+,)+::(.*)$', input_file )
     if filename_match:
         file_path = filename_match.group(1)
     else:
@@ -130,7 +130,7 @@ def get_file_path( input_file ):
 
 def set_genome_metadata( genome, input_file ):
     import re
-    filename_match = re.match( r'^((?:[A-Za-z0-9._ -]+,)+)::(.*)$', input_file )
+    filename_match = re.match( r'^((?:[^,:]+,)+)::(.*)$', input_file )
     if filename_match:
         generator_array = filename_match.group(1).split( ',' )
         genome.set_file_type( generator_array[0] )
