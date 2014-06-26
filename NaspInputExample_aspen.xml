@@ -44,7 +44,7 @@
 				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</BamIndex>
-		<MatrixGeneration path="/packages/tnorth/bin/nasp_python/vcf_to_matrix.py">
+		<MatrixGenerator path="/packages/tnorth/bin/nasp_python/vcf_to_matrix.py">
 			<AdditionalArgs></AdditionalArgs>
 			<JobParameters name="nasp_matrix">
 				<MemRequested>45</MemRequested>
@@ -53,7 +53,7 @@
 				<Queue>hmem</Queue>
 				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
-		</MatrixGeneration>
+		</MatrixGenerator>
 		<Picard path="/packages/tnorth/bin/">
 			<AdditionalArgs></AdditionalArgs>
 		</Picard>

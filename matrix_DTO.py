@@ -38,6 +38,7 @@ def _parse_files( node ):
     return input_files
 
 def write_dto( matrix_parms, franken_fastas, vcf_files, xml_file ):
+    from xml.dom import minidom
     root = ElementTree.Element("matrix_data")
     parm_node = ElementTree.SubElement(root, "parameters")
     _write_parameters(parm_node, matrix_parms)
@@ -48,7 +49,10 @@ def write_dto( matrix_parms, franken_fastas, vcf_files, xml_file ):
     for (name, aligner, snpcaller, file) in vcf_files:
         attributes = {'name':name, 'aligner':aligner, 'snpcaller':snpcaller}
         _add_input_file(files_node, "vcf", attributes, file)
-    ElementTree.ElementTree(root).write(xml_file)
+    dom = minidom.parseString(ElementTree.tostring(root, 'utf-8'))
+    output = open(xml_file, 'w')
+    output.write(dom.toprettyxml(indent="    "))
+    output.close()
     return xml_file
     
 def parse_dto( xml_file ):

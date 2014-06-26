@@ -454,6 +454,8 @@ def begin( configuration ):
     franken_fastas = []
     if configuration["find_dups"]:
         (job_id, dups_file) = _find_dups( configuration, index_job_id, reference )
+        if job_id:
+            job_ids.append(job_id)
     for assembly in configuration["assemblies"]:
         (job_id, final_file) = _convert_external_genome( assembly, configuration, index_job_id, reference )
         if job_id:

@@ -74,7 +74,7 @@
 				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</BamIndex>
-		<MatrixGeneration path="/lumberyard/bin/nasp_python/vcf_to_matrix.py">
+		<MatrixGenerator path="/lumberyard/bin/nasp_python/vcf_to_matrix.py">
 			<AdditionalArgs></AdditionalArgs>
 			<JobParameters name="nasp_matrix">
 				<MemRequested>45</MemRequested>
@@ -83,7 +83,7 @@
 				<Queue></Queue>
 				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
-		</MatrixGeneration>
+		</MatrixGenerator>
 		<Picard path="/usr/share/java/">
 			<AdditionalArgs></AdditionalArgs>
 		</Picard>
@@ -130,7 +130,7 @@
 				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
-		<Aligner name="BWA sampe" path="/usr/local/bin/bwa">
+		<Aligner name="BWA-sampe" path="/usr/local/bin/bwa">
 			<AdditionalArgs></AdditionalArgs>
 			<JobParameters name="">
 				<MemRequested>10</MemRequested>
@@ -140,7 +140,7 @@
 				<JobSubmitterArgs></JobSubmitterArgs>
 			</JobParameters>
 		</Aligner>
-		<Aligner name="BWA mem" path="/usr/local/bin/bwa">
+		<Aligner name="BWA-mem" path="/usr/local/bin/bwa">
 			<AdditionalArgs></AdditionalArgs>
 			<JobParameters name="">
 				<MemRequested>10</MemRequested>
