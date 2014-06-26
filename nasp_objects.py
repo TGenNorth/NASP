@@ -389,6 +389,12 @@ class GenomeCollection( CollectionStatistics ):
             self.increment_contig_stat( 'reference_clean', current_contig )
         matrix_line += '' + reference_call + "\t"
         custom_line = '' + matrix_line
+        dups_call = self._reference.get_dups_call( current_pos, None, current_contig )
+        if dups_call == "1":
+            dups_call = True
+            self.increment_contig_stat( 'reference_duplicated', current_contig )
+        else:
+            dups_call = False
         call_data = { 'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0, 'callstring': '', 'covstring': '', 'propstring': '', 'called': 0, 'passcov': 0, 'passprop': 0 }
         consensus_check = {}
         # The expensive loop, single threaded and runs for every sample-analysis-contig-position
@@ -432,11 +438,33 @@ class GenomeCollection( CollectionStatistics ):
                     consensus_check[genome_nickname] = simplified_sample_call
             else:
                 consensus_check[genome_nickname] = 'N'
+            # FIXME indels
             if was_called and passed_coverage and passed_proportion and simplified_refcall != 'N':
+                if not dups_call:
+                    self.record_sample_stat( 'quality_breadth', genome_nickname, genome_identifier, genome_path, True )
                 if simplified_refcall == simplified_sample_call:
                     call_data['refcall'] += 1
+                    if not dups_call:
+                        self.record_sample_stat( 'called_reference', genome_nickname, genome_identifier, genome_path, True )
+                        self.record_sample_stat( 'called_snp', genome_nickname, genome_identifier, genome_path, False )
+                        self.record_sample_stat( 'called_indel', genome_nickname, genome_identifier, genome_path, False )
+                        self.record_sample_stat( 'called_degen', genome_nickname, genome_identifier, genome_path, False )
                 elif simplified_sample_call != 'N':
                     call_data['snpcall'] += 1
+                    if not dups_call:
+                        self.record_sample_stat( 'called_reference', genome_nickname, genome_identifier, genome_path, False )
+                        self.record_sample_stat( 'called_snp', genome_nickname, genome_identifier, genome_path, True )
+                        self.record_sample_stat( 'called_indel', genome_nickname, genome_identifier, genome_path, False )
+                        self.record_sample_stat( 'called_degen', genome_nickname, genome_identifier, genome_path, False )
+                else:
+                    if not dups_call:
+                        self.record_sample_stat( 'called_reference', genome_nickname, genome_identifier, genome_path, False )
+                        self.record_sample_stat( 'called_snp', genome_nickname, genome_identifier, genome_path, False )
+                        self.record_sample_stat( 'called_indel', genome_nickname, genome_identifier, genome_path, False )
+                        self.record_sample_stat( 'called_degen', genome_nickname, genome_identifier, genome_path, True )
+            elif simplified_refcall != 'N':
+                if not dups_call:
+                    self.record_sample_stat( 'quality_breadth', genome_nickname, genome_identifier, genome_path, False )
             if matrix_format is None:
                 custom_line += '' + sample_call + "\t"
             elif matrix_format == "missingdata":
@@ -460,12 +488,6 @@ class GenomeCollection( CollectionStatistics ):
         custom_line += '' + str( call_data['A'] ) + "\t" + str( call_data['C'] ) + "\t" + str( call_data['G'] ) + "\t" + str( call_data['T'] ) + "\t" + str( call_data['indel'] ) + "\t" + str( call_data['N'] ) + "\t"
         matrix_line += '' + current_contig + "\t" + str( current_pos ) + "\t"
         custom_line += '' + current_contig + "\t" + str( current_pos ) + "\t"
-        dups_call = self._reference.get_dups_call( current_pos, None, current_contig )
-        if dups_call == "1":
-            dups_call = True
-            self.increment_contig_stat( 'reference_duplicated', current_contig )
-        else:
-            dups_call = False
         if 'N' not in consensus_check.values():
             consensus_check = True
             self.increment_contig_stat( 'all_passed_consensus', current_contig )
@@ -547,7 +569,7 @@ class GenomeCollection( CollectionStatistics ):
             general_handle.write( "\n" )
 
     def _write_sample_stats( self, sample_handle ):
-        sample_stat_array = [ 'was_called', 'passed_coverage_filter', 'passed_proportion_filter' ]
+        sample_stat_array = [ 'was_called', 'passed_coverage_filter', 'passed_proportion_filter', 'called_reference', 'called_snp', 'called_degen' ]
         #denominator_stat = 'reference_length'
         #denominator_value = self.get_contig_stat( denominator_stat )
         sample_handle.write( "Sample\tSample Analysis\t" )
@@ -583,7 +605,7 @@ class GenomeCollection( CollectionStatistics ):
         general_handle = open( general_filename, 'w' )
         sample_handle = open( sample_filename, 'w' )
         self._write_general_stats( general_handle )
-        #self._write_sample_stats( sample_handle )
+        self._write_sample_stats( sample_handle )
         general_handle.close()
         sample_handle.close()
         #print( self._stats._contig_stats )
@@ -727,13 +749,13 @@ class VCFRecord:
         sample_info = {}
         sample_info['call'] = self.get_sample_call( current_sample )
         # FIXME indels
-        if len( sample_info['call'] ) > 1:
+        if sample_info['call'] is not None and len( sample_info['call'] ) > 1:
             sample_info['call'] = sample_info['call'][0]
         sample_info['was_called'] = False
         sample_info['is_a_snp'] = False
-        if sample_info['call'] is not None and sample_info['call'][0] != 'N':
+        if sample_info['call'] is not None and sample_info['call'] != 'N':
             sample_info['was_called'] = True
-            if Genome.simple_call( sample_info['call'][0] ) != Genome.simple_call( self._current_record['global']['REF'] ):
+            if Genome.simple_call( sample_info['call'] ) != Genome.simple_call( self._current_record['global']['REF'] ):
                 sample_info['is_a_snp'] = True
         # FIXME indels
         sample_info['is_an_insert'] = None
