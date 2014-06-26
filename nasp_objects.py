@@ -316,13 +316,13 @@ class CollectionStatistics:
         self._cache_cumulative_stats( stat_id, None, did_pass )
 
     def get_sample_stat( self, stat_id, sample_nickname, sample_identifier, sample_path ):
-        return_value = 0 
+        return_value = 0
         if ( stat_id, sample_nickname, ( sample_identifier, sample_path ), None ) in self._sample_stats:
             return_value = self._sample_stats[( stat_id, sample_nickname, ( sample_identifier, sample_path ), None )]
         return return_value
 
     def get_cumulative_stat( self, stat_id, cum_type, sample_nickname = None ):
-        return_value = 0 
+        return_value = 0
         if ( stat_id, sample_nickname, None, cum_type ) in self._sample_stats:
             return_value = self._sample_stats[( stat_id, sample_nickname, None, cum_type )]
         return return_value
@@ -334,6 +334,7 @@ class CollectionStatistics:
                     self._increment_by_sample( stat_id, sample_nickname, None, 'all' )
                 if self._cumulative_cache[( stat_id, sample_nickname, 'p' )] > 0:
                     self._increment_by_sample( stat_id, sample_nickname, None, 'any' )
+        self._cumulative_cache = {}
 
 
 class GenomeCollection( CollectionStatistics ):
@@ -572,7 +573,7 @@ class GenomeCollection( CollectionStatistics ):
         sample_stat_array = [ 'was_called', 'passed_coverage_filter', 'passed_proportion_filter', 'called_reference', 'called_snp', 'called_degen' ]
         #denominator_stat = 'reference_length'
         #denominator_value = self.get_contig_stat( denominator_stat )
-        sample_handle.write( "Sample\tSample Analysis\t" )
+        sample_handle.write( "Sample\tSample::Analysis\t" )
         for current_stat in sample_stat_array:
             sample_handle.write( '' + current_stat + "\t" )
             #sample_handle.write( '' + current_stat + " (%)\t" )
