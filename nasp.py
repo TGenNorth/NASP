@@ -197,14 +197,14 @@ def _get_aligners(queue, args):
     response = input("\nWould you like to run BWA samp/se [N]?* ")
     if re.match('^[Yy]', response):
         bwa_path = _get_application_path("bwa")
-        bwa_sampe_settings = _get_advanced_settings("BWA sampe", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
+        bwa_sampe_settings = _get_advanced_settings("BWA-sampe", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(bwa_sampe_settings)
         logging.info(bwa_sampe_settings)
     response = input("\nWould you like to run BWA mem [Y]? ")
     if not re.match('^[Nn]', response):
         if not bwa_path:
             bwa_path = _get_application_path("bwa")
-        bwa_mem_settings = _get_advanced_settings("BWA mem", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
+        bwa_mem_settings = _get_advanced_settings("BWA-mem", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(bwa_mem_settings)
         logging.info(bwa_mem_settings)
     response = input("\nWould you like to run Novoalign [Y]? ")
@@ -316,9 +316,23 @@ def _get_user_input(reference, output_folder):
     configuration["job_submitter"] = job_submitter
     logging.info("JobSubmitter = %s", configuration["job_submitter"])
     
-    read_list = _get_reads(cwd)
-    configuration["reads"] = read_list
+    name_match = re.search('^.*/(.*)$', output_folder) #Warning, not OS-independent! Should find a better way to do this.
+    configuration["run_name"] = name_match.group(1) #Temporary: setting the run name to be whatever the the output folder is named. Should ask user.
+    logging.info("RunName = %s", configuration["run_name"])
     
+    samtools_path = _find_executable("samtools")
+    configuration["samtools"] = ("Samtools", samtools_path, "", {})
+    logging.info("Samtools = %s", configuration["samtools"])
+    
+    run_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+    configuration["index"] = ("Index", run_path, "", {'name':'nasp_index', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'queue':queue, 'args':args})
+    logging.info("Index = %s", configuration["index"])
+    matrix_path = os.path.join(run_path, "vcf_to_matrix.py")
+    if not os.path.exists(matrix_path):
+        matrix_path = "vcf_to_matrix.py"
+    configuration["matrix_generator"] = ("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
+    logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
+
     fasta_list = _get_external_fastas(cwd)
     configuration["assemblies"] = fasta_list
 
@@ -332,50 +346,25 @@ def _get_user_input(reference, output_folder):
             if re.match('^[Yy]', response):
                 nucmer_args = input("  What additional arguments would you like to pass to 'nucmer' while importing external genomes? ")
                 deltafilter_args = input("  What additional arguments would you like to pass to 'delta-filter' while importing external genomes? ")
-            configuration["assembly_importer"] = ("assemblyImporter", deltafilter_path, deltafilter_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1', 'queue':queue, 'args':args})
+            configuration["assembly_importer"] = ("AssemblyImporter", deltafilter_path, deltafilter_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1', 'queue':queue, 'args':args})
             logging.info("AssemblyImporter = %s", configuration["assembly_importer"])
-        configuration["dup_finder"] = ("dupFinder", nucmer_path, nucmer_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1', 'queue':queue, 'args':args})
+        configuration["dup_finder"] = ("DupFinder", nucmer_path, nucmer_args, {'num_cpus':'1', 'mem_requested':'2', 'walltime':'1', 'queue':queue, 'args':args})
         logging.info("DupFinder = %s", configuration["dup_finder"])
     
-    coverage_filter = input("\nThis pipeline can do filtering based on coverage.\nIf you do not want filtering based on coverage, enter 0.\nWhat is your minimum coverage threshold [10]? ")
-    if not coverage_filter:
-        coverage_filter = 10
-    configuration["coverage_filter"] = str(coverage_filter)
-    logging.info("CoverageFilter = %s", configuration["coverage_filter"])
+    read_list = _get_reads(cwd)
+    configuration["reads"] = read_list
     
-    proportion_filter = input("\nThis pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.\nIf you do not want filtering based on proportion, enter 0.\nWhat is the minimum acceptable proportion [0.9]? ")    
-    if not proportion_filter:
-        proportion_filter = 0.9
-    configuration["proportion_filter"] = str(proportion_filter)
-    logging.info("ProportionFilter = %s", configuration["proportion_filter"])
-
-    name_match = re.search('^.*/(.*)$', output_folder) #Warning, not OS-independent! Should find a better way to do this.
-    configuration["run_name"] = name_match.group(1) #Temporary: setting the run name to be whatever the the output folder is named. Should ask user.
-    logging.info("RunName = %s", configuration["run_name"])
-    
-    samtools_path = _find_executable("samtools")
-    configuration["samtools"] = ("samtools", samtools_path, "", {})
-    logging.info("Samtools = %s", configuration["samtools"])
-    
-    run_path = os.path.abspath(os.path.dirname(sys.argv[0]))
-    configuration["index"] = ("index", run_path, "", {'name':'nasp_index', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'queue':queue, 'args':args})
-    logging.info("Index = %s", configuration["index"])
-    configuration["bam_index"] = ("bamIndex", run_path, "", {'name':'nasp_bamindex', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'queue':queue, 'args':args})
-    logging.info("BamIndex = %s", configuration["bam_index"])
-    matrix_path = os.path.join(run_path, "vcf_to_matrix.py")
-    if not os.path.exists(matrix_path):
-        matrix_path = "vcf_to_matrix.py"
-    configuration["matrix_generator"] = ("matrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
-    logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
-
     if len(read_list) > 0:
         logging.info("Getting Aligners...")
         configuration["aligners"] = _get_aligners(queue, args)
     else:
-        configuration["aligners"] = ""
+        configuration["aligners"] = []
     
     bam_list = _get_bams(cwd)    
     configuration["alignments"] = bam_list
+    if len(bam_list) > 0:
+        configuration["bam_index"] = ("BamIndex", run_path, "", {'name':'nasp_bamindex', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'queue':queue, 'args':args})
+        logging.info("BamIndex = %s", configuration["bam_index"])
     
     if len(read_list) > 0 or len(bam_list) > 0:
         logging.info("Getting SNP Callers...")
@@ -383,12 +372,26 @@ def _get_user_input(reference, output_folder):
     
         if using_gatk:
             picard_path = _get_java_path("CreateSequenceDictionary.jar")
-            configuration["picard"] = ("picard", os.path.dirname(picard_path), "", {})
+            configuration["picard"] = ("Picard", os.path.dirname(picard_path), "", {})
             logging.info("Picard = %s", configuration["picard"])
     else:
-        configuration["snpcallers"] = ""
+        configuration["snpcallers"] = []
+    
+    vcf_list = _get_vcfs(cwd)    
+    configuration["vcfs"] = vcf_list
+
+    if len(read_list) > 0 or len(bam_list) > 0 or len(vcf_list) > 0:
+        coverage_filter = input("\nThis pipeline can do filtering based on coverage.\nIf you do not want filtering based on coverage, enter 0.\nWhat is your minimum coverage threshold [10]? ")
+        if not coverage_filter:
+            coverage_filter = 10
+        configuration["coverage_filter"] = str(coverage_filter)
+        logging.info("CoverageFilter = %s", configuration["coverage_filter"])
         
-    configuration["vcfs"] = _get_vcfs(cwd)
+        proportion_filter = input("\nThis pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.\nIf you do not want filtering based on proportion, enter 0.\nWhat is the minimum acceptable proportion [0.9]? ")    
+        if not proportion_filter:
+            proportion_filter = 0.9
+        configuration["proportion_filter"] = str(proportion_filter)
+        logging.info("ProportionFilter = %s", configuration["proportion_filter"])
 
     include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
     if re.match('^[Yy]', include_missing):
@@ -406,8 +409,7 @@ def main():
         dispatcher.begin(configuration)
     else:
         configuration = _get_user_input( commandline_args.reference_fasta, commandline_args.output_folder )
-        #print(configuration)
-        #configuration_parser.write_config(configuration)
+        configuration_parser.write_config(configuration)
         dispatcher.begin(configuration)
 
 if __name__ == "__main__": main()

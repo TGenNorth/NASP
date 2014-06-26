@@ -40,23 +40,24 @@ def _parse_args():
     return parser.parse_args()
 
 def _parse_options( options_node ):
-    configuration["run_name"] = options_node.find('RunName').text
-    configuration["output_folder"] = options_node.find('OutputFolder').text
+    configuration["run_name"] = options_node.findtext('RunName')
+    configuration["output_folder"] = options_node.findtext('OutputFolder')
     reference_node = options_node.find('Reference')
     configuration["reference"] = (reference_node.get('name'), reference_node.get('path'))
-    configuration["find_dups"] = reference_node.find('FindDups').text
+    configuration["find_dups"] = reference_node.findtext('FindDups')
     filter_node = options_node.find('Filters')
-    configuration["coverage_filter"] = filter_node.find('CoverageFilter').text
-    configuration["proportion_filter"] = filter_node.find('ProportionFilter').text
-    configuration["job_submitter"] = options_node.find('JobSubmitter').text
+    if options_node.find('CoverageFilter'):
+        configuration["coverage_filter"] = filter_node.findtext('CoverageFilter')
+    if options_node.find('ProportionFilter'):
+        configuration["proportion_filter"] = filter_node.findtext('ProportionFilter')
+    configuration["job_submitter"] = options_node.findtext('JobSubmitter')
     if options_node.find('FilterMatrixFormat'):
-        configuration["filter_matrix_format"] = options_node.find('FilterMatrixFormat').text
+        configuration["filter_matrix_format"] = options_node.findtext('FilterMatrixFormat')
 
 def _find_reads( folder, filepath ):
     import os
     import re
     num_reads = 0
-    folder.text = "\n\t\t\t"
     for file in os.listdir(filepath):
         is_read = re.search('(.*)(\.fastq(?:\.gz)?)$', file, re.IGNORECASE)
         if is_read:
@@ -69,14 +70,10 @@ def _find_reads( folder, filepath ):
                     read2 = "%s%s2%s%s" % (is_paired.group(1), is_paired.group(2), is_paired.group(4), is_read.group(2))
                     if os.path.exists(os.path.join(filepath, read2)):
                         read_node = ElementTree.SubElement(folder, "ReadPair", {'sample':sample_name})
-                        read_node.text = "\n\t\t\t\t"
-                        read_node.tail = "\n\t\t\t"
                         read1_node = ElementTree.SubElement(read_node, "Read1Filename")
                         read1_node.text = read1
-                        read1_node.tail = "\n\t\t\t\t"
                         read2_node = ElementTree.SubElement(read_node, "Read2Filename")
                         read2_node.text = read2                    
-                        read2_node.tail = "\n\t\t\t"
                         read_list.append((sample_name, os.path.join(filepath, read1), os.path.join(filepath, read2)))
                         num_reads += 1
                     else:
@@ -84,7 +81,6 @@ def _find_reads( folder, filepath ):
             else:
                 read_node = ElementTree.SubElement(folder, "Read", {'sample':sample_name})
                 read_node.text = file
-                read_node.tail = "\n\t\t\t"
                 read_list.append((sample_name, os.path.join(filepath, file)))
                 num_reads += 1
     return num_reads
@@ -93,14 +89,12 @@ def _find_files( folder, filepath, filetype, extension ):
     import os
     import re
     num_files = 0
-    folder.text = "\n\t\t\t"
     for file in os.listdir(filepath):
         is_type = re.search('(.*)(\.%s)$' % extension, file, re.IGNORECASE)
         if is_type:
             sample_name = is_type.group(1)
             file_node = ElementTree.SubElement(folder, filetype, {'sample':sample_name})
             file_node.text = file
-            file_node.tail = "\n\t\t\t"
             if filetype == 'Assembly':
                 fasta_list.append((sample_name, os.path.join(filepath, file)))
             if filetype == 'Alignment':
@@ -181,26 +175,27 @@ def _parse_files( files_node ):
 def _get_application( app_node, name=None ):
     name = name or app_node.get('name')
     path = app_node.get('path')
-    args = app_node.find('AdditionalArgs').text or ""
+    args = app_node.findtext('AdditionalArgs', default="")
     job_parms = {}
     job_node = app_node.find('JobParameters')
     if ( job_node is not None ):
         job_parms['name'] = job_node.get("name") if job_node.get("name") else ""
-        job_parms['mem_requested'] = job_node.find('MemRequested').text if job_node.find('MemRequested') else ""
-        job_parms['num_cpus'] = job_node.find('NumCPUs').text if job_node.find('NumCPUs') else ""
-        job_parms['walltime'] = job_node.find('Walltime').text if job_node.find('Walltime') else ""
-        job_parms['gueue'] = job_node.find('Queue').text if job_node.find('Queue') else ""
-        job_parms['args'] = job_node.find('JobSubmitterArgs').text if job_node.find('JobSubmitterArgs') else ""
+        job_parms['mem_requested'] = job_node.findtext('MemRequested', default="")
+        job_parms['num_cpus'] = job_node.findtext('NumCPUs', default="")
+        job_parms['walltime'] = job_node.findtext('Walltime', default="")
+        job_parms['queue'] = job_node.findtext('Queue', default="")
+        job_parms['args'] = job_node.findtext('JobSubmitterArgs', default="")
+        print(job_parms)
     return (name, path, args, job_parms)
 
 def _parse_applications( applications_node ):
-    configuration["picard"] = _get_application(applications_node.find('Picard'), "picard")
-    configuration["samtools"] = _get_application(applications_node.find('Samtools'), "samtools")
-    configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "dupFinder")
-    configuration["index"] = _get_application(applications_node.find('Index'), "index")
-    configuration["bam_index"] = _get_application(applications_node.find('BamIndex'), "bamIndex")
-    configuration["matrix_generator"] = _get_application(applications_node.find('MatrixGenerator'), "matrixGenerator")
-    configuration["assembly_importer"] = _get_application(applications_node.find('AssemblyImporter'), "assemblyImporter")
+    configuration["picard"] = _get_application(applications_node.find('Picard'), "Picard")
+    configuration["samtools"] = _get_application(applications_node.find('Samtools'), "Samtools")
+    configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "DupFinder")
+    configuration["index"] = _get_application(applications_node.find('Index'), "Index")
+    configuration["bam_index"] = _get_application(applications_node.find('BamIndex'), "BamIndex")
+    configuration["matrix_generator"] = _get_application(applications_node.find('MatrixGenerator'), "MatrixGenerator")
+    configuration["assembly_importer"] = _get_application(applications_node.find('AssemblyImporter'), "AssemblyImporter")
     for aligner in applications_node.findall('Aligner'):
         aligner_list.append(_get_application(aligner))
     configuration["aligners"] = aligner_list
@@ -208,13 +203,160 @@ def _parse_applications( applications_node ):
         snpcaller_list.append(_get_application(snpcaller))
     configuration["snpcallers"] = snpcaller_list
         
+def _write_reads( node, read_list ):
+    import os
+    from collections import defaultdict
+    read_dict = defaultdict(list)
+    for read_tuple in read_list:
+        (name, read1) = read_tuple[0:2]
+        read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
+        folder = os.path.dirname(read1)
+        read1 = os.path.basename(read1)
+        if read2:
+            read2 = os.path.basename(read2)
+        read_dict[folder].append((name, read1, read2))
+    for folder in read_dict:
+        folder_node = ElementTree.SubElement(node, "ReadFolder", {'path':folder})
+        for (name, read1, read2) in read_dict[folder]:
+            if read2: # We have paired reads
+                read_node = ElementTree.SubElement(folder_node, "ReadPair", {'sample':name})
+                read1_node = ElementTree.SubElement(read_node, "Read1Filename")
+                read1_node.text = read1
+                read2_node = ElementTree.SubElement(read_node, "Read2Filename")
+                read2_node.text = read2
+            else:
+                read_node = ElementTree.SubElement(folder_node, "Read", {'sample':name})
+                read_node.text = read1
+    return node
+
+def _write_files( node, file_list, foldernode, filenode ):
+    import os
+    from collections import defaultdict
+    file_dict = defaultdict(list)
+    for (name, file) in file_list:
+        folder = os.path.dirname(file)
+        file = os.path.basename(file)
+        file_dict[folder].append((name, file))
+    for folder in file_dict:
+        folder_node = ElementTree.SubElement(node, foldernode, {'path':folder})
+        for (name, file) in file_dict[folder]:
+            file_node = ElementTree.SubElement(folder_node, filenode, {'sample':name})
+            file_node.text = file
+    return node
+
+def _write_application( node, details, app_type ):
+    (name, path, args, job_parms) = details
+    app_node = ElementTree.SubElement(node, app_type, {'name':name, 'path':path})
+    arg_node = ElementTree.SubElement(app_node, "AdditionalArguments")
+    arg_node.text = args
+    if len(job_parms) > 0:
+        job_node = ElementTree.SubElement(app_node, "JobParameters")
+        if "name" in job_parms:
+            job_node.set('name', job_parms["name"])
+        ElementTree.SubElement(job_node, "MemRequested").text = job_parms["mem_requested"] if "mem_requested" in job_parms else ""
+        ElementTree.SubElement(job_node, "NumCPUs").text = job_parms["num_cpus"] if "num_cpus" in job_parms else ""
+        ElementTree.SubElement(job_node, "Walltime").text = job_parms["walltime"] if "walltime" in job_parms else ""
+        ElementTree.SubElement(job_node, "Queue").text = job_parms["queue"] if "queue" in job_parms else ""
+        ElementTree.SubElement(job_node, "JobSubmitterArgs").text = job_parms["args"] if "args" in job_parms else ""
+    return node
+
+def _write_config_node( root, xml_file ):
+    from xml.dom import minidom
+    dom = minidom.parseString(ElementTree.tostring(root, 'utf-8'))
+    output = open(xml_file, 'w')
+    output.write(dom.toprettyxml(indent="    ", newl="\n"))
+    output.close()
+    return xml_file
+
+def write_config( configuration ):
+    import os
+    root = ElementTree.Element("NaspInputData")
+    
+    #Create the Options section
+    options_node = ElementTree.SubElement(root, "Options")
+
+    run_name = configuration["run_name"]
+    node = ElementTree.SubElement(options_node, "RunName")
+    node.text = run_name
+    
+    output_folder = configuration["output_folder"]
+    node = ElementTree.SubElement(options_node, "OutputFolder")
+    node.text = output_folder
+    
+    xml_file = os.path.join(output_folder, "%s.xml" % run_name)
+    
+    (name, path) = configuration["reference"]
+    ref_node = ElementTree.SubElement(options_node, "Reference", {'name':name, 'path':path})
+    node = ElementTree.SubElement(ref_node, "FindDups")
+    node.text = configuration["find_dups"]
+    
+    filter_node = ElementTree.SubElement(options_node, "Filters")
+    if "proportion_filter" in configuration:
+        proportion = ElementTree.SubElement(filter_node, "ProportionFilter")
+        proportion.text = configuration["proportion_filter"]
+    if "coverage_filter" in configuration:
+        coverage = ElementTree.SubElement(filter_node, "CoverageFilter")
+        coverage.text = configuration["coverage_filter"]
+    
+    node = ElementTree.SubElement(options_node, "JobSubmitter")
+    node.text = configuration["job_submitter"]
+
+    if "filter_matrix_format" in configuration:
+        node = ElementTree.SubElement(options_node, "FilterMatrixFormat")
+        node.text = configuration["filter_matrix_format"]
+        
+    #Create the Files section
+    files_node = ElementTree.SubElement(root, "Files")
+    
+    read_list = configuration["reads"]
+    if len(read_list) > 0:
+        _write_reads(files_node, read_list)
+        
+    fasta_list = configuration["assemblies"]
+    if len(fasta_list) > 0:
+        _write_files(files_node, fasta_list, "AssemblyFolder", "Assembly")
+        
+    bam_list = configuration["alignments"]
+    if len(bam_list) > 0:
+        _write_files(files_node, bam_list, "AlignmentFolder", "Alignment")
+        
+    vcf_list = configuration["vcfs"]
+    if len(fasta_list) > 0:
+        _write_files(files_node, vcf_list, "VCFFolder", "VCFFile")
+
+    #Create the ExternalApplications section
+    applications_node = ElementTree.SubElement(root, "ExternalApplications")
+    
+    _write_application(applications_node, configuration["index"], "Index")
+    _write_application(applications_node, configuration["bam_index"], "BamIndex")
+    _write_application(applications_node, configuration["matrix_generator"], "MatrixGenerator")
+    _write_application(applications_node, configuration["picard"], "Picard")
+    _write_application(applications_node, configuration["samtools"], "Samtools")
+    _write_application(applications_node, configuration["dup_finder"], "DupFinder")
+    _write_application(applications_node, configuration["assembly_importer"], "AssemblyImporter")
+    
+    for aligner in configuration["aligners"]:
+        _write_application(applications_node, aligner, "Aligner")
+
+    for snpcaller in configuration["snpcallers"]:
+        _write_application(applications_node, snpcaller, "SNPCaller")
+
+    _write_config_node( root, xml_file )    
+
 def parse_config( config_file ):
+    import os
     xmltree = ElementTree.parse( config_file )
     root = xmltree.getroot()
     _parse_options(root.find('Options'))
     _parse_files(root.find('Files'))
     _parse_applications(root.find('ExternalApplications'))
-    ElementTree.ElementTree(root).write("%s_temp.xml" % config_file)
+    output_folder = configuration['output_folder']
+    xml_file = os.path.join(output_folder, config_file)
+    run_name = configuration['run_name']
+    if run_name:
+        xml_file = os.path.join(output_folder, "%s.xml" % run_name)
+    #_write_config_node( root, xml_file )
+    write_config(configuration)
     return configuration
 
 def main():
