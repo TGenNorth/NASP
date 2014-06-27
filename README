@@ -26,6 +26,12 @@ Expected usage for the command-line interface is:
 
 You will then be prompted to answer a few questions about your analysis.
 
+Optionally, if you are re-running a previous analysis with the same (or similar) 
+options, you can pass in an xml-based configuration file (this is written out to 
+your output_folder after running the command-line interface) using the format:
+
+  nasp --config <path_to_config.xml>
+
 
  INSTALLATION:
 ---------------
@@ -42,7 +48,7 @@ those versions that have been tested to work with NASP, refer to the included
  LICENSE:
 ----------
 Copyright (c) The Translational Genomics Research Institute
-See the included "LICENSE" docuement.
+See the included "LICENSE" document.
 
 
  CONTACT:

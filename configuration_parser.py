@@ -21,18 +21,6 @@ vcf_list = []
 aligner_list = []
 snpcaller_list = []
 
-# from UserDict import UserDict
-# 
-# class JobParameters(UserDict):
-#     "store job scheduling parameters"
-#     def __init__(self, scheduler="qsub"):
-#         UserDict.__init__(self)
-#         self["scheduler"] = scheduler
-#     def __setitem__(self, key, item):
-#         self.data[key] = item
-#     def __getitem__(self, key):
-#         return self.data[key]
-    
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
@@ -283,7 +271,7 @@ def write_config( configuration ):
     node = ElementTree.SubElement(options_node, "OutputFolder")
     node.text = output_folder
     
-    xml_file = os.path.join(output_folder, "%s.xml" % run_name)
+    xml_file = os.path.join(output_folder, "%s-config.xml" % run_name)
     
     (name, path) = configuration["reference"]
     ref_node = ElementTree.SubElement(options_node, "Reference", {'name':name, 'path':path})
@@ -344,18 +332,19 @@ def write_config( configuration ):
     _write_config_node( root, xml_file )    
 
 def parse_config( config_file ):
-    import os
     xmltree = ElementTree.parse( config_file )
     root = xmltree.getroot()
     _parse_options(root.find('Options'))
     _parse_files(root.find('Files'))
     _parse_applications(root.find('ExternalApplications'))
-    output_folder = configuration['output_folder']
-    xml_file = os.path.join(output_folder, config_file)
-    run_name = configuration['run_name']
-    if run_name:
-        xml_file = os.path.join(output_folder, "%s.xml" % run_name)
-    #_write_config_node( root, xml_file )
+# Commented part might be nicer way to do this here, but ElementTree keeps whitespace with each node, thus repeated reading 
+# and prettyprinting the same file keeps adding additional carriage returns. So we need to create new tree each time instead.
+#    output_folder = configuration['output_folder']
+#    xml_file = os.path.join(output_folder, config_file)
+#    run_name = configuration['run_name']
+#    if run_name:
+#        xml_file = os.path.join(output_folder, "%s-config.xml" % run_name)
+#    _write_config_node( root, xml_file )
     write_config(configuration)
     return configuration
 
