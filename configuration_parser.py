@@ -316,12 +316,16 @@ def write_config( configuration ):
     applications_node = ElementTree.SubElement(root, "ExternalApplications")
     
     _write_application(applications_node, configuration["index"], "Index")
-    _write_application(applications_node, configuration["bam_index"], "BamIndex")
+    if "bam_index" in configuration:
+        _write_application(applications_node, configuration["bam_index"], "BamIndex")
     _write_application(applications_node, configuration["matrix_generator"], "MatrixGenerator")
-    _write_application(applications_node, configuration["picard"], "Picard")
+    if "picard" in configuration:
+        _write_application(applications_node, configuration["picard"], "Picard")
     _write_application(applications_node, configuration["samtools"], "Samtools")
-    _write_application(applications_node, configuration["dup_finder"], "DupFinder")
-    _write_application(applications_node, configuration["assembly_importer"], "AssemblyImporter")
+    if "dup_finder" in configuration:
+        _write_application(applications_node, configuration["dup_finder"], "DupFinder")
+    if "assembly_importer" in configuration:
+        _write_application(applications_node, configuration["assembly_importer"], "AssemblyImporter")
     
     for aligner in configuration["aligners"]:
         _write_application(applications_node, aligner, "Aligner")
