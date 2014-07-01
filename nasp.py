@@ -309,7 +309,7 @@ def _get_user_input(reference, output_folder):
     logging.info("Reference = %s", configuration["reference"])
 
     response = input("\nDo you want to check the reference for duplicated regions\nand skip SNPs that fall in those regions [Y]? ")
-    configuration["find_dups"] = False if re.match('^[Nn]', response) else True
+    configuration["find_dups"] = "False" if re.match('^[Nn]', response) else "True"
     logging.info("FindDups = %s", configuration["find_dups"])
 
     (job_submitter, queue, args) = _get_job_submitter()
