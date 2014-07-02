@@ -429,8 +429,10 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     path = configuration["matrix_generator"][1]
     job_parms = configuration["matrix_generator"][3]
     matrix_parms = {'reference-fasta':reference, 'reference-dups':dups_file}
-    matrix_parms['minimum-coverage'] = configuration['coverage_filter']
-    matrix_parms['minimum-proportion'] = configuration['proportion_filter']
+    if "coverage_filter" in configuration:
+        matrix_parms['minimum-coverage'] = configuration['coverage_filter']
+    if "proportion_filter" in configuration:
+        matrix_parms['minimum-proportion'] = configuration['proportion_filter']
     matrix_parms['master-matrix'] = os.path.join(output_dir, 'master_matrix.tsv')
     matrix_parms['filter-matrix'] = os.path.join(output_dir, 'filter_matrix.tsv')
     matrix_parms['general-stats'] = os.path.join(output_dir, 'general_stats.tsv')

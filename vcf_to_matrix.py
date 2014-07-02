@@ -34,8 +34,8 @@ def _parse_input_config(commandline_args):
     commandline_args.filter_matrix = matrix_parms['filter-matrix']
     commandline_args.general_stats = matrix_parms['general-stats']
     commandline_args.contig_stats = matrix_parms['contig-stats']
-    commandline_args.minimum_coverage = int(matrix_parms['minimum-coverage'])
-    commandline_args.minimum_proportion = float(matrix_parms['minimum-proportion'])
+    commandline_args.minimum_coverage = int(matrix_parms['minimum-coverage']) if "minimum-coverage" in matrix_parms else 0
+    commandline_args.minimum_proportion = float(matrix_parms['minimum-proportion']) if "minimum-proportion" in matrix_parms else 0
     if "filter-matrix-format" in matrix_parms:
         commandline_args.filter_matrix_format = matrix_parms['filter-matrix-format']
     commandline_args.input_files = input_files
