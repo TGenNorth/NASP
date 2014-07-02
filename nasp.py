@@ -286,7 +286,9 @@ def _get_user_input(reference, output_folder):
     print( "* Starred features might be even more broken than non-starred features." )
 
     if not output_folder:
-        output_folder = input("\nWhere would you like output files to be written? ")
+        output_folder = input("\nWhere would you like output files to be written [nasp_results]? ")
+        if not output_folder:
+            output_folder = "nasp_results"
     output_folder = _expand_path(output_folder)
     if os.path.exists(output_folder):
         response = input("\nOutput folder %s already exists!\nFiles in it may be overwritten!\nShould we continue anyway [N]? " % output_folder)
