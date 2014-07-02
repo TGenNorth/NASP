@@ -269,8 +269,13 @@ def _run_solsnp(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, re
     work_dir = os.path.join(output_folder, snpcaller_name)   
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
-    final_file = os.path.join(work_dir, "%s.vcf" % vcf_nickname)    
-    command = "java -Xmx%sG -jar %s INPUT=%s REFERENCE_SEQUENCE=%s OUTPUT=%s SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable %s" % (memory, path, bam_file, reference, final_file, args)
+    final_file = os.path.join(work_dir, "%s.vcf" % vcf_nickname)
+    bam_link = os.path.join(work_dir, os.path.splitext(os.path.basename(bam_file))[0])
+    print("bam_file = %s" % bam_file)
+    print("work_dir = %s" % work_dir)
+    print("bam_link = %s" % bam_link)
+    os.symlink(bam_file, bam_link)    
+    command = "java -Xmx%sG -jar %s INPUT=%s REFERENCE_SEQUENCE=%s OUTPUT=%s SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable %s" % (memory, path, bam_link, reference, final_file, args)
     job_parms['name'] = "nasp_%s_%s" % (snpcaller_name, nickname)
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
