@@ -153,7 +153,9 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             for new_genome in new_genomes:
                 output_q.put( new_genome )
         except:
-            logging.exception( "Unable to read in data from '{0}'!".format( get_file_path( input_file ) ) )
+            failed_file_path = get_file_path( input_file )
+            logging.exception( "Unable to read in data from '{0}'!".format( failed_file_path ) )
+            output_q.put( failed_file_path )
         input_file = input_q.get()
     output_q.put( None )
 
@@ -180,6 +182,8 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
         new_genome = output_q.get()
         if new_genome is None:
             num_threads -= 1
+        elif isinstance( new_genome, str ):
+            genomes.add_failed_genome( new_genome )
         else:
             genomes.add_genome( new_genome )
     sleep( 1 )

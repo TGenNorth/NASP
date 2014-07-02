@@ -344,6 +344,7 @@ class GenomeCollection( CollectionStatistics ):
         self._reference = None
         self._genomes = []
         self._genome_identifiers = {}
+        self._failed_genomes = []
 
     # To preserve sample-analysis order across different runs
     @staticmethod
@@ -367,6 +368,10 @@ class GenomeCollection( CollectionStatistics ):
         self._genome_identifiers[genome_nickname][ ( genome.identifier(), genome.file_path() ) ] = True
         self._genomes.sort( key=GenomeCollection._get_key )
 
+    def add_failed_genome( self, genome_path ):
+        if genome_path not in self._failed_genomes:
+            self._failed_genomes.append( genome_path )
+
     def set_current_contig( self, contig_name ):
         contig_name = self._reference.set_current_contig( contig_name )
         for genome in self._genomes:
@@ -376,12 +381,10 @@ class GenomeCollection( CollectionStatistics ):
     def get_contigs( self ):
         return self._reference.get_contigs()
 
-    def get_genome_count( self ):
-        return len( self._genomes )
-
     # FIXME split into a larger number of smaller more testable functions
     def _format_matrix_line( self, current_contig, current_pos, matrix_format ):
-        genome_count = self.get_genome_count()
+        genome_count = len( self._genomes )
+        failed_genome_count = len( self._failed_genomes )
         matrix_line = '' + current_contig + "::" + str( current_pos ) + "\t"
         reference_call = self._reference.get_call( current_pos, None, current_contig )
         simplified_refcall = Genome.simple_call( reference_call )
@@ -475,6 +478,8 @@ class GenomeCollection( CollectionStatistics ):
                     custom_line += "X\t"
                 else:
                     custom_line += "N\t"
+        matrix_line += '' + '\t' * failed_genome_count
+        custom_line += '' + '\t' * failed_genome_count
         for genome_nickname in consensus_check:
             if consensus_check[genome_nickname] != 'N':
                 self.record_sample_stat( 'consensus', genome_nickname, None, None, True )
@@ -528,6 +533,9 @@ class GenomeCollection( CollectionStatistics ):
         for genome in self._genomes:
             master_handle.write( '' + genome.identifier() + "\t" )
             custom_handle.write( '' + genome.identifier() + "\t" )
+        for genome_path in self._failed_genomes:
+            master_handle.write( '' + genome_path + "\t" )
+            custom_handle.write( '' + genome_path + "\t" )
         master_handle.write( "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\n" )
         if matrix_format is None:
             custom_handle.write( "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\n" )
