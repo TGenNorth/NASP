@@ -110,7 +110,7 @@ def _get_vcfs(cwd):
         vcf_list = _find_files(path, "vcf")
     return vcf_list
 
-def _get_external_fastas(cwd):
+def _get_external_fastas(cwd, exclude):
     import re
     fasta_list = []
     response = input("\nDo you have fasta files for external genomes you wish to include [Y]? ")
@@ -119,6 +119,11 @@ def _get_external_fastas(cwd):
         path = _expand_path(path) if path else cwd
         logging.info("Looking for external fastas in %s...", path)
         fasta_list = _find_files(path, "fasta")
+        #remove the reference from the fasta_list if it is in there
+        for fasta_tuple in fasta_list:
+            fasta = fasta_tuple[1]
+            if fasta == exclude:
+                fasta_list.remove(fasta_tuple)
     return fasta_list
 
 def _get_reads(cwd):
@@ -333,7 +338,7 @@ def _get_user_input(reference, output_folder):
     configuration["matrix_generator"] = ("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
-    fasta_list = _get_external_fastas(cwd)
+    fasta_list = _get_external_fastas(cwd, reference)
     configuration["assemblies"] = fasta_list
 
     if configuration["find_dups"] or len(fasta_list) > 0:
