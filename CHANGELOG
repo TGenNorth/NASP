@@ -3,7 +3,9 @@
 
  Pending:
 ----------
- * 
+ * Support for bowtie2 aligner
+ * Remove requirement for Python 3.1+
+ *
 
  0.9.6:
 --------
@@ -14,7 +16,11 @@
  * Aligner and SNP caller program name expected values are now more tolerant and open-ended.
  * Insertion data no longer appears in the filtered matrix; one character per matrix cell.
  * Files that fail to be read are now represented with blank matrix columns to alert the user.
- * 
+ * Fully Python job dispatcher and command-line UI -- all code now written in Python
+ * Run log is written to output folder with choices the user made in the UI and commands that were submitted to job manager
+ * Main nasp executable can accept an XML file with configuration parameters instead of going through UI
+ * XML configuration file is written to output folder on every run
+ * Support for SLURM job manager and specifying queues/partitions and other job manager options for both PBS and SLURM
 
  0.9.5:
 --------
