@@ -1,10 +1,19 @@
- nasp changelog
+ NASP Changelog
 ================
 
  Pending:
 ----------
+ * 
+
+ 0.9.6:
+--------
  * VCF files with missing headers now throw a "MalformedInputFile" error instead of hanging.
  * Rewrote multithreading parameter passing algorithm to fix race condition again.
+ * Modified data storage algorithm to speed the matrix-building process at the cost of memory use.
+ * Improvements made to sample and analysis statistics, and new improved statistics file format.
+ * Aligner and SNP caller program name expected values are now more tolerant and open-ended.
+ * Insertion data no longer appears in the filtered matrix; one character per matrix cell.
+ * Files that fail to be read are now represented with blank matrix columns to alert the user.
  * 
 
  0.9.5:
