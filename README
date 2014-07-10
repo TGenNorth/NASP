@@ -22,7 +22,7 @@ interface, you would collect (or symbolically link) all of your input files
 into a folder, and then invoke the command-line interface from that folder.
 Expected usage for the command-line interface is:
 
-  nasp <reference.fasta> [output_folder]
+  nasp.py <reference.fasta> [output_folder]
 
 You will then be prompted to answer a few questions about your analysis.
 
@@ -30,7 +30,7 @@ Optionally, if you are re-running a previous analysis with the same (or similar)
 options, you can pass in an xml-based configuration file (this is written out to 
 your output_folder after running the command-line interface) using the format:
 
-  nasp --config <path_to_config.xml>
+  nasp.py --config <path_to_config.xml>
 
 
  INSTALLATION:

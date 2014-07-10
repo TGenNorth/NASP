@@ -6,11 +6,11 @@
 ---------------
 NASP itself is a set of python scripts with no special requirements for use.
 No "Makefile" or "setup.py" script is required, as no special steps need be
-taken.  The following files should have their execute flag set, and then be
-placed in, or symbolically linked to, a folder within the user's PATH:
+taken.  All of the included '.py' files should reside in the same folder.
+The following files should then have their execute flag set and reside in, or
+be symbolically linked to, a folder within the user's PATH:
 
- * nasp.pl
- * nasp_objects.py
+ * nasp.py
  * vcf_to_matrix.py
  * format_fasta.py
  * convert_external_genome.py
@@ -31,7 +31,7 @@ Single user:
     tar xzvf nasp.tar.gz
     mkdir ~/bin
     cd ~/bin
-    ln -s ../nasp_pipeline/*.pl ../nasp_pipeline/*.py ./
+    ln -s ../nasp_pipeline/*.py ./
     echo 'PATH="$HOME/bin:$PATH"' >> ~/.profile
 
 Multi-user:
@@ -45,7 +45,7 @@ Multi-user:
     cd /usr/local/src/nasp_pipeline/
     tar xzvf nasp.tar.gz
     cd /usr/local/bin
-    ln -s ../src/nasp_pipeline/*.pl ../src/nasp_pipeline/*.py ./
+    ln -s ../src/nasp_pipeline/*.py ./
 
 Using the "module load" system:
   If you have configured a module system on your high-performance compute
