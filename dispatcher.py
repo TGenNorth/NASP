@@ -109,6 +109,10 @@ def _index_reference( configuration ):
             if not bwa_done:
                 index_commands.append("%s index %s" % (path, reference))
                 bwa_done = True
+        elif re.search('b(ow)?t(ie)?2', name, re.IGNORECASE):
+            bt2path = os.path.split(path)[0]
+            bt2_build_path = os.path.join(bt2path, "bowtie2-build")
+            index_commands.append("%s %s reference" % (bt2_build_path, reference))
         elif re.search('novo', name, re.IGNORECASE):
             novopath = os.path.split(path)[0]
             novoindex_path = os.path.join(novopath, "novoindex")
@@ -164,6 +168,32 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
             command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (path, old_format_string, reference, read1, ncpus, output_file, args))
             command_parts.append("%s samse -r %s %s %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
         aligner_command = "\n".join(command_parts)
+    bam_nickname = "%s-%s" % (name, aligner_name)    
+    samview_command = "%s view -S -b -h -" % (sampath)
+    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
+    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
+    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
+    work_dir = os.path.join(output_folder, aligner_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)    
+    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+    return (bam_nickname, job_id, final_file)
+
+def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
+    import os
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
+    read_string = "-1 %s -2 %s" % (read1, read2) if read2 else "-U %s" % read1
+    ref_string = os.path.splitext(reference)[0]
+    bam_string = "--rg-id \'%s\' --rg \'SM:%s\'" % (name, name)
+    sampath = samtools[1]
+    (path, args, job_parms) = aligner[1:4]
+    aligner_name = "bowtie2"
+    ncpus = job_parms['num_cpus']
+    aligner_command = "%s %s -p %s %s -x %s %s" % (path, args, ncpus, bam_string, ref_string, read_string)
     bam_nickname = "%s-%s" % (name, aligner_name)    
     samview_command = "%s view -S -b -h -" % (sampath)
     samsort_command = "%s sort - %s" % (sampath, bam_nickname)
@@ -360,6 +390,10 @@ def _align_reads( read_tuple, configuration, index_job_id, reference ):
         name = aligner[0]
         if re.search('bwa', name, re.IGNORECASE):
             (bam_nickname, job_id, final_file) = _run_bwa(read_tuple, aligner, configuration["samtools"], configuration["job_submitter"], index_job_id, reference, configuration["output_folder"])
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
+        elif re.search('b(ow)?t(ie)?2', name, re.IGNORECASE):
+            (bam_nickname, job_id, final_file) = _run_bowtie2(read_tuple, aligner, configuration["samtools"], configuration["job_submitter"], index_job_id, reference, configuration["output_folder"])
             if job_id:
                 aligner_output.append((bam_nickname, job_id, final_file, name))
         elif re.search('novo', name, re.IGNORECASE):

@@ -212,6 +212,12 @@ def _get_aligners(queue, args):
         bwa_mem_settings = _get_advanced_settings("BWA-mem", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(bwa_mem_settings)
         logging.info(bwa_mem_settings)
+    response = input("\nWould you like to run Bowtie2 [Y]? ")
+    if not re.match('^[Nn]', response):
+        bt2_path = _get_application_path("bowtie2")
+        bt2_settings = _get_advanced_settings("Bowtie2", bt2_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
+        aligner_list.append(bt2_settings)
+        logging.info(bt2_settings)
     response = input("\nWould you like to run Novoalign [Y]? ")
     if not re.match('^[Nn]', response):
         novo_path = _get_application_path("novoalign")
