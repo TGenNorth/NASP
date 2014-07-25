@@ -21,6 +21,7 @@ def _parse_args():
 def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False, notify=False ):
     import subprocess
     import re
+    import os
     output = jobid = None
     logging.info("command = %s", command)
     if job_submitter == "PBS":
@@ -70,7 +71,27 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False,
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
     else:
-        pass
+        work_dir = job_parms['work_dir']
+        dependency_check = ""
+        if waitfor_id:
+            if re.search(":", waitfor_id[0]):
+                pid_filename = os.path.join(work_dir, "%s_dependent_pids" % job_parms['name'])
+                pid_file = open(pid_filename, 'w')
+                pids = waitfor_id[0].split(":")
+                pid_file.write("\n".join(pids))
+                pid_file.close
+                dependency_check = "while [ -s %s ]; do for pid in `cat %s`; do kill -0 \"$pid\" 2>/dev/null || sed -i \"/^$pid$/d\" %s; done; sleep 600; done; rm %s; " % (pid_filename, pid_filename, pid_filename, pid_filename)
+            else:
+                pid = waitfor_id[0]
+                dependency_check = "while kill -0 %s; do sleep 300; done; " % pid
+        #cpu_check = "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)/($2+$4+$5)} END {print 1-usage}'"
+        mem_requested = job_parms['mem_requested']
+        mem_check = "while [ `free -g | grep cache: | awk '{ print $4 }'` -lt %d*0.75 ]; do sleep 300; done; " % float(mem_requested)
+        submit_command = "%s%s%s" % (dependency_check, mem_check, command)
+        logging.debug("submit_command = %s", submit_command)
+        proc = subprocess.Popen(submit_command, stderr=subprocess.PIPE, shell=True, cwd=work_dir)
+        jobid = str(proc.pid)
+        print(proc.communicate())
     logging.info("jobid = %s", jobid)
     return(jobid)
 

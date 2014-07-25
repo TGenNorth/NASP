@@ -173,17 +173,21 @@ def _get_application( app_node, name=None ):
         job_parms['walltime'] = job_node.findtext('Walltime', default="")
         job_parms['queue'] = job_node.findtext('Queue', default="")
         job_parms['args'] = job_node.findtext('JobSubmitterArgs', default="")
-        print(job_parms)
     return (name, path, args, job_parms)
 
 def _parse_applications( applications_node ):
-    configuration["picard"] = _get_application(applications_node.find('Picard'), "Picard")
+    if applications_node.find('Picard'):
+        configuration["picard"] = _get_application(applications_node.find('Picard'), "Picard")
     configuration["samtools"] = _get_application(applications_node.find('Samtools'), "Samtools")
-    configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "DupFinder")
-    configuration["index"] = _get_application(applications_node.find('Index'), "Index")
-    configuration["bam_index"] = _get_application(applications_node.find('BamIndex'), "BamIndex")
+    if applications_node.find('DupFinder'):
+        configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "DupFinder")
+    if applications_node.find('Index'):
+        configuration["index"] = _get_application(applications_node.find('Index'), "Index")
+    if applications_node.find('BamIndex'):
+        configuration["bam_index"] = _get_application(applications_node.find('BamIndex'), "BamIndex")
     configuration["matrix_generator"] = _get_application(applications_node.find('MatrixGenerator'), "MatrixGenerator")
-    configuration["assembly_importer"] = _get_application(applications_node.find('AssemblyImporter'), "AssemblyImporter")
+    if applications_node.find('AssemblyImporter'):
+        configuration["assembly_importer"] = _get_application(applications_node.find('AssemblyImporter'), "AssemblyImporter")
     for aligner in applications_node.findall('Aligner'):
         aligner_list.append(_get_application(aligner))
     configuration["aligners"] = aligner_list

@@ -267,16 +267,21 @@ def _get_snpcallers(queue, args):
 def _get_job_submitter():
     import re
     job_submitter = "invalid"
-    response = input("\nWhat system do you use for job management (PBS/Torque and SLURM are currently supported) [PBS]? ")
+    queue = ""
+    args = ""
+    response = input("\nWhat system do you use for job management (PBS/TORQUE, SLURM, and 'none' are currently supported) [PBS]? ")
     while job_submitter == "invalid":
-        if re.match('^(PBS|Torque|qsub|)$', response, re.IGNORECASE):
+        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE):
             job_submitter = "PBS"
         elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
             job_submitter = "SLURM"
+        elif re.match('^none$', response, re.IGNORECASE):
+            job_submitter = "NONE"
         else:
             response = input("  %s is not a valid job management system, please enter another [PBS]? " % response)
-    queue = input("  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? ")
-    args = input("  What additional arguments do you need to pass to the job management system []? ")
+    if job_submitter != "NONE":
+        queue = input("  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? ")
+        args = input("  What additional arguments do you need to pass to the job management system []? ")
     return (job_submitter, queue, args)
 
 def _get_user_input(reference, output_folder):
@@ -285,8 +290,6 @@ def _get_user_input(reference, output_folder):
     import sys
     configuration = {}
     cwd = os.getcwd()
-    queue = ""
-    args = ""
     
     print( "Welcome to the very experimental python nasp version %s." % nasp_version )
     print( "* Starred features might be even more broken than non-starred features." )
