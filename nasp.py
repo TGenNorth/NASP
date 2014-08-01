@@ -419,13 +419,28 @@ def _get_user_input(reference, output_folder):
 def main():
     import dispatcher
     import configuration_parser
+    import os
+    import re
     commandline_args = _parse_args()
     if commandline_args.config:
         configuration = configuration_parser.parse_config(commandline_args.config)
-        dispatcher.begin(configuration)
+        output_folder = configuration["output_folder"]
+        if os.path.exists(output_folder):
+            response = input("\nOutput folder %s already exists!\nFiles in it may be overwritten!\nShould we continue anyway [N]? " % output_folder)
+            if not re.match('^[Yy]', response):
+                print("Operation cancelled!") 
+                quit()
+        else:
+            os.makedirs(output_folder)
+        logfile = os.path.join(output_folder, "runlog.txt")
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)s %(levelname)-8s %(message)s',
+                            datefmt='%m/%d/%Y %H:%M:%S',
+                            filename=logfile,
+                            filemode='w')
     else:
         configuration = _get_user_input( commandline_args.reference_fasta, commandline_args.output_folder )
-        configuration_parser.write_config(configuration)
-        dispatcher.begin(configuration)
+    configuration_parser.write_config(configuration)
+    dispatcher.begin(configuration)
 
 if __name__ == "__main__": main()

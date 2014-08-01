@@ -34,12 +34,12 @@ def _parse_options( options_node ):
     configuration["reference"] = (reference_node.get('name'), reference_node.get('path'))
     configuration["find_dups"] = reference_node.findtext('FindDups')
     filter_node = options_node.find('Filters')
-    if options_node.find('CoverageFilter'):
+    if filter_node.find('CoverageFilter') is not None:
         configuration["coverage_filter"] = filter_node.findtext('CoverageFilter')
-    if options_node.find('ProportionFilter'):
+    if filter_node.find('ProportionFilter') is not None:
         configuration["proportion_filter"] = filter_node.findtext('ProportionFilter')
     configuration["job_submitter"] = options_node.findtext('JobSubmitter')
-    if options_node.find('FilterMatrixFormat'):
+    if options_node.find('FilterMatrixFormat') is not None:
         configuration["filter_matrix_format"] = options_node.findtext('FilterMatrixFormat')
 
 def _find_reads( folder, filepath ):
@@ -353,7 +353,7 @@ def parse_config( config_file ):
 #    if run_name:
 #        xml_file = os.path.join(output_folder, "%s-config.xml" % run_name)
 #    _write_config_node( root, xml_file )
-    write_config(configuration)
+#    write_config(configuration)
     return configuration
 
 def main():
