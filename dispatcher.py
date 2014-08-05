@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.6"
+__version__ = "0.9.7"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -21,8 +21,9 @@ def _parse_args():
 def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False, notify=False ):
     import subprocess
     import re
+    import os
     output = jobid = None
-    logging.info("command = %s", command)
+    logging.info("command = %s" % command)
     if job_submitter == "PBS":
         waitfor = ""
         if waitfor_id:
@@ -39,7 +40,7 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False,
         submit_command = "qsub -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s %s %s" % (job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s", submit_command)
         output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
-        logging.debug("output = %s", output)
+        logging.debug("output = %s" % output)
         job_match = re.search('^(\d+)\..*$', output)
         if job_match:
             jobid = job_match.group(1)
@@ -60,9 +61,9 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False,
         if notify:
             args += " --mail-type=END"
         submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --mail-type=FAIL -J \'%s\' %s %s %s" % (job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['name'], waitfor, queue, args)
-        logging.debug("submit_command = %s", submit_command)
+        logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
-        logging.debug("output = %s", output)
+        logging.debug("output = %s" % output)
         job_match = re.search('^Submitted batch job (\d+)$', output)
         if job_match:
             jobid = job_match.group(1)
@@ -70,8 +71,34 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False,
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
     else:
-        pass
-    logging.info("jobid = %s", jobid)
+        command = re.sub('\n', '; ', command)
+        work_dir = job_parms['work_dir']
+        dependency_check = ""
+        if waitfor_id:
+            if re.search(":", waitfor_id[0]):
+                pid_filename = os.path.join(work_dir, "%s_dependent_pids" % job_parms['name'])
+                pid_file = open(pid_filename, 'w')
+                pids = waitfor_id[0].split(":")
+                pid_file.write("\n".join(pids))
+                pid_file.close
+                dependency_check = "while [ -s %s ]; do sleep 600; for pid in `cat %s`; do kill -0 \"$pid\" 2>/dev/null || sed -i \"/^$pid$/d\" %s; done; done; rm %s; " % (pid_filename, pid_filename, pid_filename, pid_filename)
+            else:
+                pid = waitfor_id[0]
+                dependency_check = "while kill -0 %s; do sleep 300; done; " % pid
+        #cpu_check = "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)/($2+$4+$5)} END {print 1-usage}'"
+        total_mem = subprocess.getoutput("free -g | grep Mem: | awk '{ print $2 }'")
+        mem_requested = job_parms['mem_requested']
+        if mem_requested > total_mem:
+            mem_requested = total_mem
+        print("total_mem = %s" % total_mem)
+        mem_needed = float(mem_requested)*750
+        mem_check = "while [ `free -m | grep cache: | awk '{ print $4 }'` -lt %d ]; do sleep 300; done; " % mem_needed
+        submit_command = "%s%s%s" % (dependency_check, mem_check, command)
+        logging.debug("submit_command = %s" % submit_command)
+        output_log = os.open(os.path.join(work_dir, "%s.out" % job_parms['name']), os.O_WRONLY|os.O_CREAT)
+        proc = subprocess.Popen(submit_command, stderr=subprocess.STDOUT, stdout=output_log, shell=True, cwd=work_dir)
+        jobid = str(proc.pid)
+    logging.info("jobid = %s" % jobid)
     return(jobid)
 
 def _release_hold( job_submitter, job_id ):
@@ -109,6 +136,10 @@ def _index_reference( configuration ):
             if not bwa_done:
                 index_commands.append("%s index %s" % (path, reference))
                 bwa_done = True
+        elif re.search('b(ow)?t(ie)?2', name, re.IGNORECASE):
+            bt2path = os.path.split(path)[0]
+            bt2_build_path = os.path.join(bt2path, "bowtie2-build")
+            index_commands.append("%s %s reference" % (bt2_build_path, reference))
         elif re.search('novo', name, re.IGNORECASE):
             novopath = os.path.split(path)[0]
             novoindex_path = os.path.join(novopath, "novoindex")
@@ -164,6 +195,32 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
             command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (path, old_format_string, reference, read1, ncpus, output_file, args))
             command_parts.append("%s samse -r %s %s %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
         aligner_command = "\n".join(command_parts)
+    bam_nickname = "%s-%s" % (name, aligner_name)    
+    samview_command = "%s view -S -b -h -" % (sampath)
+    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
+    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
+    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
+    work_dir = os.path.join(output_folder, aligner_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)    
+    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+    return (bam_nickname, job_id, final_file)
+
+def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
+    import os
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
+    read_string = "-1 %s -2 %s" % (read1, read2) if read2 else "-U %s" % read1
+    ref_string = os.path.splitext(reference)[0]
+    bam_string = "--rg-id \'%s\' --rg \'SM:%s\'" % (name, name)
+    sampath = samtools[1]
+    (path, args, job_parms) = aligner[1:4]
+    aligner_name = "bowtie2"
+    ncpus = job_parms['num_cpus']
+    aligner_command = "%s %s -p %s %s -x %s %s" % (path, args, ncpus, bam_string, ref_string, read_string)
     bam_nickname = "%s-%s" % (name, aligner_name)    
     samview_command = "%s view -S -b -h -" % (sampath)
     samsort_command = "%s sort - %s" % (sampath, bam_nickname)
@@ -360,6 +417,10 @@ def _align_reads( read_tuple, configuration, index_job_id, reference ):
         name = aligner[0]
         if re.search('bwa', name, re.IGNORECASE):
             (bam_nickname, job_id, final_file) = _run_bwa(read_tuple, aligner, configuration["samtools"], configuration["job_submitter"], index_job_id, reference, configuration["output_folder"])
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
+        elif re.search('b(ow)?t(ie)?2', name, re.IGNORECASE):
+            (bam_nickname, job_id, final_file) = _run_bowtie2(read_tuple, aligner, configuration["samtools"], configuration["job_submitter"], index_job_id, reference, configuration["output_folder"])
             if job_id:
                 aligner_output.append((bam_nickname, job_id, final_file, name))
         elif re.search('novo', name, re.IGNORECASE):

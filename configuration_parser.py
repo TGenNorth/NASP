@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.6"
+__version__ = "0.9.7"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -34,12 +34,12 @@ def _parse_options( options_node ):
     configuration["reference"] = (reference_node.get('name'), reference_node.get('path'))
     configuration["find_dups"] = reference_node.findtext('FindDups')
     filter_node = options_node.find('Filters')
-    if options_node.find('CoverageFilter'):
+    if filter_node.find('CoverageFilter') is not None:
         configuration["coverage_filter"] = filter_node.findtext('CoverageFilter')
-    if options_node.find('ProportionFilter'):
+    if filter_node.find('ProportionFilter') is not None:
         configuration["proportion_filter"] = filter_node.findtext('ProportionFilter')
     configuration["job_submitter"] = options_node.findtext('JobSubmitter')
-    if options_node.find('FilterMatrixFormat'):
+    if options_node.find('FilterMatrixFormat') is not None:
         configuration["filter_matrix_format"] = options_node.findtext('FilterMatrixFormat')
 
 def _find_reads( folder, filepath ):
@@ -173,17 +173,21 @@ def _get_application( app_node, name=None ):
         job_parms['walltime'] = job_node.findtext('Walltime', default="")
         job_parms['queue'] = job_node.findtext('Queue', default="")
         job_parms['args'] = job_node.findtext('JobSubmitterArgs', default="")
-        print(job_parms)
     return (name, path, args, job_parms)
 
 def _parse_applications( applications_node ):
-    configuration["picard"] = _get_application(applications_node.find('Picard'), "Picard")
+    if applications_node.find('Picard'):
+        configuration["picard"] = _get_application(applications_node.find('Picard'), "Picard")
     configuration["samtools"] = _get_application(applications_node.find('Samtools'), "Samtools")
-    configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "DupFinder")
-    configuration["index"] = _get_application(applications_node.find('Index'), "Index")
-    configuration["bam_index"] = _get_application(applications_node.find('BamIndex'), "BamIndex")
+    if applications_node.find('DupFinder'):
+        configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "DupFinder")
+    if applications_node.find('Index'):
+        configuration["index"] = _get_application(applications_node.find('Index'), "Index")
+    if applications_node.find('BamIndex'):
+        configuration["bam_index"] = _get_application(applications_node.find('BamIndex'), "BamIndex")
     configuration["matrix_generator"] = _get_application(applications_node.find('MatrixGenerator'), "MatrixGenerator")
-    configuration["assembly_importer"] = _get_application(applications_node.find('AssemblyImporter'), "AssemblyImporter")
+    if applications_node.find('AssemblyImporter'):
+        configuration["assembly_importer"] = _get_application(applications_node.find('AssemblyImporter'), "AssemblyImporter")
     for aligner in applications_node.findall('Aligner'):
         aligner_list.append(_get_application(aligner))
     configuration["aligners"] = aligner_list
@@ -349,7 +353,7 @@ def parse_config( config_file ):
 #    if run_name:
 #        xml_file = os.path.join(output_folder, "%s-config.xml" % run_name)
 #    _write_config_node( root, xml_file )
-    write_config(configuration)
+#    write_config(configuration)
     return configuration
 
 def main():

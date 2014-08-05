@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.6"
+__version__ = "0.9.7"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -212,6 +212,12 @@ def _get_aligners(queue, args):
         bwa_mem_settings = _get_advanced_settings("BWA-mem", bwa_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
         aligner_list.append(bwa_mem_settings)
         logging.info(bwa_mem_settings)
+    response = input("\nWould you like to run Bowtie2 [Y]? ")
+    if not re.match('^[Nn]', response):
+        bt2_path = _get_application_path("bowtie2")
+        bt2_settings = _get_advanced_settings("Bowtie2", bt2_path, "", {'num_cpus':'4', 'mem_requested':'10', 'walltime':'36', 'queue':queue, 'args':args})
+        aligner_list.append(bt2_settings)
+        logging.info(bt2_settings)
     response = input("\nWould you like to run Novoalign [Y]? ")
     if not re.match('^[Nn]', response):
         novo_path = _get_application_path("novoalign")
@@ -261,16 +267,21 @@ def _get_snpcallers(queue, args):
 def _get_job_submitter():
     import re
     job_submitter = "invalid"
-    response = input("\nWhat system do you use for job management (PBS/Torque and SLURM are currently supported) [PBS]? ")
+    queue = ""
+    args = ""
+    response = input("\nWhat system do you use for job management (PBS/TORQUE, SLURM, and 'none' are currently supported) [PBS]? ")
     while job_submitter == "invalid":
-        if re.match('^(PBS|Torque|qsub|)$', response, re.IGNORECASE):
+        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE):
             job_submitter = "PBS"
         elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
             job_submitter = "SLURM"
+        elif re.match('^none$', response, re.IGNORECASE):
+            job_submitter = "NONE"
         else:
             response = input("  %s is not a valid job management system, please enter another [PBS]? " % response)
-    queue = input("  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? ")
-    args = input("  What additional arguments do you need to pass to the job management system []? ")
+    if job_submitter != "NONE":
+        queue = input("  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? ")
+        args = input("  What additional arguments do you need to pass to the job management system []? ")
     return (job_submitter, queue, args)
 
 def _get_user_input(reference, output_folder):
@@ -279,8 +290,6 @@ def _get_user_input(reference, output_folder):
     import sys
     configuration = {}
     cwd = os.getcwd()
-    queue = ""
-    args = ""
     
     print( "Welcome to the very experimental python nasp version %s." % nasp_version )
     print( "* Starred features might be even more broken than non-starred features." )
@@ -410,13 +419,28 @@ def _get_user_input(reference, output_folder):
 def main():
     import dispatcher
     import configuration_parser
+    import os
+    import re
     commandline_args = _parse_args()
     if commandline_args.config:
         configuration = configuration_parser.parse_config(commandline_args.config)
-        dispatcher.begin(configuration)
+        output_folder = configuration["output_folder"]
+        if os.path.exists(output_folder):
+            response = input("\nOutput folder %s already exists!\nFiles in it may be overwritten!\nShould we continue anyway [N]? " % output_folder)
+            if not re.match('^[Yy]', response):
+                print("Operation cancelled!") 
+                quit()
+        else:
+            os.makedirs(output_folder)
+        logfile = os.path.join(output_folder, "runlog.txt")
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)s %(levelname)-8s %(message)s',
+                            datefmt='%m/%d/%Y %H:%M:%S',
+                            filename=logfile,
+                            filemode='w')
     else:
         configuration = _get_user_input( commandline_args.reference_fasta, commandline_args.output_folder )
-        configuration_parser.write_config(configuration)
-        dispatcher.begin(configuration)
+    configuration_parser.write_config(configuration)
+    dispatcher.begin(configuration)
 
 if __name__ == "__main__": main()
