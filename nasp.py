@@ -271,7 +271,7 @@ def _get_job_submitter():
     args = ""
     response = input("\nWhat system do you use for job management (PBS/TORQUE, SLURM, and 'none' are currently supported) [PBS]? ")
     while job_submitter == "invalid":
-        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE):
+        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE) or response == "":
             job_submitter = "PBS"
         elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
             job_submitter = "SLURM"
