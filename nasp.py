@@ -343,11 +343,6 @@ def _get_user_input(reference, output_folder):
     run_path = os.path.abspath(os.path.dirname(sys.argv[0]))
     configuration["index"] = ("Index", run_path, "", {'name':'nasp_index', 'num_cpus':'1', 'mem_requested':'2', 'walltime':'4', 'queue':queue, 'args':args})
     logging.info("Index = %s", configuration["index"])
-    matrix_path = os.path.join(run_path, "vcf_to_matrix.py")
-    if not os.path.exists(matrix_path):
-        matrix_path = "vcf_to_matrix.py"
-    configuration["matrix_generator"] = ("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
-    logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
     fasta_list = _get_external_fastas(cwd, reference)
     configuration["assemblies"] = fasta_list
@@ -408,6 +403,14 @@ def _get_user_input(reference, output_folder):
             proportion_filter = 0.9
         configuration["proportion_filter"] = str(proportion_filter)
         logging.info("ProportionFilter = %s", configuration["proportion_filter"])
+
+    matrix_path = os.path.join(run_path, "vcf_to_matrix.py")
+    if not os.path.exists(matrix_path):
+        matrix_path = "vcf_to_matrix.py"
+    print("\n")
+    matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
+    configuration["matrix_generator"] = matrix_settings
+    logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
     include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
     if re.match('^[Yy]', include_missing):
