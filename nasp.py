@@ -159,7 +159,7 @@ def _get_java_path(jarfile):
         for filename in fnmatch.filter(files, jarfile):
             return os.path.join(path, filename)
     #Didn't find it there, recursively check current directory
-    for path, dirs, files in os.walk(os.getcwd):
+    for path, dirs, files in os.walk(os.getcwd()):
         for filename in fnmatch.filter(files, jarfile):
             return os.path.join(path, filename)
     #Let's ask the user
