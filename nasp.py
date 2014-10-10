@@ -269,12 +269,14 @@ def _get_job_submitter():
     job_submitter = "invalid"
     queue = ""
     args = ""
-    response = input("\nWhat system do you use for job management (PBS/TORQUE, SLURM, and 'none' are currently supported) [PBS]? ")
+    response = input("\nWhat system do you use for job management (PBS/TORQUE, SLURM, SGE*, and 'none' are currently supported) [PBS]? ")
     while job_submitter == "invalid":
         if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE) or response == "":
             job_submitter = "PBS"
         elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
             job_submitter = "SLURM"
+        elif re.match('^SGE$', response, re.IGNORECASE):
+            job_submitter = "SGE"
         elif re.match('^none$', response, re.IGNORECASE):
             job_submitter = "NONE"
         else:
@@ -291,8 +293,8 @@ def _get_user_input(reference, output_folder):
     configuration = {}
     cwd = os.getcwd()
     
-    print( "Welcome to the very experimental python nasp version %s." % nasp_version )
-    print( "* Starred features might be even more broken than non-starred features." )
+    print( "Welcome to the experimental python NASP version %s." % nasp_version )
+    print( "* Starred features are less well tested, and may not work." )
 
     if not output_folder:
         output_folder = input("\nWhere would you like output files to be written [nasp_results]? ")

@@ -70,6 +70,30 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False,
         else:
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
+    elif job_submitter == "SGE":
+        waitfor = ""
+        if waitfor_id:
+            waitfor = "-hold_jid %s" % (re.sub(":", ",", waitfor_id[0]))
+        queue = ""
+        if job_parms["queue"]:
+            queue = "-q %s" % job_parms["queue"]
+        args = job_parms["args"]
+        if hold:
+            args += " -h"
+        if notify:
+            args += " -m e"
+        mem_needed = float(job_parms['mem_requested'])*1024*1024
+        #Apparently the number of processors a job uses is controlled by the queue it is running on in SGE, so there is no way to request a specific number of CPUs??
+        submit_command = "qsub -cwd \'%s\' -wd \'%s\' -l h_data=%sgb,h_rt=%s:00:00 -m a -N \'%s\' %s %s %s" % (job_parms["work_dir"], job_parms["work_dir"], mem_needed, job_parms['walltime'], job_parms['name'], waitfor, queue, args)
+        logging.debug("submit_command = %s", submit_command)
+        output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
+        logging.debug("output = %s" % output)
+        job_match = re.search('^(\d+)\..*$', output)
+        if job_match:
+            jobid = job_match.group(1)
+        else:
+            logging.warning("Job not submitted!!")
+            print("WARNING: Job not submitted: %s" % output)
     else:
         command = re.sub('\n', '; ', command)
         work_dir = job_parms['work_dir']
@@ -103,7 +127,7 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False,
 
 def _release_hold( job_submitter, job_id ):
     import subprocess
-    if job_submitter == "PBS":
+    if job_submitter == "PBS" or job_submitter == "SGE":
         command = "qrls %s" % job_id
     elif job_submitter == "SLURM":
         command = "scontrol release %s" % job_id
