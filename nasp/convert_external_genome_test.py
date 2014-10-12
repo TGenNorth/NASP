@@ -5,9 +5,10 @@ Created on Nov 19, 2013
 '''
 
 import logging
-import convert_external_genome
+import nasp.convert_external_genome as convert_external_genome
 import unittest
 import os
+
 
 class ConvertExternalGenomeTestCase(unittest.TestCase):
 
@@ -72,7 +73,7 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         self.assertRaises(OSError, convert_external_genome._update_genome_from_delta_data, "", "")
 
     def test_parse_delta_file(self):
-        from nasp_objects import GenomeStatus
+        from nasp.nasp_objects import GenomeStatus
         convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
         dups_data = GenomeStatus()
         convert_external_genome.parse_delta_file(self.delta, dups_data)

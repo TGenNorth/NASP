@@ -6,12 +6,14 @@ __email__ = "dsmith@tgen.org"
 
 import logging
 
+
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
     parser.add_argument( "--nucmerpath", default="nucmer", help="Path to the 'nucmer' executable." )
     parser.add_argument( "--reference", required=True, help="Path to the reference fasta file." )
     return parser.parse_args()
+
 
 # This should eventually be moved to the main job manager section
 def run_nucmer_on_reference( nucmer_path, reference_path ):
@@ -20,6 +22,7 @@ def run_nucmer_on_reference( nucmer_path, reference_path ):
     return_code = subprocess.call( [ nucmer_path, "--prefix=reference", "--maxmatch", "--nosimplify", reference_path, reference_path ] )
     if return_code > 0:
         sys.stderr.write( "NASP WARNING: nucmer may have encountered errors during reference duplicates checking, proceeding anyway\n" )
+
 
 def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
     import re
@@ -50,6 +53,7 @@ def _parse_delta_line( line_from_delta_file, dups_data, current_contigs ):
                 dups_data.set_value( ( "1" * ( contig_1_end - contig_1_start + 1 ) ), contig_1_start, "!", current_contigs[1] )
     return current_contigs
 
+
 def parse_delta_file( delta_filename, dups_data ):
     current_contigs = ( "", "" )
     delta_handle = open( delta_filename, 'r' )
@@ -57,8 +61,9 @@ def parse_delta_file( delta_filename, dups_data ):
         current_contigs = _parse_delta_line( line_from_delta_file, dups_data, current_contigs )
     delta_handle.close()
 
+
 def main():
-    from nasp_objects import GenomeStatus
+    from nasp.nasp_objects import GenomeStatus
     commandline_args = _parse_args()
     run_nucmer_on_reference( commandline_args.nucmerpath, commandline_args.reference )
     dups_data = GenomeStatus()

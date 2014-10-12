@@ -1,6 +1,6 @@
-===============================
+=============================
 Northern Arizona SNP Pipeline
-===============================
+=============================
 
 .. image:: https://badge.fury.io/py/nasp.png
     :target: http://badge.fury.io/py/nasp

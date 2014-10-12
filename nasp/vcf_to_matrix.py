@@ -31,6 +31,7 @@ def _parse_args():
     parser.add_argument( "--dto-file", help="Path to a matrix_dto XML file that defines all the parameters." )
     return parser.parse_args()
 
+
 def _parse_input_config(commandline_args):
     """
     Set the configuration options from the XML file and add them as attributes
@@ -40,7 +41,7 @@ def _parse_input_config(commandline_args):
     XML file in a separate dictionary, instead of mixing the two data sources
     together as now.
     """
-    import matrix_DTO
+    import nasp.matrix_DTO as matrix_DTO
     (matrix_parms, input_files) = matrix_DTO.parse_dto(commandline_args.dto_file)
     commandline_args.reference_fasta = matrix_parms['reference-fasta']
     commandline_args.reference_dups = matrix_parms['reference-dups']
@@ -55,6 +56,7 @@ def _parse_input_config(commandline_args):
     commandline_args.input_files = input_files
     return commandline_args
 
+
 def import_reference( reference, reference_path, dups_path ):
     """
     Take an empty reference object and populate it with the data from a
@@ -68,6 +70,7 @@ def import_reference( reference, reference_path, dups_path ):
     #reference._genome._send_to_fasta_handle( stdout )
     #reference._dups._send_to_fasta_handle( stdout )
 
+
 def import_external_fasta( input_file ):
     """
     Create a FastaGenome object, set its metadata, and populate it with the
@@ -75,13 +78,14 @@ def import_external_fasta( input_file ):
     Must return the data as the single item in an array, because other file
     formats potentially contain several genomes.
     """
-    from nasp_objects import FastaGenome
+    from nasp.nasp_objects import FastaGenome
     genome = FastaGenome()
     set_genome_metadata( genome, input_file )
     genome.import_fasta_file( genome.file_path(), "franken::" )
     #from sys import stdout
     #genome._genome._send_to_fasta_handle( stdout )
     return [ genome ]
+
 
 # FIXME split into a larger number of smaller more testable functions
 # FIXME This belongs in VCFGenome object perhaps?
@@ -93,7 +97,7 @@ def read_vcf_file( reference, min_coverage, min_proportion, input_file ):
     genomes = {}
     file_path = get_file_path( input_file )
     with open( file_path, 'r' ) as vcf_filehandle:
-        from nasp_objects import VCFGenome, Genome, ReferenceCallMismatch, VCFRecord
+        from nasp.nasp_objects import VCFGenome, Genome, ReferenceCallMismatch, VCFRecord
         vcf_record = VCFRecord( file_path )
         vcf_samples = vcf_record.get_samples()
         for vcf_sample in vcf_samples:
@@ -150,6 +154,7 @@ def determine_file_type( input_file ):
     #print( file_type )
     return file_type
 
+
 def get_file_path( input_file ):
     """ Get the file path from the packed input filename string """
     import re
@@ -162,6 +167,7 @@ def get_file_path( input_file ):
         file_path = input_file
     #print( file_path )
     return file_path
+
 
 def set_genome_metadata( genome, input_file ):
     """ Get all the metadata from the packed input filename string """
@@ -176,6 +182,7 @@ def set_genome_metadata( genome, input_file ):
     else:
         genome.set_file_path( input_file )
     #print( genome.identifier() )
+
 
 def manage_input_thread( reference, min_coverage, min_proportion, input_q, output_q ):
     """
@@ -205,6 +212,7 @@ def manage_input_thread( reference, min_coverage, min_proportion, input_q, outpu
             output_q.put( failed_file_path )
         input_file = input_q.get()
     output_q.put( None )
+
 
 def parse_input_files( input_files, num_threads, genomes, min_coverage, min_proportion ):
     """
@@ -306,7 +314,7 @@ def main():
     if(commandline_args.dto_file):
         commandline_args = _parse_input_config(commandline_args)
     logging.basicConfig( level=logging.WARNING )
-    from nasp_objects import ReferenceGenome, GenomeCollection
+    from nasp.nasp_objects import ReferenceGenome, GenomeCollection
     reference = ReferenceGenome()
     import_reference( reference, commandline_args.reference_fasta, commandline_args.reference_dups )
     genomes = GenomeCollection()

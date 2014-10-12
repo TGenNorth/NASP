@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to Northern Arizona SNP Pipeline's documentation!
-======================================
+=========================================================
 
 Contents:
 

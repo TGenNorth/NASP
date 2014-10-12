@@ -14,8 +14,9 @@ def _parse_args():
     parser.add_argument( "--outputfasta", required=True, help="Path to output fasta." )
     return parser.parse_args()
 
+
 def main():
-    from nasp_objects import Genome
+    from nasp.nasp_objects import Genome
     commandline_args = _parse_args()
     fasta_data = Genome()
     fasta_data.import_fasta_file( commandline_args.inputfasta )

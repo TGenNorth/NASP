@@ -12,11 +12,13 @@ Created on Mar 4, 2014
 
 import logging
 
+
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
     parser.add_argument( "--config", required=True, help="Path to the configuration xml file." )
     return parser.parse_args()
+
 
 def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False, notify=False ):
     import subprocess
@@ -125,6 +127,7 @@ def _submit_job( job_submitter, command, job_parms, waitfor_id=None, hold=False,
     logging.info("jobid = %s" % jobid)
     return(jobid)
 
+
 def _release_hold( job_submitter, job_id ):
     import subprocess
     if job_submitter == "PBS" or job_submitter == "SGE":
@@ -136,6 +139,7 @@ def _release_hold( job_submitter, job_id ):
     logging.info("command = %s", command)
     output = subprocess.getoutput(command)
     logging.debug("output = %s", output)
+
 
 def _index_reference( configuration ):
     import os
@@ -190,6 +194,7 @@ def _index_reference( configuration ):
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, hold=True)
     return (job_id, reference)
 
+
 def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import re
     import os
@@ -233,6 +238,7 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
     job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
     return (bam_nickname, job_id, final_file)
 
+
 def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import os
     (name, read1) = read_tuple[0:2]
@@ -259,6 +265,7 @@ def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, ref
     job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
     return (bam_nickname, job_id, final_file)
 
+
 def _run_novoalign(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import os
     (name, read1) = read_tuple[0:2]
@@ -283,6 +290,7 @@ def _run_novoalign(read_tuple, aligner, samtools, job_submitter, index_job_id, r
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
     return (bam_nickname, job_id, final_file)
+
 
 def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import re
@@ -324,6 +332,7 @@ def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, refere
     job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
     return (bam_nickname, job_id, final_file)
 
+
 def _run_gatk(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, reference, output_folder):
     import os
     (path, args, job_parms) = snpcaller[1:4]
@@ -340,6 +349,7 @@ def _run_gatk(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, refe
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
     return (vcf_nickname, job_id, final_file)    
+
 
 def _run_solsnp(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, reference, output_folder):
     import os
@@ -358,6 +368,7 @@ def _run_solsnp(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, re
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
     return (vcf_nickname, job_id, final_file)    
+
 
 def _run_varscan(nickname, bam_file, snpcaller, samtools, job_submitter, aligner_job_id, reference, output_folder):
     import os
@@ -384,6 +395,7 @@ def _run_varscan(nickname, bam_file, snpcaller, samtools, job_submitter, aligner
     job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
     return (vcf_nickname, job_id, final_file)    
 
+
 def _run_samtools(nickname, bam_file, snpcaller, samtools, job_submitter, aligner_job_id, reference, output_folder):
     import os
     (path, args, job_parms) = snpcaller[1:4]
@@ -402,6 +414,7 @@ def _run_samtools(nickname, bam_file, snpcaller, samtools, job_submitter, aligne
     job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
     return (vcf_nickname, job_id, final_file)    
 
+
 def _find_dups( configuration, index_job_id, reference ):
     import os
     (name, path, args, job_parms) = configuration["dup_finder"]
@@ -414,6 +427,7 @@ def _find_dups( configuration, index_job_id, reference ):
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
     return (job_id, final_file)
+
 
 def _convert_external_genome( assembly, configuration, index_job_id, reference ):
     import os
@@ -433,6 +447,7 @@ def _convert_external_genome( assembly, configuration, index_job_id, reference )
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
     return (job_id, final_file)
+
 
 def _align_reads( read_tuple, configuration, index_job_id, reference ):
     import re
@@ -458,6 +473,7 @@ def _align_reads( read_tuple, configuration, index_job_id, reference ):
         else:
             print("Unknown aligner \'%s\' found, don't know what to do. Skipping..." % name)
     return aligner_output
+
 
 def _call_snps( aligner_output, configuration, reference ):
     import re
@@ -486,6 +502,7 @@ def _call_snps( aligner_output, configuration, reference ):
                     print("Unknown SNP caller \'%s\' found, don't know what to do. Skipping..." % name)
     return snpcaller_output
 
+
 def _index_bams( configuration, index_job_id ):
     import os
     alignments = configuration["alignments"]
@@ -507,8 +524,9 @@ def _index_bams( configuration, index_job_id ):
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
     return (bam_files, job_id)
 
+
 def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fastas, job_ids ):
-    import matrix_DTO
+    import nasp.matrix_DTO as matrix_DTO
     import os
     output_dir = configuration['output_folder']
     path = configuration["matrix_generator"][1]
@@ -533,6 +551,7 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
     job_parms['work_dir'] = output_dir
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'), notify=True)    
     return job_id
+
 
 def begin( configuration ):
     (index_job_id, reference) = _index_reference( configuration )
@@ -575,8 +594,9 @@ def begin( configuration ):
     _create_matrices( configuration, reference, dups_file, vcf_files, franken_fastas, job_ids )
     _release_hold( configuration["job_submitter"], index_job_id )
 
+
 def main():
-    import configuration_parser
+    import nasp.configuration_parser as configuration_parser
     commandline_args = _parse_args()
     configuration = configuration_parser.parse_config( commandline_args.config )
     begin( configuration )        

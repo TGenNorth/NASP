@@ -12,22 +12,26 @@ Created on April 3, 2014
 import logging
 from xml.etree import ElementTree
 
+
 def _write_parameters( node, data ):
     for k,v in data.items():
         subnode = ElementTree.SubElement(node, k)
         subnode.text = v
     return node
 
+
 def _add_input_file( node, filetype, attributes, file ):
     subnode = ElementTree.SubElement(node, filetype, attributes)
     subnode.text = file
     return subnode
+
 
 def _parse_parameters( node ):
     parms = {}
     for element in node.iter():
         parms[element.tag] = element.text
     return parms
+
 
 def _parse_files( node ):
     input_files = []
@@ -36,6 +40,7 @@ def _parse_files( node ):
     for vcf in node.iter("vcf"):
         input_files.append("%s,%s,%s,::%s" % ("vcf", vcf.get("aligner"), vcf.get("snpcaller"), vcf.text))
     return input_files
+
 
 def write_dto( matrix_parms, franken_fastas, vcf_files, xml_file ):
     from xml.dom import minidom
@@ -54,13 +59,15 @@ def write_dto( matrix_parms, franken_fastas, vcf_files, xml_file ):
     output.write(dom.toprettyxml(indent="    "))
     output.close()
     return xml_file
-    
+
+
 def parse_dto( xml_file ):
     xmltree = ElementTree.parse( xml_file )
     root = xmltree.getroot()
     matrix_parms = _parse_parameters(root.find("parameters"))
     input_files = _parse_files(root.find("files"))
     return (matrix_parms, input_files)
+
 
 def main():
     pass

@@ -21,11 +21,13 @@ vcf_list = []
 aligner_list = []
 snpcaller_list = []
 
+
 def _parse_args():
     import argparse
     parser = argparse.ArgumentParser( description="Meant to be called from the pipeline automatically." )
     parser.add_argument( "--config", required=True, help="Path to the configuration xml file." )
     return parser.parse_args()
+
 
 def _parse_options( options_node ):
     configuration["run_name"] = options_node.findtext('RunName')
@@ -41,6 +43,7 @@ def _parse_options( options_node ):
     configuration["job_submitter"] = options_node.findtext('JobSubmitter')
     if options_node.find('FilterMatrixFormat') is not None:
         configuration["filter_matrix_format"] = options_node.findtext('FilterMatrixFormat')
+
 
 def _find_reads( folder, filepath ):
     import os
@@ -73,6 +76,7 @@ def _find_reads( folder, filepath ):
                 num_reads += 1
     return num_reads
 
+
 def _find_files( folder, filepath, filetype, extension ):
     import os
     import re
@@ -92,6 +96,7 @@ def _find_files( folder, filepath, filetype, extension ):
             num_files += 1
     return num_files
 
+
 def _get_reads( folder ):
     from os import path
     filepath = folder.get('path')
@@ -110,6 +115,7 @@ def _get_reads( folder ):
         num_reads = _find_reads(folder, filepath)
     return num_reads
 
+
 def _get_fastas( folder ):
     from os import path
     filepath = folder.get('path')
@@ -121,6 +127,7 @@ def _get_fastas( folder ):
     if num_files == 0:
         num_files = _find_files(folder, filepath, 'Assembly', 'fasta')
     return num_files
+
 
 def _get_bams( folder ):
     from os import path
@@ -134,6 +141,7 @@ def _get_bams( folder ):
         num_files = _find_files(folder, filepath, 'Alignment', 'bam')
     return num_files
 
+
 def _get_vcfs( folder ):
     from os import path
     filepath = folder.get('path')
@@ -145,6 +153,7 @@ def _get_vcfs( folder ):
     if num_files == 0:
         num_files = _find_files(folder, filepath, 'VCFFile', 'vcf')
     return num_files
+
 
 def _parse_files( files_node ):
     for folder in files_node.findall('ReadFolder'):
@@ -160,6 +169,7 @@ def _parse_files( files_node ):
         _get_vcfs( folder )
     configuration["vcfs"] = vcf_list
 
+
 def _get_application( app_node, name=None ):
     name = name or app_node.get('name')
     path = app_node.get('path')
@@ -174,6 +184,7 @@ def _get_application( app_node, name=None ):
         job_parms['queue'] = job_node.findtext('Queue', default="")
         job_parms['args'] = job_node.findtext('JobSubmitterArgs', default="")
     return (name, path, args, job_parms)
+
 
 def _parse_applications( applications_node ):
     if applications_node.find('Picard'):
@@ -194,7 +205,8 @@ def _parse_applications( applications_node ):
     for snpcaller in applications_node.findall('SNPCaller'):
         snpcaller_list.append(_get_application(snpcaller))
     configuration["snpcallers"] = snpcaller_list
-        
+
+
 def _write_reads( node, read_list ):
     import os
     from collections import defaultdict
@@ -221,6 +233,7 @@ def _write_reads( node, read_list ):
                 read_node.text = read1
     return node
 
+
 def _write_files( node, file_list, foldernode, filenode ):
     import os
     from collections import defaultdict
@@ -235,6 +248,7 @@ def _write_files( node, file_list, foldernode, filenode ):
             file_node = ElementTree.SubElement(folder_node, filenode, {'sample':name})
             file_node.text = file
     return node
+
 
 def _write_application( node, details, app_type ):
     (name, path, args, job_parms) = details
@@ -252,6 +266,7 @@ def _write_application( node, details, app_type ):
         ElementTree.SubElement(job_node, "JobSubmitterArgs").text = job_parms["args"] if "args" in job_parms else ""
     return node
 
+
 def _write_config_node( root, xml_file ):
     from xml.dom import minidom
     dom = minidom.parseString(ElementTree.tostring(root, 'utf-8'))
@@ -259,6 +274,7 @@ def _write_config_node( root, xml_file ):
     output.write(dom.toprettyxml(indent="    ", newl="\n"))
     output.close()
     return xml_file
+
 
 def write_config( configuration ):
     import os
@@ -339,6 +355,7 @@ def write_config( configuration ):
 
     _write_config_node( root, xml_file )    
 
+
 def parse_config( config_file ):
     xmltree = ElementTree.parse( config_file )
     root = xmltree.getroot()
@@ -355,6 +372,7 @@ def parse_config( config_file ):
 #    _write_config_node( root, xml_file )
 #    write_config(configuration)
     return configuration
+
 
 def main():
     commandline_args = _parse_args()

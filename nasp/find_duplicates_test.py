@@ -10,6 +10,7 @@ import find_duplicates
 import unittest
 import os
 
+
 class FindDuplicatesTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -52,7 +53,7 @@ class FindDuplicatesTestCase(unittest.TestCase):
         self.assertRaises(OSError, find_duplicates.run_nucmer_on_reference, "", "")
 
     def test_parse_delta_file(self):
-        from nasp_objects import GenomeStatus
+        from nasp.nasp_objects import GenomeStatus
         find_duplicates.run_nucmer_on_reference(self.nucmer_path, self.fasta.name)
         dups_data = GenomeStatus()
         find_duplicates.parse_delta_file(self.delta, dups_data)
