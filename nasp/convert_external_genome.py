@@ -47,10 +47,10 @@ def _update_genome_from_delta_data( franken_genome, external_genome, parser_stat
     parser_state['reference_pos'] = parser_state['reference_pos'] + distance_covered
     parser_state['external_pos'] = parser_state['external_pos'] + ( -distance_covered if parser_state['external_is_reversed'] else distance_covered )
     if is_external_insert:
-        parser_state['external_pos'] = parser_state['external_pos'] + ( -1 if parser_state['external_is_reversed'] else 1 ) 
+        parser_state['external_pos'] += -1 if parser_state['external_is_reversed'] else 1
     else:
         franken_genome.set_call( '.', parser_state['reference_pos'], '!' )
-        parser_state['reference_pos'] = parser_state['reference_pos'] + 1
+        parser_state['reference_pos'] += 1
     return parser_state
 
 

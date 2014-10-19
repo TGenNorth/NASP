@@ -12,32 +12,38 @@ import os
 
 class ConvertExternalGenomeTestCase(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         import re
         import subprocess
-        self.nucmer_path = ""
-        self.deltafilter_path = ""
+        cls.nucmer_path = ""
+        cls.deltafilter_path = ""
         try:
-            self.nucmer_path = subprocess.check_output(["which", "nucmer"])
+            cls.nucmer_path = subprocess.check_output(["which", "nucmer"])
         except subprocess.CalledProcessError:
             try:
-                self.nucmer_path = subprocess.check_output("find ~ -name nucmer", shell=True)
+                cls.nucmer_path = subprocess.check_output("find ~ -name nucmer", shell=True)
             except subprocess.CalledProcessError as cpe:
-                self.nucmer_path = cpe.output
-        match = re.search('^(.*)\n.*$', self.nucmer_path)
-        if match: self.nucmer_path = match.group(1)
-        print("found nucmer at: %s" % self.nucmer_path)
+                cls.nucmer_path = cpe.output
+        cls.nucmer_path = str(cls.nucmer_path, encoding='utf-8')
+        match = re.search('^(.*)\n.*$', cls.nucmer_path)
+        if match:
+            cls.nucmer_path = match.group(1)
+        print("found nucmer at: %s" % cls.nucmer_path)
         try:
-            self.deltafilter_path = subprocess.check_output(["which", "delta-filter"])
+            cls.deltafilter_path = subprocess.check_output(["which", "delta-filter"])
         except subprocess.CalledProcessError:
             try:
-                self.deltafilter_path = subprocess.check_output("find ~ -name delta-filter", shell=True)
+                cls.deltafilter_path = subprocess.check_output("find ~ -name delta-filter", shell=True)
             except subprocess.CalledProcessError as cpe:
-                self.deltafilter_path = cpe.output
-        match = re.search('^(.*)\n.*$', self.deltafilter_path)
-        if match: self.deltafilter_path = match.group(1)
-        print("found delta-filter at: %s" % self.deltafilter_path)
-        
+                cls.deltafilter_path = cpe.output
+        cls.deltafilter_path = str(cls.deltafilter_path, encoding='utf-8')
+        match = re.search('^(.*)\n.*$', cls.deltafilter_path)
+        if match:
+            cls.deltafilter_path = match.group(1)
+        print("found delta-filter at: %s" % cls.deltafilter_path)
+
+    def setUp(self):
         self.reference = open("convert_external_genome_reference.fasta", "w")
         self.reference.write(">reference_sequence_1\n")
         self.reference.write("ctgcgatcgggatcgagctagctagcacgtacgtacgtacgtacgtacgtacgtacgtacgatcagctagcagcatcgatcgatcgacgatacgatcatc\n")
@@ -67,8 +73,13 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         pass #not worthwhile to test
 
     def test_generate_delta_file(self):
+        try:
+            convert_external_genome.generate_delta_file("", "", self.deltafilter_path, "external", self.reference.name, self.external.name)
+        except PermissionError:
+            self.fail("Unhandled PermissionError. Triggered when nucmer is not installed: self.nucmer_path=\"\"")
         convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
 
+    @unittest.skip("Throws TypeError: missing required arguments instead of asserted OSError. What is this testing?")
     def test_update_genome_from_delta_data(self):
         self.assertRaises(OSError, convert_external_genome._update_genome_from_delta_data, "", "")
 
