@@ -518,10 +518,12 @@ def _create_matrices( configuration, reference, dups_file, vcf_files, franken_fa
         matrix_parms['minimum-coverage'] = configuration['coverage_filter']
     if "proportion_filter" in configuration:
         matrix_parms['minimum-proportion'] = configuration['proportion_filter']
-    matrix_parms['master-matrix'] = os.path.join(output_dir, 'master_matrix.tsv')
-    matrix_parms['filter-matrix'] = os.path.join(output_dir, 'filter_matrix.tsv')
-    matrix_parms['general-stats'] = os.path.join(output_dir, 'general_stats.tsv')
-    matrix_parms['contig-stats'] = os.path.join(output_dir, 'contig_stats.tsv')
+    matrix_parms['matrix-folder'] = os.path.join(output_dir, 'matrices')
+    if not os.path.exists(matrix_parms['matrix-folder']):
+        os.makedirs(matrix_parms['matrix-folder'])
+    matrix_parms['stats-folder'] = os.path.join(output_dir, 'statistics')
+    if not os.path.exists(matrix_parms['stats-folder']):
+        os.makedirs(matrix_parms['stats-folder'])
     if 'filter_matrix_format' in configuration:
         matrix_parms['filter-matrix-format'] = configuration['filter_matrix_format']
     dto_file = os.path.join(output_dir, "matrix_dto.xml")

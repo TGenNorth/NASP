@@ -23,11 +23,8 @@ def _parse_args():
     parser.add_argument( "--reference-fasta", help="Path to input reference fasta file." )
     parser.add_argument( "--reference-dups", help="Path to input reference dups file." )
     parser.add_argument( "--input-files", nargs="+", help="Path to input VCF/fasta files for matrix conversion." )
-    parser.add_argument( "--master-matrix", default="master_matrix.tsv", help="Name of master matrix to create." )
-    parser.add_argument( "--filter-matrix", default="filter_matrix.tsv", help="Name of custom matrix to create." )
-    parser.add_argument( "--filter-matrix-format", help="String describing the custom format of the filter matrix." )
-    parser.add_argument( "--general-stats", default="general_stats.tsv", help="Name of general statistics file to create." )
-    parser.add_argument( "--sample-stats", default="sample_stats.tsv", help="Name of sample statistics file to create." )
+    parser.add_argument( "--matrix-folder", default="matrices", help="Name of folder to write output matries to." )
+    parser.add_argument( "--stats-folder", default="statistics", help="Name of folder to write statistics files to." )
     parser.add_argument( "--minimum-coverage", type=int, default=10, help="Minimum coverage depth at a position." )
     parser.add_argument( "--minimum-proportion", type=float, default=0.9, help="Minimum proportion of reads that must match the call at a position." )
     parser.add_argument( "--num-threads", type=int, default=1, help="Number of threads to use when processing input." )
@@ -47,14 +44,14 @@ def _parse_input_config(commandline_args):
     (matrix_parms, input_files) = matrix_DTO.parse_dto(commandline_args.dto_file)
     commandline_args.reference_fasta = matrix_parms['reference-fasta']
     commandline_args.reference_dups = matrix_parms['reference-dups']
-    commandline_args.master_matrix = matrix_parms['master-matrix']
-    commandline_args.filter_matrix = matrix_parms['filter-matrix']
-    commandline_args.general_stats = matrix_parms['general-stats']
-    commandline_args.contig_stats = matrix_parms['contig-stats']
+    commandline_args.matrix_folder = matrix_parms['matrix-folder']
+    commandline_args.stats_folder = matrix_parms['stats-folder']
     commandline_args.minimum_coverage = int(matrix_parms['minimum-coverage']) if "minimum-coverage" in matrix_parms else 0
     commandline_args.minimum_proportion = float(matrix_parms['minimum-proportion']) if "minimum-proportion" in matrix_parms else 0
     if "filter-matrix-format" in matrix_parms:
         commandline_args.filter_matrix_format = matrix_parms['filter-matrix-format']
+    else:
+        commandline_args.filter_matrix_format = None
     commandline_args.input_files = input_files
     return commandline_args
 
@@ -251,14 +248,48 @@ def parse_input_files( input_files, num_threads, genomes, min_coverage, min_prop
     for current_thread in thread_list:  # Multi-thread
         current_thread.join()  # Multi-thread
 
-def write_output_matrices( genomes, master_matrix, filter_matrix, matrix_format ):
-    """ Write matrices from genome collection data """
-    # FIXME Multiple matrix formats defined here
-    genomes.write_to_matrices( master_matrix, filter_matrix, matrix_format )
+def write_output_matrices( genomes, matrix_folder, matrix_format_choices ):
+    """
+    Write matrices from genome collection data.
+    Defines the matrix types for future expansion of custom matrix options.
+    This information eventually should come from the user interface and be
+    included in the XML configuration file, rather than hardcoded here.
+    The matrix_format_choices option comes from the XML to here, and then
+    is currently discarded.
+    """
+    matrix_formats = [
+        {
+            'filename': '' + matrix_folder + '/master_matrix.tsv',
+            'dataformat': 'matrix',
+            'filter': 'allcallable'
+        },
+        {
+            'filename': '' + matrix_folder + '/bestsnp_matrix.tsv',
+            'dataformat': 'matrix',
+            'filter': 'bestsnp'
+        },
+        {
+            'filename': '' + matrix_folder + '/bestsnp_matrix.snpfasta',
+            'dataformat': 'fasta',
+            'filter': 'bestsnp'
+        },
+        {
+            'filename': '' + matrix_folder + '/missingdata_matrix.tsv',
+            'dataformat': 'matrix',
+            'filter': 'missingdata'
+        },
+        {
+            'filename': '' + matrix_folder + '/missingdata_matrix.snpfasta',
+            'dataformat': 'fasta',
+            'filter': 'missingdata'
+        }]
+    genomes.write_to_matrices( matrix_formats )
 
-def write_stats_data( genomes, general_stats, sample_stats ):
-    """ Write stats data from genome collection to passed-in filenames """
-    genomes.write_to_stats_files( general_stats, sample_stats )
+def write_stats_data( genomes, stats_folder ):
+    """ Write stats data from genome collection to preset filenames """
+    general_stats_file = '' + stats_folder + '/general_stats.tsv'
+    sample_stats_file = '' + stats_folder + '/sample_stats.tsv'
+    genomes.write_to_stats_files( general_stats_file, sample_stats_file )
 
 
 def main():
@@ -281,8 +312,8 @@ def main():
     genomes = GenomeCollection()
     genomes.set_reference( reference )
     parse_input_files( commandline_args.input_files, commandline_args.num_threads, genomes, commandline_args.minimum_coverage, commandline_args.minimum_proportion )
-    write_output_matrices( genomes, commandline_args.master_matrix, commandline_args.filter_matrix, commandline_args.filter_matrix_format )
-    write_stats_data( genomes, commandline_args.general_stats, commandline_args.sample_stats )
+    write_output_matrices( genomes, commandline_args.matrix_folder, commandline_args.filter_matrix_format )
+    write_stats_data( genomes, commandline_args.stats_folder )
 
 if __name__ == "__main__": main()
 
