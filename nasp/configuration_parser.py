@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# coding=utf-8
 
 __author__ = "Darrin Lemmer"
 __version__ = "0.9.7"
@@ -370,6 +371,11 @@ def write_config(configuration):
 
 
 def parse_config(config_file):
+    """
+
+    :param config_file: path to an XML formatted configuration file
+    :return: configuration dictionary
+    """
     xmltree = ElementTree.parse(config_file)
     root = xmltree.getroot()
     _parse_options(root.find('Options'))

@@ -51,6 +51,14 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     entry_points = {
-        'console_scripts': ['nasp = nasp.nasp:main']
-    }
+        'console_scripts': [
+            'nasp = nasp.nasp:main',
+        ]
+    },
+    scripts = [
+        'scripts/filter_matrix_by_coord.py',
+        'scripts/filter_matrix_remove_genomes.py',
+        'scripts/matrix_to_fasta.py',
+        'scripts/report_single_snps_single_isolate.py'
+    ]
 )
