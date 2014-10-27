@@ -336,7 +336,7 @@ def _get_job_submitter():
             job_submitter = "PBS"
         elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
             job_submitter = "SLURM"
-        elif re.match('^SGE$', response, re.IGNORECASE):
+        elif re.match('^SGE', response, re.IGNORECASE):
             job_submitter = "SGE"
         elif re.match('^none$', response, re.IGNORECASE):
             job_submitter = "NONE"
@@ -489,10 +489,7 @@ def _get_user_input(reference, output_folder):
     matrix_path = os.path.join(run_path, "vcf_to_matrix.py")
     if not os.path.exists(matrix_path):
         matrix_path = "vcf_to_matrix.py"
-    print("\n")
-    matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "",
-                                             {'name': 'nasp_matrix', 'num_cpus': '12', 'mem_requested': '45',
-                                              'walltime': '48', 'queue': queue, 'args': args})
+    matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 

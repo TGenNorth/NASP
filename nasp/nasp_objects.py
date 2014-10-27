@@ -762,14 +762,14 @@ class GenomeCollection(CollectionStatistics):
             general_handle.write("\n")
 
     def _write_sample_stats(self, sample_handle):
-        sample_stat_array = ['was_called', 'passed_coverage_filter', 'passed_proportion_filter', 'called_reference',
-                             'called_snp', 'called_degen']
-        # denominator_stat = 'reference_length'
-        # denominator_value = self.get_contig_stat( denominator_stat )
+        sample_stat_array = ['was_called', 'passed_coverage_filter', 'passed_proportion_filter', 'quality_breadth', 
+                             'called_reference', 'called_snp', 'called_degen']
+        denominator_stat = 'reference_length'
+        denominator_value = self.get_contig_stat(denominator_stat)
         sample_handle.write("Sample\tSample::Analysis\t")
         for current_stat in sample_stat_array:
             sample_handle.write('' + current_stat + "\t")
-            # sample_handle.write( '' + current_stat + " (%)\t" )
+            sample_handle.write('' + current_stat + " (%)\t")
         sample_handle.write("\n")
         sample_handle.write("\tstat descriptions go here\n\n")
         for current_sample in ( [None] + sorted(self._genome_identifiers.keys()) ):
@@ -782,8 +782,8 @@ class GenomeCollection(CollectionStatistics):
                 for current_stat in sample_stat_array:
                     sample_handle.write(
                         '' + str(self.get_cumulative_stat(current_stat, current_analysis, current_sample)) + "\t")
-                    # if current_stat != denominator_stat:
-                    # sample_handle.write( "%.2f%%\t" % ( self.get_contig_stat( current_stat, current_contig ) / denominator_value * 100 ) )
+                    if current_stat != denominator_stat:
+                        sample_handle.write("%.2f%%\t" % (self.get_contig_stat(current_stat, current_contig) / denominator_value * 100))
                 sample_handle.write("\n")
             if current_sample is not None:
                 for current_analysis in sorted(self._genome_identifiers[current_sample].keys()):
@@ -792,8 +792,8 @@ class GenomeCollection(CollectionStatistics):
                     for current_stat in sample_stat_array:
                         sample_handle.write('' + str(
                             self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path)) + "\t")
-                        # if current_stat != denominator_stat:
-                        # sample_handle.write( "%.2f%%\t" % ( self.get_contig_stat( current_stat, current_contig ) / denominator_value * 100 ) )
+                        if current_stat != denominator_stat:
+                            sample_handle.write("%.2f%%\t" % (self.get_contig_stat(current_stat, current_contig) / denominator_value * 100))
                     sample_handle.write("\n")
             sample_handle.write("\n")
 
