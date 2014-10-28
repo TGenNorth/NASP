@@ -581,7 +581,7 @@ def _index_bams(configuration, index_job_id):
 
 
 def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids):
-    import nasp.matrix_DTO as matrix_DTO
+    import matrix_DTO as matrix_DTO
     import os
 
     output_dir = configuration['output_folder']
@@ -653,7 +653,7 @@ def begin(configuration):
 
 
 def main():
-    import nasp.configuration_parser as configuration_parser
+    import configuration_parser as configuration_parser
 
     commandline_args = _parse_args()
     configuration = configuration_parser.parse_config(commandline_args.config)

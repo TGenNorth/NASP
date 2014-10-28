@@ -40,7 +40,7 @@ def generate_delta_file(nucmer_path, nucmer_args, delta_filter_path, external_ni
 
 
 def _update_genome_from_delta_data(franken_genome, external_genome, parser_state, distance_covered, is_external_insert):
-    from nasp.nasp_objects import Genome
+    from nasp_objects import Genome
 
     if distance_covered == -1:
         distance_covered = parser_state['final_pos'] - parser_state['reference_pos'] + 1
@@ -104,7 +104,7 @@ def parse_delta_file(delta_filename, franken_genome, external_genome):
 
 
 def main():
-    from nasp.nasp_objects import Genome, GenomeMeta
+    from nasp_objects import Genome, GenomeMeta
 
     commandline_args = _parse_args()
     external_nickname = commandline_args.name if commandline_args.name else GenomeMeta.generate_nickname_from_filename(

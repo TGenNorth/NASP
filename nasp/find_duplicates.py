@@ -71,7 +71,7 @@ def parse_delta_file(delta_filename, dups_data):
 
 
 def main():
-    from nasp.nasp_objects import GenomeStatus
+    from nasp_objects import GenomeStatus
 
     commandline_args = _parse_args()
     run_nucmer_on_reference(commandline_args.nucmerpath, commandline_args.reference)

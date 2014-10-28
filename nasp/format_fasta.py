@@ -18,7 +18,7 @@ def _parse_args():
 
 
 def main():
-    from nasp.nasp_objects import Genome
+    from nasp_objects import Genome
 
     commandline_args = _parse_args()
     fasta_data = Genome()

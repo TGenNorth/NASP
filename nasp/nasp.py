@@ -502,8 +502,8 @@ def _get_user_input(reference, output_folder):
 
 
 def main():
-    import nasp.dispatcher as dispatcher
-    import nasp.configuration_parser as configuration_parser
+    import dispatcher as dispatcher
+    import configuration_parser as configuration_parser
     import os
     import re
 

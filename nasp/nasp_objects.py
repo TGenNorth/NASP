@@ -783,7 +783,7 @@ class GenomeCollection(CollectionStatistics):
                     sample_handle.write(
                         '' + str(self.get_cumulative_stat(current_stat, current_analysis, current_sample)) + "\t")
                     if current_stat != denominator_stat:
-                        sample_handle.write("%.2f%%\t" % (self.get_contig_stat(current_stat, current_contig) / denominator_value * 100))
+                        sample_handle.write("%.2f%%\t" % (self.get_cumulative_stat(current_stat, current_analysis, current_sample) / denominator_value * 100))
                 sample_handle.write("\n")
             if current_sample is not None:
                 for current_analysis in sorted(self._genome_identifiers[current_sample].keys()):
@@ -793,7 +793,7 @@ class GenomeCollection(CollectionStatistics):
                         sample_handle.write('' + str(
                             self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path)) + "\t")
                         if current_stat != denominator_stat:
-                            sample_handle.write("%.2f%%\t" % (self.get_contig_stat(current_stat, current_contig) / denominator_value * 100))
+                            sample_handle.write("%.2f%%\t" % (self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path) / denominator_value * 100))
                     sample_handle.write("\n")
             sample_handle.write("\n")
 
