@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='nasp',
-    version='0.9.6',
+    version='0.9.7',
     description='Northern Arizona SNP Pipeline',
     long_description=readme + '\n\n' + history,
     author='Darrin Lemmer',
@@ -41,9 +41,6 @@ setup(
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
@@ -53,6 +50,10 @@ setup(
     entry_points = {
         'console_scripts': [
             'nasp = nasp.nasp:main',
+            'format_fasta = nasp.format_fasta:main',
+            'find_duplicates = nasp.find_duplicates:main',
+            'convert_external_genome = nasp.convert_external_genome:main',
+            'vcf_to_matrix = nasp.vcf_to_matrix:main'
         ]
     },
     scripts = [

@@ -44,7 +44,7 @@ def _parse_input_config(commandline_args):
     XML file in a separate dictionary, instead of mixing the two data sources
     together as now.
     """
-    import matrix_DTO as matrix_DTO
+    import nasp.matrix_DTO as matrix_DTO
 
     (matrix_parms, input_files) = matrix_DTO.parse_dto(commandline_args.dto_file)
     commandline_args.reference_fasta = matrix_parms['reference-fasta']
@@ -84,7 +84,7 @@ def import_external_fasta(input_file):
     Must return the data as the single item in an array, because other file
     formats potentially contain several genomes.
     """
-    from nasp_objects import FastaGenome
+    from nasp.nasp_objects import FastaGenome
 
     genome = FastaGenome()
     set_genome_metadata(genome, input_file)
@@ -104,7 +104,7 @@ def read_vcf_file(reference, min_coverage, min_proportion, input_file):
     genomes = {}
     file_path = get_file_path(input_file)
     with open(file_path, 'r') as vcf_filehandle:
-        from nasp_objects import VCFGenome, Genome, ReferenceCallMismatch, VCFRecord
+        from nasp.nasp_objects import VCFGenome, Genome, ReferenceCallMismatch, VCFRecord
 
         vcf_record = VCFRecord(file_path)
         vcf_samples = vcf_record.get_samples()
@@ -332,7 +332,7 @@ def main():
     if commandline_args.dto_file:
         commandline_args = _parse_input_config(commandline_args)
     logging.basicConfig(level=logging.WARNING)
-    from nasp_objects import ReferenceGenome, GenomeCollection
+    from nasp.nasp_objects import ReferenceGenome, GenomeCollection
 
     reference = ReferenceGenome()
     import_reference(reference, commandline_args.reference_fasta, commandline_args.reference_dups)

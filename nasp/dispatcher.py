@@ -165,7 +165,7 @@ def _index_reference(configuration):
     reference = os.path.join(ref_folder, "reference.fasta")
     if os.path.exists(reference):
         os.remove(reference)
-    index_commands = ["format_fasta.py --inputfasta %s --outputfasta %s" % (ref_path, reference)]
+    index_commands = ["format_fasta --inputfasta %s --outputfasta %s" % (ref_path, reference)]
 
     # Gather all of the index commands that need to be run
     bwa_done = False
@@ -450,7 +450,7 @@ def _find_dups(configuration, index_job_id, reference):
     import os
 
     (name, path, args, job_parms) = configuration["dup_finder"]
-    command = "find_duplicates.py --nucmerpath %s --reference %s" % (path, reference)
+    command = "find_duplicates --nucmerpath %s --reference %s" % (path, reference)
     work_dir = os.path.dirname(reference)
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
@@ -472,8 +472,8 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
     new_fasta = os.path.join(work_dir, os.path.basename(fasta))
-    command_parts = ["format_fasta.py --inputfasta %s --outputfasta %s" % (fasta, new_fasta),
-                     "convert_external_genome.py --nucmerpath %s --nucmerargs %s --deltafilterpath %s --reference %s --external %s --name %s" % (
+    command_parts = ["format_fasta --inputfasta %s --outputfasta %s" % (fasta, new_fasta),
+                     "convert_external_genome --nucmerpath %s --nucmerargs %s --deltafilterpath %s --reference %s --external %s --name %s" % (
                          nucmer_path, extraargs, path, reference, fasta, name)]
     command = "\n".join(command_parts)
     final_file = os.path.join(work_dir, "%s.frankenfasta" % name)
@@ -581,7 +581,7 @@ def _index_bams(configuration, index_job_id):
 
 
 def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids):
-    import matrix_DTO as matrix_DTO
+    import nasp.matrix_DTO as matrix_DTO
     import os
 
     output_dir = configuration['output_folder']
@@ -653,7 +653,7 @@ def begin(configuration):
 
 
 def main():
-    import configuration_parser as configuration_parser
+    import nasp.configuration_parser as configuration_parser
 
     commandline_args = _parse_args()
     configuration = configuration_parser.parse_config(commandline_args.config)
