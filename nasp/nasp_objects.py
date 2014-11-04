@@ -24,6 +24,31 @@ class GenomeStatus:
     when you do that.
     """
 
+    """
+    The conventions used for what data is stored are as follows:
+    Genomes:
+        A, C, G, T, U, a, c, g, t, u:  The respective call.
+        N, n:  Called "N" according to upstream analysis tools.
+        X:  Not called by upstream analysis tools.
+        . or empty string:  A deletion relative to reference.
+        String of length >1:  An insertion relative to reference.
+        Any other single letter:  A degeneracy.
+        !:  An algorithmic failure.
+    Duplicate region data:
+        0:  Position not in a region that is duplicated within the reference.
+        1:  Position is in a region that is duplicated.
+        -:  Duplicate checking at this position was skipped by the user.
+        !:  An algorithmic failure.
+    Filters:
+        Y:  This position passed its filter.
+        N:  This position failed its filter.
+        ?:  The filter could not be checked, and so the position is assumed
+            to have failed.
+        -:  The filter was not applicable, or skipped, or could not be checked
+            for a known reason, and so is assumed to have passed.
+        !:  An algorithmic failure.
+    """
+
     # Arrays are zero-indexed, genome positions are one-indexed. Off-by-one errors? Never heard of 'em.
     def __init__(self):
         """
@@ -242,7 +267,17 @@ class Genome(GenomeStatus):
 
 
 class GenomeMeta:
+    """ Stores the metadata associated with a genome.  """
+
     def __init__(self):
+        """
+        _nickname is our best guess at the name information as supplied by the
+        input files.  Its determination depends on filetype.  For example, the
+        nickname of a genome from a fasta file is the filename minus the
+        extension.  There is no expectation that this value is unique.  A 
+        ( _file_path, _nickname ) tuple or the like would stand a much higher
+        chance of being unique.
+        """
         self._nickname = None
         self._file_path = None
         self._file_type = None
@@ -257,9 +292,18 @@ class GenomeMeta:
         self._file_type = type_string
 
     def set_nickname(self, nickname):
+        """
+        This value should be unique per-file, for multi-sample input files,
+        but there is no expectation that this would be unique per run, and
+        nothing to enforce even per-file uniqueness.
+        """
         self._nickname = nickname
 
     def add_generators(self, generator_array):
+        """
+        A list of analysis tools that have been run on input files to produce
+        this data, from earliest to latest.
+        """
         self._generators.extend(generator_array)
 
     def file_path(self):
@@ -272,6 +316,14 @@ class GenomeMeta:
         return self._nickname
 
     def identifier(self):
+        """
+        Returns a string meant to be recognizable to the user to differentiate
+        their sample-analyses.  There can be no assumption that this value is
+        unique, because the nickname is often not unique.  As a result, this
+        should not be used in-code (EG dictionary keys) to differentiate
+        samples.  The best we can do is a ( _file_path, _nickname ) tuple, and
+        even that may not be guaranteed to be unique.
+        """
         identifier = self._nickname
         if len(self._generators) > 0:
             identifier = '' + identifier + "::" + ( ','.join(self._generators) )
@@ -279,9 +331,14 @@ class GenomeMeta:
 
     @staticmethod
     def generate_nickname_from_filename(filename):
+        """
+        For single-sample input files that don't carry any sample name
+        metadata within the file, generate a nickname for the sample by
+        removing the extension.  If this fails, generate a random name in the
+        format "file_XXXXXXXX" where X is an 8-digit random integer.
+        """
         import re
         import random
-
         filename_match = re.match(
             r'^(?:.*\/)?([^\/]+?)(?:\.(?:[Ff][Rr][Aa][Nn][Kk][Ee][Nn])?[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?|\.[Vv][Cc][Ff])?$',
             filename)
@@ -299,12 +356,29 @@ class GenomeMeta:
 
 
 class IndelList:
+    """
+    For storing indel data separately from the reference-indexed position
+    data.  Mostly a relic from when calls were stored as a long string with
+    one character per position.  Might still have some use for indel
+    implementation, but might be no longer useful.
+    """
     def __init__(self):
         self._indels = {}
 
 
 class ReferenceGenome(Genome):
+    """
+    A special type of genome that is to be used as our reference.
+    Unlike other genomes, we know there will only be one, it carries duplicate
+    region data, and we don't need to store any metadata about it.
+    """
+
     def __init__(self):
+        """
+        _dups is a GenomeStatus that carries data about whether a particular
+        region of the reference was found to be very similar to another region
+        in the same reference.
+        """
         Genome.__init__(self)
         self._dups = GenomeStatus()
 
@@ -312,8 +386,11 @@ class ReferenceGenome(Genome):
         return self._dups.get_value(first_position, last_position, contig_name, "?")
 
     def _import_dups_line(self, line_from_dups_file, contig_prefix=""):
+        """
+        Just like importing any other fasta-like file line-by-line, but
+        specific to duplicate region data.
+        """
         import re
-
         contig_match = re.match(r'^>' + re.escape(contig_prefix) + r'([^\s]+)(?:\s|$)', line_from_dups_file)
         if contig_match:
             self.add_contig(contig_match.group(1))
@@ -324,6 +401,7 @@ class ReferenceGenome(Genome):
                 self._dups.append_contig(list(data_match.group(1)))
 
     def import_dups_file(self, dups_filename, contig_prefix=""):
+        """ Wrapper for _import_dups_line for flexibility and testing. """
         dups_handle = open(dups_filename, 'r')
         for line_from_dups_file in dups_handle:
             self._import_dups_line(line_from_dups_file, contig_prefix)
@@ -331,6 +409,12 @@ class ReferenceGenome(Genome):
 
 
 class FastaGenome(Genome, GenomeMeta):
+    """
+    A special type of genome where we know the data came from a fasta file,
+    and so we can omit the depth and proportion filters.  Meant to mimic
+    a VCFGenome object, with filter checks hard-coded.
+    """
+
     def __init__(self):
         Genome.__init__(self)
         GenomeMeta.__init__(self)
@@ -338,6 +422,10 @@ class FastaGenome(Genome, GenomeMeta):
 
     # FIXME This data should be put into a real structure when the fasta code is pulled in
     def get_was_called(self, current_pos, contig_name=None):
+        """
+        A stand-in for the was-called filter that just makes sure the position
+        isn't an "N".
+        """
         return_value = "N"
         call_to_check = self.get_call(current_pos, None, contig_name, "X")
         if call_to_check != "X" and call_to_check != "N":
@@ -345,13 +433,20 @@ class FastaGenome(Genome, GenomeMeta):
         return return_value
 
     def get_coverage_pass(self, current_pos, contig_name=None):
+        """ This filter is not applicable. """
         return "-"
 
     def get_proportion_pass(self, current_pos, contig_name=None):
+        """ This filter is not applicable. """
         return "-"
 
 
 class VCFGenome(Genome, GenomeMeta):
+    """
+    A standard sample for analysis.  Has geome data, metadata, and data for
+    the three filters.
+    """
+
     def __init__(self):
         Genome.__init__(self)
         GenomeMeta.__init__(self)
@@ -380,17 +475,38 @@ class VCFGenome(Genome, GenomeMeta):
 
 
 class CollectionStatistics:
+    """
+    Stores a running tally for the statistics for the run.
+    Stats are in two categories: per-contig and per-sample.
+    Contig stats are basic counts, and percentages based on reference length.
+    Sample stats are tallied as x out of y for each position, and then
+    counts for each sample, all samples, and any samples, can be computed
+    automatically.
+    For this reason, the object needs to know when the run moves on to the
+    next position, and the flush_cumulative_stat_cache function does this.
+    """
+
     def __init__(self):
+        """
+        _cumulative_cache keeps a running tally of sample stats at the
+        current position, and then writes the results to _sample_stats when
+        flush_cumulative_stat_cache() is called.
+        """
         self._contig_stats = {}
         self._sample_stats = {}
         self._cumulative_cache = {}
 
     def _increment_by_contig(self, stat_id, contig_name):
+        """ Makes sure the contig stat is defined, then increments it. """
         if ( stat_id, contig_name ) not in self._contig_stats:
             self._contig_stats[( stat_id, contig_name )] = 0
         self._contig_stats[( stat_id, contig_name )] += 1
 
     def increment_contig_stat(self, stat_id, contig_name=None):
+        """
+        Increments the stat for the specified contig, and automatically
+        increments the count for the all-contigs tally on the same stat.
+        """
         self._increment_by_contig(stat_id, contig_name)
         if contig_name is not None:
             self._increment_by_contig(stat_id, None)
@@ -402,6 +518,15 @@ class CollectionStatistics:
         return return_value
 
     def _cache_cumulative_stats(self, stat_id, sample_nickname, did_pass):
+        """
+        Writes data to the stat cache for the current position.  stat_type
+        is either "p" for pass/positive or "t" for total.  Flushing the cache
+        involves checking the p/t ratio.  When updating the cache,
+        failed/negative samples just increment t, while pass/positive samples
+        increment p and t.
+        Cumulative stats are across all samples at a position, and then once
+        each for all sample-analyses on a sample.
+        """
         if ( stat_id, sample_nickname, 't' ) not in self._cumulative_cache:
             self._cumulative_cache[( stat_id, sample_nickname, 't' )] = 0
             self._cumulative_cache[( stat_id, sample_nickname, 'p' )] = 0
@@ -410,11 +535,17 @@ class CollectionStatistics:
             self._cumulative_cache[( stat_id, sample_nickname, 'p' )] += 1
 
     def _increment_by_sample(self, stat_id, sample_nickname, sample_info, cum_type):
+        """ Defines if necessary, then increments, the sample stat. """
         if ( stat_id, sample_nickname, sample_info, cum_type ) not in self._sample_stats:
             self._sample_stats[( stat_id, sample_nickname, sample_info, cum_type )] = 0
         self._sample_stats[( stat_id, sample_nickname, sample_info, cum_type )] += 1
 
     def record_sample_stat(self, stat_id, sample_nickname, sample_identifier, sample_path, did_pass):
+        """
+        Updates the sample stat, and then the cumulative stat cache.
+        Increments the cache for all samples, and for all analyses
+        on this sample.
+        """
         if did_pass:
             self._increment_by_sample(stat_id, sample_nickname, ( sample_identifier, sample_path ), None)
         self._cache_cumulative_stats(stat_id, sample_nickname, did_pass)
@@ -433,6 +564,12 @@ class CollectionStatistics:
         return return_value
 
     def flush_cumulative_stat_cache(self):
+        """
+        Does the math on the p/t ratio for the stat cache for the current
+        position, and writes that to the sample stats for the any/all counts.
+        p > 0:  any++
+        p = t:  all++
+        """
         for ( stat_id, sample_nickname, stat_type ) in self._cumulative_cache:
             if stat_type == 'p':
                 if self._cumulative_cache[( stat_id, sample_nickname, 'p' )] == self._cumulative_cache[
@@ -444,16 +581,32 @@ class CollectionStatistics:
 
 
 class GenomeCollection(CollectionStatistics):
+    """
+    A "master matrix" object, of sorts.
+    Carries all the data necessary to make a matrix, although some of it
+    is computed on-the-fly as the matrix is actually written, for
+    performance reasons.  Stats aren't available until after the matrix
+    is written, for this reason.
+    """
+
     def __init__(self):
+        """
+        _failed_genomes is just a list of filenames that had errors during
+        import.  Added as blank columns to inform the user.
+        """
         CollectionStatistics.__init__(self)
         self._reference = None
         self._genomes = []
         self._genome_identifiers = {}
         self._failed_genomes = []
 
-    # To preserve sample-analysis order across different runs
     @staticmethod
     def _get_key(genome):
+        """
+        A wrapper getter for a genome's identifier, for the purpose of passing
+        informative data to the sort function.  This is used to make sample
+        order predictable and preserved between different runs.
+        """
         return genome.identifier()
 
     def set_reference(self, reference):
@@ -466,6 +619,10 @@ class GenomeCollection(CollectionStatistics):
         return self._reference.get_dups_call(first_position, last_position, contig_name)
 
     def add_genome(self, genome):
+        """
+        Adds the genome to the collection, then makes sure the genome list is
+        properly set and in order.
+        """
         self._genomes.append(genome)
         genome_nickname = genome.nickname()
         if genome_nickname not in self._genome_identifiers:
@@ -486,15 +643,31 @@ class GenomeCollection(CollectionStatistics):
     def get_contigs(self):
         return self._reference.get_contigs()
 
-    # FIXME split into a larger number of smaller more testable functions
     # FIXME this function is starting to become a bit of a cluster
     def _format_matrix_line(self, current_contig, current_pos, matrix_formats, pattern_data):
+        """
+        A matrix line represents all the sample data at one reference
+        contig-position.
+        This function contains a large portion of the ultimate NASP logic that
+        goes into generating a matrix, like filter application and consensus
+        checking.
+        A section of this function must be performed linearly and
+        single-threaded for all contig-position-sample-analyses.  This is the
+        "expensive loop".
+        The monolithic nature of this function, its massive size, and the fact
+        that it makes little distinction between calculating something and
+        writing something to a file, are all problems that will probably need
+        to eventually be corrected.  I fear, however, that there is a
+        significant tradeoff with it works / it's fast to run / it was fast to
+        develop / it's easily maintained / it's beautiful.
+        """
         all_matrices = []
         allcallable_matrices = []
         snp_matrices_best = []
         snp_matrices_md = []
         fasta_pending_data = {}
         current_pattern = ''
+        # Key None stores next unused, value 1 reserved for reference
         current_pattern_legend = {None: 2}
         for matrix_format in matrix_formats:
             if matrix_format['dataformat'] == 'matrix':
@@ -698,6 +871,10 @@ class GenomeCollection(CollectionStatistics):
         self.flush_cumulative_stat_cache()
 
     def send_to_matrix_handles(self, matrix_formats):
+        """
+        Writes headers and handles per-matrix logic.  Calls _write_matrix_line
+        to handle the per-line computation and analysis.
+        """
         for matrix_format in matrix_formats:
             if matrix_format['dataformat'] == 'matrix':
                 matrix_format['handle'].write("LocusID\tReference\t")
@@ -717,6 +894,7 @@ class GenomeCollection(CollectionStatistics):
                 matrix_format['fastadata'] = GenomeStatus()
                 for genome in self._genomes:
                     matrix_format['fastadata'].add_contig(genome.identifier())
+        # Key None stores next unused
         pattern_data = {None: 1}
         for current_contig in self.get_contigs():
             for current_pos in range(1, self._reference.get_contig_length(current_contig) + 1):
@@ -730,6 +908,7 @@ class GenomeCollection(CollectionStatistics):
                 matrix_format['fastadata'].send_to_fasta_handle(matrix_format['handle'])
 
     def write_to_matrices(self, matrix_formats):
+        """ Opens files for writing; abstracted for flexibility/testing. """
         for matrix_format in matrix_formats:
             matrix_format['handle'] = open(matrix_format['filename'], 'w')
         self.send_to_matrix_handles(matrix_formats)
@@ -737,6 +916,7 @@ class GenomeCollection(CollectionStatistics):
             matrix_format['handle'].close()
 
     def _write_general_stats(self, general_handle):
+        """ Writes finalized general stats to file. """
         general_stat_array = ['reference_length', 'reference_clean', 'reference_duplicated', 'all_called',
                               'all_passed_coverage', 'all_passed_proportion', 'all_passed_consensus', 'quality_breadth',
                               'any_snps', 'best_snps']
@@ -762,6 +942,11 @@ class GenomeCollection(CollectionStatistics):
             general_handle.write("\n")
 
     def _write_sample_stats(self, sample_handle):
+        """
+        Writes finalized sample stats to file.
+        Includes per-sample counts, any/all counts across each set of
+        sample-analyses, and any/all counts overall.
+        """
         sample_stat_array = ['was_called', 'passed_coverage_filter', 'passed_proportion_filter', 'quality_breadth', 
                              'called_reference', 'called_snp', 'called_degen']
         denominator_stat = 'reference_length'
@@ -798,6 +983,7 @@ class GenomeCollection(CollectionStatistics):
             sample_handle.write("\n")
 
     def write_to_stats_files(self, general_filename, sample_filename):
+        """ Opens files for writing; abstracted for flexibility/testing. """
         general_handle = open(general_filename, 'w')
         sample_handle = open(sample_filename, 'w')
         self._write_general_stats(general_handle)
@@ -809,6 +995,8 @@ class GenomeCollection(CollectionStatistics):
 
 
 class VCFRecord:
+    """ VCF parser, object representing an input VCF being read. """
+
     def __init__(self, file_path):
         self._file_path = file_path
         self._file_handle = open(self._file_path, 'r')
@@ -818,6 +1006,11 @@ class VCFRecord:
         self._get_header_map()
 
     def _get_header_map(self):
+        """
+        Pulls the headers from the file, so that we know which columns mean
+        what as we read the file in line-by-line.
+        The header map is expected to start with "#CHROM".
+        """
         current_line = ''
         while current_line[0:6] != "#CHROM":
             current_line = self._file_handle.readline()
@@ -837,6 +1030,10 @@ class VCFRecord:
             # print( self._sample_list )
 
     def _get_record_alts(self):
+        """
+        Get and parse the list of non-reference calls that might appear in
+        one or more samples.
+        """
         self._current_record['alts'] = [self._current_record['global']['REF']]
         if self._current_record['global']['ALT'] != '.':
             self._current_record['alts'] += self._current_record['global']['ALT'].split(',')
@@ -860,6 +1057,11 @@ class VCFRecord:
                     zip(sample_header, self._current_record['global'][current_sample].split(':')))
 
     def fetch_next_record(self):
+        """
+        We're done with the current line, let's move to the next.
+        Populates all the information at the position we'll need for parsing
+        parts of the next line.
+        """
         current_line = "#"
         while current_line[0:1] == "#":
             current_line = self._file_handle.readline()
@@ -971,6 +1173,14 @@ class VCFRecord:
 
 
 class InvalidContigName(Exception):
+    """
+    A contig was referenced that is not known to exist in this run.
+    For the most part, this exception isn't used because encountering
+    an unknown contig either means we should create it or we should
+    discard the data that follows.  However, there are potential times
+    where we need to take more extreme action.
+    """
+
     def __init__(self, invalid_contig, contig_list):
         self._invalid_contig = invalid_contig
         self._contig_list = contig_list
@@ -980,6 +1190,13 @@ class InvalidContigName(Exception):
 
 
 class ReferenceCallMismatch(Exception):
+    """
+    At two different points in the run, the reference call appeared, and the
+    two calls disagreed.  This probably means the user is analyzing two
+    different sets of data as if they belong together, in error.  This is
+    a very bad thing.
+    """
+
     def __init__(self, old_call, new_call, data_file=None, contig_name=None, position_number=None):
         self._old_call = old_call
         self._new_call = new_call
@@ -988,6 +1205,10 @@ class ReferenceCallMismatch(Exception):
         self._position_number = position_number
 
     def __str__(self):
+        """
+        The file, contig, and position are optional.  When given in any
+        combination, what's given will be in the error message.
+        """
         return_value = "Expected reference call of '{0}' but got '{1}'".format(self._old_call, self._new_call)
         if self._data_file is not None:
             return_value += " while reading '{0}'".format(self._data_file)
@@ -1000,6 +1221,12 @@ class ReferenceCallMismatch(Exception):
 
 
 class MalformedInputFile(Exception):
+    """
+    There was an error parsing the input file.
+    Give the information we can to the user in the stderr stream.
+    Let's hope they read it.
+    """
+
     def __init__(self, data_file, error_message=None):
         self._data_file = data_file
         self._error_message = error_message
