@@ -368,7 +368,7 @@ def _run_gatk(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, refe
     work_dir = os.path.join(output_folder, snpcaller_name)
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
-    command = "java -Xmx%sG -jar %s -T UnifiedGenotyper -dt NONE -glm BOTH -I %s -R %s -nt %s -ploidy 1 -o %s.vcf -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE %s" % (
+    command = "java -Xmx%sG -jar %s -T UnifiedGenotyper -dt NONE -glm BOTH -I %s -R %s -nt %s -o %s.vcf -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE %s" % (
         memory, path, bam_file, reference, ncpus, vcf_nickname, args)
     final_file = os.path.join(work_dir, "%s.vcf" % vcf_nickname)
     job_parms['name'] = "nasp_%s_%s" % (snpcaller_name, nickname)

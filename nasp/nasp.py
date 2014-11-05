@@ -214,6 +214,12 @@ def _get_advanced_settings(app_name, app_path, app_args, job_parms):
                     "    '%s' either does not exist or you don't have permission to run it, please enter the full path to '%s': " % (
                     path, app_name))
             app_path = path
+        args = input("  What additional arguments would you like to pass to %s [%s]? " % (app_name, app_args))
+        if args:
+            app_args = args
+        queue = input("  What queue/partition should %s run on [%s]? " % (app_name, job_parms['queue']))
+        if queue:
+            job_parms['queue'] = queue
         mem = input("  How much memory (GB) will %s require [%s]? " % (app_name, job_parms['mem_requested']))
         if re.match("^[1-9][0-9]*$", mem):
             job_parms['mem_requested'] = mem
@@ -223,9 +229,6 @@ def _get_advanced_settings(app_name, app_path, app_args, job_parms):
         hours = input("  How many hours will %s take to run [%s]? " % (app_name, job_parms['walltime']))
         if re.match("^[1-9][0-9]*$", hours):
             job_parms['walltime'] = hours
-        args = input("  What additional arguments would you like to pass to %s [%s]? " % (app_name, app_args))
-        if args:
-            app_args = args
     return app_name, app_path, app_args, job_parms
 
 
@@ -290,7 +293,7 @@ def _get_snpcallers(queue, args):
     response = input("\nWould you like to run GATK [Y]? ")
     if not re.match('^[Nn]', response):
         gatk_path = _get_java_path("GenomeAnalysisTK.jar")
-        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100",
+        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100 -ploidy 1",
                                                {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
                                                 'queue': queue, 'args': args})
         snpcaller_list.append(gatk_settings)
@@ -489,14 +492,15 @@ def _get_user_input(reference, output_folder):
     matrix_path = os.path.join(run_path, "vcf_to_matrix")
     if not os.path.exists(matrix_path):
         matrix_path = "vcf_to_matrix"
+    print();
     matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
-    include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
-    if re.match('^[Yy]', include_missing):
-        configuration["filter_matrix_format"] = "missingdata"
-        logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])
+#    include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
+#    if re.match('^[Yy]', include_missing):
+#        configuration["filter_matrix_format"] = "missingdata"
+#        logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])
 
     return configuration
 
