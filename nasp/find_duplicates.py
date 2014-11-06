@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "David Smith"
-__version__ = "0.9.7"
+__version__ = "0.9.8"
 __email__ = "dsmith@tgen.org"
 
 import logging
