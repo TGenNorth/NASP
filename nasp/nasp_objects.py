@@ -63,7 +63,7 @@ class GenomeStatus(object):
         self._status_data = {}
         self._current_contig = None
 
-    # FIXME: Does not raise exception if contig name is None or the empty string as documented
+    # NOTE(jtravis): Does not raise exception if contig name is None or the empty string as documented
     def add_contig(self, contig_name):
         """
         Defines a new empty contig in the genome.
@@ -82,7 +82,7 @@ class GenomeStatus(object):
             self._status_data[contig_name] = []
         self._current_contig = contig_name
 
-    # FIXME: unused parameter create_contig
+    # NOTE(jtravis): unused parameter create_contig
     def set_current_contig(self, contig_name, create_contig=True):
         """
         Sets the most-recently-referenced contig without actually performing
@@ -276,15 +276,17 @@ class Genome(GenomeStatus):
         line top to bottom.
 
         Args:
-            line_from_fasta (str):
-            contig_prefix (str):
+            line_from_fasta (str): the current line to parse
+            contig_prefix (str): the prefix will be removed from the parsed contig name
         """
         import re
 
+        # Parse the contig name discarding the prefix and surrounding whitespace characters
         contig_match = re.match(r'^>' + re.escape(contig_prefix) + r'([^\s]+)(?:\s|$)', line_from_fasta)
         if contig_match:
             self.add_contig(contig_match.group(1))
         else:
+            # Parse the contig sequence discarding trailing whitespace characters
             data_match = re.match(r'^([A-Za-z.-]+)\s*$', line_from_fasta)
             if data_match:
                 self.append_contig(list(data_match.group(1)))
@@ -293,8 +295,8 @@ class Genome(GenomeStatus):
         """ Read in a fasta file.
 
         Args:
-            fasta_filename (str):
-            contig_prefix (str):
+            fasta_filename (str): fasta file to import
+            contig_prefix (str): the prefix will be removed from the parsed contig names
         """
         with open(fasta_filename, 'r') as fasta_handle:
             for line_from_fasta in fasta_handle:
@@ -304,10 +306,10 @@ class Genome(GenomeStatus):
     def reverse_complement(dna_string):
         """
         Args:
-            dna_string (str):
+            dna_string (str): nucleotide sequence to reverse complement
 
         Returns:
-            string: dna string reverse complement
+            string: nucleotide sequence reverse complement
         """
         return dna_string.translate(
             ''.maketrans('ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr'))[::-1]
@@ -315,18 +317,23 @@ class Genome(GenomeStatus):
     @staticmethod
     def simple_call(dna_string, allow_x=False, allow_del=False):
         """
-        Standardizes the DNA call assumed to be the base at one position.
-        Only returns exactly 'A', 'C', 'G', 'T', 'N', or optionally 'X' or '.'
-        Discards insertion data, uppercases the call, changes 'U' to 'T',
-        and changes degeneracies to 'N'.  'X' and deletes are changed to 'N'
-        by default.
+        Standardizes the DNA call assumed to be the base at position one.
+        Discards insertion data, changes 'U' to 'T', and changes degeneracies to 'N'.
+        'X' and deletes are changed to 'N' by default.
+
+        Args:
+            dna_string (str): only the first position is considered
+            allow_x (bool):
+            allow_del (bool):
+
+        Returns:
+            string: 'A', 'C', 'G', 'T', or 'N' with optional 'X' and '.'
         """
         simple_base = 'N'
         if len(dna_string) > 0:
-            simple_base = dna_string[0:1]
+            simple_base = dna_string[0].upper()
         elif allow_del:
             simple_base = '.'
-        simple_base = simple_base.upper()
         if simple_base == 'U':
             simple_base = 'T'
         if simple_base not in ['A', 'C', 'G', 'T', 'X', '.']:
@@ -352,19 +359,22 @@ class GenomeMeta(object):
             chance of being unique.
             _filepath:
             _file_type:
-            _generators:
+            _generators: A list of analysis tools that have been run on input files to produce
+            this data, from earliest to latest.
         """
         self._nickname = None
         self._file_path = None
         self._file_type = None
-        self._generators = []  # This should probably be a dictionary someday
+        self._generators = []  # TODO: This should probably be a dictionary someday
 
+    # NOTE(jtravis): side effect alters nickname
     def set_file_path(self, file_path):
         """
         Args:
             file_path (str):
         """
         self._file_path = file_path
+        # TODO: merge and replace if-statement with set_nickname()
         if self._nickname is None:
             self._nickname = GenomeMeta.generate_nickname_from_filename(file_path)
 
@@ -446,9 +456,8 @@ class GenomeMeta(object):
         """
         import re
         import random
-        filename_match = re.match(
-            r'^(?:.*\/)?([^\/]+?)(?:\.(?:[Ff][Rr][Aa][Nn][Kk][Ee][Nn])?[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?|\.[Vv][Cc][Ff])?$',
-            filename)
+        # Parse basename from fasta or vcf file
+        filename_match = re.match(r'^(?:.*/)?([^/]+?)\.(?:(?:franken)?fas?(?:ta)?|vcf)?$', filename, re.IGNORECASE)
         if filename_match:
             nickname = filename_match.group(1)
         else:

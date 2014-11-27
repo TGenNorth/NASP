@@ -1,3 +1,7 @@
+# coding: utf-8
+
+__author__ = 'jtravis'
+
 import unittest
 from nasp.nasp_objects import InvalidContigName, GenomeStatus
 from io import StringIO
