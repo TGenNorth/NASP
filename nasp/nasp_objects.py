@@ -119,7 +119,7 @@ class GenomeStatus(object):
         """
         return sorted(self._status_data.keys())
 
-    def append_contig(self, genome_data, contig_name):
+    def append_contig(self, genome_data, contig_name=None):
         """
         Places the passed-in data at the position following the last
         defined position on the contig.  If passed a list, will give each
@@ -132,7 +132,7 @@ class GenomeStatus(object):
         contig_name = self.set_current_contig(contig_name)
         self._status_data[contig_name].extend(genome_data)
 
-    def extend_contig(self, new_length, missing_range_filler, contig_name):
+    def extend_contig(self, new_length, missing_range_filler, contig_name=None):
         """
         Ensures the contig is at least new_length positions long
 
@@ -167,7 +167,7 @@ class GenomeStatus(object):
         else:
             self._status_data[contig_name][position_number - 1] = new_data
 
-    def get_value(self, contig_name, first_position, last_position=None, filler_value=None):
+    def get_value(self, first_position, last_position=None, contig_name=None, filler_value=None):
         """
         Args:
             contig_name (str): Unique contig description.
@@ -194,7 +194,7 @@ class GenomeStatus(object):
                     queried_value.extend([filler_value] * ( last_position - first_position + 1 - len(queried_value) ))
         return queried_value
 
-    def get_contig_length(self, contig_name):
+    def get_contig_length(self, contig_name=None):
         """
         Args:
             contig_name (str): Unique contig description.
@@ -266,7 +266,7 @@ class Genome(GenomeStatus):
 
     def get_call(self, first_position, last_position=None, contig_name=None, filler_value="X"):
         """ Alias of get_value, for code clarity """
-        return self.get_value(contig_name, first_position, last_position, filler_value)
+        return self.get_value( first_position, last_position, contig_name, filler_value)
 
     def _import_fasta_line(self, line_from_fasta, contig_prefix=""):
         """
@@ -513,7 +513,7 @@ class ReferenceGenome(Genome):
         Returns:
             list:
         """
-        return self._dups.get_value(contig_name, first_position, last_position, "?")
+        return self._dups.get_value(first_position, last_position, contig_name, "?")
 
     def _import_dups_line(self, line_from_dups_file, contig_prefix=""):
         """
@@ -602,13 +602,13 @@ class VCFGenome(Genome, GenomeMeta):
         self._passed_proportion.set_value(pass_value, current_pos, "?", contig_name)
 
     def get_was_called(self, current_pos, contig_name=None):
-        return self._was_called.get_value(contig_name, current_pos, None, "N")
+        return self._was_called.get_value(current_pos, None, contig_name, "N")
 
     def get_coverage_pass(self, current_pos, contig_name=None):
-        return self._passed_coverage.get_value(contig_name, current_pos, None, "?")
+        return self._passed_coverage.get_value(current_pos, None, contig_name, "?")
 
     def get_proportion_pass(self, current_pos, contig_name=None):
-        return self._passed_proportion.get_value(contig_name, current_pos, None, "?")
+        return self._passed_proportion.get_value(current_pos, None, contig_name, "?")
 
 
 class CollectionStatistics(object):
