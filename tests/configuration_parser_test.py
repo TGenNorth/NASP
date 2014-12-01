@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
+__author__ = "jtravis"
+
 from nasp import configuration_parser
 import unittest
 import tempfile
@@ -40,27 +42,35 @@ class ConfigurationParserTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+    @unittest.skip("Not Implemented")
     def test_parse_args(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_parse_options(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_find_reads(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_find_files(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_get_reads(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_get_fastas(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_get_bams(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_get_vcfs(self):
         raise NotImplementedError
 
@@ -109,24 +119,31 @@ class ConfigurationParserTestCase(unittest.TestCase):
         #self.assertTrue(all(configuration_parser.configuration[key] == expected[key] for key in expected.keys()),
         #                "The configuration must contain all the expected key value pairs")
 
+    @unittest.skip("Not Implemented")
     def test_get_application(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_parse_applications(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_write_reads(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_write_files(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_write_application(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_write_config_node(self):
         raise NotImplementedError
 
+    @unittest.skip("Not Implemented")
     def test_write_config(self):
         raise NotImplementedError
 

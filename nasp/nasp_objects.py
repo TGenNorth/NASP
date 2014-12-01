@@ -7,7 +7,7 @@ __email__ = "dsmith@tgen.org"
 import logging
 
 
-class GenomeStatus:
+class GenomeStatus(object):
     """
     Contains and manipulates any generic data that is per-contig-position.
     This could be any single type of data, like actual bases, filter data,
@@ -52,16 +52,18 @@ class GenomeStatus:
     # Arrays are zero-indexed, genome positions are one-indexed. Off-by-one errors? Never heard of 'em.
     def __init__(self):
         """
-        _status_data is the dictionary of lists that stores the actual genome
-        data.  The keys of the dictionary are the contig names.  The lists
-        correspond to the position data on that contig.  Genome position is
-        list position + 1.
-        _current_contig tracks the most recently-referenced contig, for
-        convenience EG reading in fastas line-by-line.
+        Attributes:
+            _status_data: The dictionary of lists that stores the actual genome.
+            data. The keys of the dictionary are the contig names.  The lists
+            correspond to the position data on that contig.  Genome position is
+            list position + 1.
+            _current_contig: Tracks the most recently-referenced contig, for
+            convenience EG reading in fastas line-by-line.
         """
         self._status_data = {}
         self._current_contig = None
 
+    # NOTE(jtravis): Does not raise exception if contig name is None or the empty string as documented
     def add_contig(self, contig_name):
         """
         Defines a new empty contig in the genome.
@@ -69,19 +71,36 @@ class GenomeStatus:
         contig will be created and then acted upon.
         Otherwise, add_contig must be called on a new contig first, or an
         InvalidContigName will be thrown.
+
+        Args:
+            contig_name (str): Unique contig description.
+
+        Raises:
+            InvalidContigName: If contig_name is undefined.
         """
         if contig_name not in self._status_data:
             self._status_data[contig_name] = []
         self._current_contig = contig_name
 
+    # NOTE(jtravis): unused parameter create_contig
     def set_current_contig(self, contig_name, create_contig=True):
         """
         Sets the most-recently-referenced contig without actually performing
-        any action on the data.  Returns the current contig.
+        any action on the data.
         Can be called to return the current contig without changing it if
         given a contig_name of None.
         Will create the contig if it has not been encountered yet by
         default, or throw an InvalidContigName otherwise.
+
+        Args:
+            contig_name (str): Unique contig description or None to query the current contig name.
+            create_contig (bool): If True and the contig does not exist, an empty contig will be created.
+
+        Returns:
+            str: Name of the last accessed contig or None.
+
+        Raises:
+            InvalidContigName: If create_contig is False and the contig does not exist.
         """
         if contig_name is None:
             contig_name = self._current_contig
@@ -94,23 +113,33 @@ class GenomeStatus:
         return contig_name
 
     def get_contigs(self):
-        """ Returns the list of contigs """
+        """
+        Returns:
+            list: Sorted list of contig names.
+        """
         return sorted(self._status_data.keys())
 
-    def append_contig(self, genome_data, contig_name=None):
+    def append_contig(self, genome_data, contig_name):
         """
         Places the passed-in data at the position following the last
         defined position on the contig.  If passed a list, will give each
         item in the list its own position.
+
+        Args:
+            genome_data (list): List of nucleotide symbols.
+            contig_name (str): Unique contig description.
         """
         contig_name = self.set_current_contig(contig_name)
         self._status_data[contig_name].extend(genome_data)
 
-    def extend_contig(self, new_length, missing_range_filler, contig_name=None):
+    def extend_contig(self, new_length, missing_range_filler, contig_name):
         """
-        Ensures that the contig is at least new_length positions long.
-        Undefined areas (which will only be found at the end) will be filled
-        with missing_range_filler in each position.
+        Ensures the contig is at least new_length positions long
+
+        Args:
+            new_length (int): Minimum contig length.
+            missing_range_filler (str): Placeholder character for undefined areas at the end of the contig.
+            contig_name (str): Unique contig description.
         """
         contig_name = self.set_current_contig(contig_name)
         if len(self._status_data[contig_name]) < new_length:
@@ -124,6 +153,12 @@ class GenomeStatus:
         starting at position_number, one position per list item.
         Will extend the contig with missing_range_filler filling undefined
         values if the position to set is beyond the end of the contig.
+
+        Args:
+            new_data (str or list): Single or list of nucleotide symbols.
+            position_number (int): 1-indexed contig position number.
+            missing_range_filler (str): Filler for undefined regions before the set value. Modifies the data.
+            contig_name (str): Unique contig description
         """
         contig_name = self.set_current_contig(contig_name)
         self.extend_contig(position_number, missing_range_filler, contig_name)
@@ -132,13 +167,17 @@ class GenomeStatus:
         else:
             self._status_data[contig_name][position_number - 1] = new_data
 
-    def get_value(self, first_position, last_position=None, contig_name=None, filler_value=None):
+    def get_value(self, contig_name, first_position, last_position=None, filler_value=None):
         """
-        Returns the value at first_position, or list of values from
-        first_position to last_position inclusive.  If last_position is -1,
-        goes to the end of the contig.  If filler_value is not none, undefined
-        regions will be filled with it when returned, but the genome data will
-        not be modified.
+        Args:
+            contig_name (str): Unique contig description.
+            first_position (int): 1-indexed first position number.
+            last_position (int): Optional last position to select a range or -1 to specify the end of the contig.
+            filler_value (str): Optional filler for undefined regions beyond the genome data. Does not modify the data.
+
+        Returns:
+            Returns the nucleotide at first_position, list of values from
+            first_position to last_position inclusive, or None.
         """
         contig_name = self.set_current_contig(contig_name)
         queried_value = filler_value
@@ -155,8 +194,14 @@ class GenomeStatus:
                     queried_value.extend([filler_value] * ( last_position - first_position + 1 - len(queried_value) ))
         return queried_value
 
-    def get_contig_length(self, contig_name=None):
-        """ Returns the number of positions defined in the contig """
+    def get_contig_length(self, contig_name):
+        """
+        Args:
+            contig_name (str): Unique contig description.
+
+        Returns:
+            int: Number of positions defined in the contig
+        """
         contig_name = self.set_current_contig(contig_name)
         return len(self._status_data[contig_name])
 
@@ -166,6 +211,13 @@ class GenomeStatus:
         character per position, and then writes it in to the handle open for
         writing.  The file format is like a typical fasta were the genome
         data to be base calls (but no checks are performed).
+
+        The contigs are sorted by name, not the order they were created.
+
+        Args:
+            output_handle (file object): File to append FASTA string.
+            contig_prefix (str): Prefix for all contig names.
+            max_chars_per_line (int): A positive value will limit the max chars per line.
         """
         for current_contig in self.get_contigs():
             output_handle.write(">" + contig_prefix + current_contig + "\n")
@@ -183,10 +235,14 @@ class GenomeStatus:
         Opens the passed filename and passes to send_to_fasta_handle.
         This is a separate function so that unit testing is easier, and
         file names or open file handles can be used as destinations.
+
+        Args:
+            output_filename (str): Output filename.
+            contig_prefix (str): Prefix for all contig names.
+            max_chars_per_line (int): A positive value will limit the max contig chars per line.
         """
-        output_handle = open(output_filename, 'w')
-        self.send_to_fasta_handle(output_handle, contig_prefix, max_chars_per_line)
-        output_handle.close()
+        with open(output_filename, 'w') as output_handle:
+            self.send_to_fasta_handle(output_handle, contig_prefix, max_chars_per_line)
 
 
 class Genome(GenomeStatus):
@@ -197,8 +253,9 @@ class Genome(GenomeStatus):
 
     def __init__(self):
         """
-        _genome is an alias of _status_data, provided for code clarity
-        when working with an actual genome
+        Attributes:
+            _genome is an alias of _status_data, provided for code clarity
+            when working with an actual genome
         """
         GenomeStatus.__init__(self)
         self._genome = self._status_data
@@ -209,7 +266,7 @@ class Genome(GenomeStatus):
 
     def get_call(self, first_position, last_position=None, contig_name=None, filler_value="X"):
         """ Alias of get_value, for code clarity """
-        return self.get_value(first_position, last_position, contig_name, filler_value)
+        return self.get_value(contig_name, first_position, last_position, filler_value)
 
     def _import_fasta_line(self, line_from_fasta, contig_prefix=""):
         """
@@ -217,44 +274,66 @@ class Genome(GenomeStatus):
         populates the genome with the information contained.  Not meant
         to be called on any data except a full fasta file in order by
         line top to bottom.
+
+        Args:
+            line_from_fasta (str): the current line to parse
+            contig_prefix (str): the prefix will be removed from the parsed contig name
         """
         import re
 
+        # Parse the contig name discarding the prefix and surrounding whitespace characters
         contig_match = re.match(r'^>' + re.escape(contig_prefix) + r'([^\s]+)(?:\s|$)', line_from_fasta)
         if contig_match:
             self.add_contig(contig_match.group(1))
         else:
+            # Parse the contig sequence discarding trailing whitespace characters
             data_match = re.match(r'^([A-Za-z.-]+)\s*$', line_from_fasta)
             if data_match:
                 self.append_contig(list(data_match.group(1)))
 
     def import_fasta_file(self, fasta_filename, contig_prefix=""):
-        """ Read in a fasta file. """
-        fasta_handle = open(fasta_filename, 'r')
-        for line_from_fasta in fasta_handle:
-            self._import_fasta_line(line_from_fasta, contig_prefix)
-        fasta_handle.close()
+        """ Read in a fasta file.
+
+        Args:
+            fasta_filename (str): fasta file to import
+            contig_prefix (str): the prefix will be removed from the parsed contig names
+        """
+        with open(fasta_filename, 'r') as fasta_handle:
+            for line_from_fasta in fasta_handle:
+                self._import_fasta_line(line_from_fasta, contig_prefix)
 
     @staticmethod
     def reverse_complement(dna_string):
+        """
+        Args:
+            dna_string (str): nucleotide sequence to reverse complement
+
+        Returns:
+            string: nucleotide sequence reverse complement
+        """
         return dna_string.translate(
             ''.maketrans('ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr'))[::-1]
 
     @staticmethod
     def simple_call(dna_string, allow_x=False, allow_del=False):
         """
-        Standardizes the DNA call assumed to be the base at one position.
-        Only returns exactly 'A', 'C', 'G', 'T', 'N', or optionally 'X' or '.'
-        Discards insertion data, uppercases the call, changes 'U' to 'T',
-        and changes degeneracies to 'N'.  'X' and deletes are changed to 'N'
-        by default.
+        Standardizes the DNA call assumed to be the base at position one.
+        Discards insertion data, changes 'U' to 'T', and changes degeneracies to 'N'.
+        'X' and deletes are changed to 'N' by default.
+
+        Args:
+            dna_string (str): only the first position is considered
+            allow_x (bool):
+            allow_del (bool):
+
+        Returns:
+            string: 'A', 'C', 'G', 'T', or 'N' with optional 'X' and '.'
         """
         simple_base = 'N'
         if len(dna_string) > 0:
-            simple_base = dna_string[0:1]
+            simple_base = dna_string[0].upper()
         elif allow_del:
             simple_base = '.'
-        simple_base = simple_base.upper()
         if simple_base == 'U':
             simple_base = 'T'
         if simple_base not in ['A', 'C', 'G', 'T', 'X', '.']:
@@ -266,29 +345,44 @@ class Genome(GenomeStatus):
         return simple_base
 
 
-class GenomeMeta:
+class GenomeMeta(object):
     """ Stores the metadata associated with a genome.  """
 
     def __init__(self):
         """
-        _nickname is our best guess at the name information as supplied by the
-        input files.  Its determination depends on filetype.  For example, the
-        nickname of a genome from a fasta file is the filename minus the
-        extension.  There is no expectation that this value is unique.  A 
-        ( _file_path, _nickname ) tuple or the like would stand a much higher
-        chance of being unique.
+        Attributes:
+            _nickname: is our best guess at the name information as supplied by the
+            input files.  Its determination depends on filetype.  For example, the
+            nickname of a genome from a fasta file is the filename minus the
+            extension.  There is no expectation that this value is unique.  A
+            ( _file_path, _nickname ) tuple or the like would stand a much higher
+            chance of being unique.
+            _filepath:
+            _file_type:
+            _generators: A list of analysis tools that have been run on input files to produce
+            this data, from earliest to latest.
         """
         self._nickname = None
         self._file_path = None
         self._file_type = None
-        self._generators = []  # This should probably be a dictionary someday
+        self._generators = []  # TODO: This should probably be a dictionary someday
 
+    # NOTE(jtravis): side effect alters nickname
     def set_file_path(self, file_path):
+        """
+        Args:
+            file_path (str):
+        """
         self._file_path = file_path
+        # TODO: merge and replace if-statement with set_nickname()
         if self._nickname is None:
             self._nickname = GenomeMeta.generate_nickname_from_filename(file_path)
 
     def set_file_type(self, type_string):
+        """
+        Args:
+            type_string (str):
+        """
         self._file_type = type_string
 
     def set_nickname(self, nickname):
@@ -296,33 +390,50 @@ class GenomeMeta:
         This value should be unique per-file, for multi-sample input files,
         but there is no expectation that this would be unique per run, and
         nothing to enforce even per-file uniqueness.
+
+        Args:
+            nickname (str):
         """
         self._nickname = nickname
 
     def add_generators(self, generator_array):
         """
-        A list of analysis tools that have been run on input files to produce
-        this data, from earliest to latest.
+        Args:
+            generator_array: A list of analysis tools that have been run on input files to produce
+            this data, from earliest to latest.
         """
         self._generators.extend(generator_array)
 
     def file_path(self):
+        """
+        Returns:
+            string:
+        """
         return self._file_path
 
     def file_type(self):
+        """
+        Returns:
+            string:
+        """
         return self._file_type
 
     def nickname(self):
+        """
+        Returns:
+            string:
+        """
         return self._nickname
 
     def identifier(self):
         """
-        Returns a string meant to be recognizable to the user to differentiate
-        their sample-analyses.  There can be no assumption that this value is
-        unique, because the nickname is often not unique.  As a result, this
-        should not be used in-code (EG dictionary keys) to differentiate
-        samples.  The best we can do is a ( _file_path, _nickname ) tuple, and
-        even that may not be guaranteed to be unique.
+        Returns:
+            string: meant to be recognizable to the user to differentiate
+            their sample-analyses.  There can be no assumption that this value is
+            unique, because the nickname is often not unique.  As a result, this
+            should not be used in-code (EG dictionary keys) to differentiate
+            samples.  The best we can do is a ( _file_path, _nickname ) tuple, and
+            even that may not be guaranteed to be unique.
         """
         identifier = self._nickname
         if len(self._generators) > 0:
@@ -336,12 +447,17 @@ class GenomeMeta:
         metadata within the file, generate a nickname for the sample by
         removing the extension.  If this fails, generate a random name in the
         format "file_XXXXXXXX" where X is an 8-digit random integer.
+
+        Args:
+            filename (str):
+
+        Returns:
+            string: filename sans extension or "file_XXXXXXXX" where X is an 8-digit random integer.
         """
         import re
         import random
-        filename_match = re.match(
-            r'^(?:.*\/)?([^\/]+?)(?:\.(?:[Ff][Rr][Aa][Nn][Kk][Ee][Nn])?[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?|\.[Vv][Cc][Ff])?$',
-            filename)
+        # Parse basename from fasta or vcf file
+        filename_match = re.match(r'^(?:.*/)?([^/]+?)\.(?:(?:franken)?fas?(?:ta)?|vcf)?$', filename, re.IGNORECASE)
         if filename_match:
             nickname = filename_match.group(1)
         else:
@@ -355,7 +471,7 @@ class GenomeMeta:
             ''.maketrans('ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr'))[::-1]
 
 
-class IndelList:
+class IndelList(object):
     """
     For storing indel data separately from the reference-indexed position
     data.  Mostly a relic from when calls were stored as a long string with
@@ -363,6 +479,10 @@ class IndelList:
     implementation, but might be no longer useful.
     """
     def __init__(self):
+        """
+        Attributes:
+            _indels (dict):
+        """
         self._indels = {}
 
 
@@ -375,20 +495,34 @@ class ReferenceGenome(Genome):
 
     def __init__(self):
         """
-        _dups is a GenomeStatus that carries data about whether a particular
-        region of the reference was found to be very similar to another region
-        in the same reference.
+        Attributes:
+            _dups (GenomeStatus): carries data about whether a particular
+            region of the reference was found to be very similar to another region
+            in the same reference.
         """
         Genome.__init__(self)
         self._dups = GenomeStatus()
 
     def get_dups_call(self, first_position, last_position=None, contig_name=None):
-        return self._dups.get_value(first_position, last_position, contig_name, "?")
+        """
+        Args:
+            first_position (int):
+            last_position (int):
+            contig_name (str):
+
+        Returns:
+            list:
+        """
+        return self._dups.get_value(contig_name, first_position, last_position, "?")
 
     def _import_dups_line(self, line_from_dups_file, contig_prefix=""):
         """
         Just like importing any other fasta-like file line-by-line, but
         specific to duplicate region data.
+
+        Args:
+            line_from_dups_file (str):
+            contig_prefix (str):
         """
         import re
         contig_match = re.match(r'^>' + re.escape(contig_prefix) + r'([^\s]+)(?:\s|$)', line_from_dups_file)
@@ -401,12 +535,15 @@ class ReferenceGenome(Genome):
                 self._dups.append_contig(list(data_match.group(1)))
 
     def import_dups_file(self, dups_filename, contig_prefix=""):
-        """ Wrapper for _import_dups_line for flexibility and testing. """
-        dups_handle = open(dups_filename, 'r')
-        for line_from_dups_file in dups_handle:
-            self._import_dups_line(line_from_dups_file, contig_prefix)
-        dups_handle.close()
+        """ Wrapper for _import_dups_line for flexibility and testing.
 
+        Args:
+            dups_filename (str):
+            contig_prefix (str):
+        """
+        with open(dups_filename, 'r') as dups_handle:
+            for line_from_dups_file in dups_handle:
+                self._import_dups_line(line_from_dups_file, contig_prefix)
 
 class FastaGenome(Genome, GenomeMeta):
     """
@@ -443,7 +580,7 @@ class FastaGenome(Genome, GenomeMeta):
 
 class VCFGenome(Genome, GenomeMeta):
     """
-    A standard sample for analysis.  Has geome data, metadata, and data for
+    A standard sample for analysis.  Has genome data, metadata, and data for
     the three filters.
     """
 
@@ -465,16 +602,16 @@ class VCFGenome(Genome, GenomeMeta):
         self._passed_proportion.set_value(pass_value, current_pos, "?", contig_name)
 
     def get_was_called(self, current_pos, contig_name=None):
-        return self._was_called.get_value(current_pos, None, contig_name, "N")
+        return self._was_called.get_value(contig_name, current_pos, None, "N")
 
     def get_coverage_pass(self, current_pos, contig_name=None):
-        return self._passed_coverage.get_value(current_pos, None, contig_name, "?")
+        return self._passed_coverage.get_value(contig_name, current_pos, None, "?")
 
     def get_proportion_pass(self, current_pos, contig_name=None):
-        return self._passed_proportion.get_value(current_pos, None, contig_name, "?")
+        return self._passed_proportion.get_value(contig_name, current_pos, None, "?")
 
 
-class CollectionStatistics:
+class CollectionStatistics(object):
     """
     Stores a running tally for the statistics for the run.
     Stats are in two categories: per-contig and per-sample.
@@ -1034,17 +1171,14 @@ class GenomeCollection(CollectionStatistics):
 
     def write_to_stats_files(self, general_filename, sample_filename):
         """ Opens files for writing; abstracted for flexibility/testing. """
-        general_handle = open(general_filename, 'w')
-        sample_handle = open(sample_filename, 'w')
-        self._write_general_stats(general_handle)
-        self._write_sample_stats(sample_handle)
-        general_handle.close()
-        sample_handle.close()
+        with open(general_filename, 'w') as general_handle, open(sample_filename, 'w') as sample_handle:
+            self._write_general_stats(general_handle)
+            self._write_sample_stats(sample_handle)
         # print( self._stats._contig_stats )
         # print( self._stats._sample_stats )
 
 
-class VCFRecord:
+class VCFRecord(object):
     """ VCF parser, object representing an input VCF being read. """
 
     def __init__(self, file_path):
