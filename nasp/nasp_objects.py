@@ -651,9 +651,8 @@ class GenomeCollection(CollectionStatistics):
         This function contains a large portion of the ultimate NASP logic that
         goes into generating a matrix, like filter application and consensus
         checking.
-        A section of this function must be performed linearly and
-        single-threaded for all contig-position-sample-analyses.  This is the
-        "expensive loop".
+        A section below must be executed linearly and single-threaded for all
+        contig-position-sample-analyses.  This is the "expensive loop".
         The monolithic nature of this function, its massive size, and the fact
         that it makes little distinction between calculating something and
         writing something to a file, are all problems that will probably need
@@ -662,13 +661,16 @@ class GenomeCollection(CollectionStatistics):
         develop / it's easily maintained / it's beautiful.
         """
         all_matrices = []
+        all_vcfs = []
         allcallable_matrices = []
         snp_matrices_best = []
         snp_matrices_md = []
         fasta_pending_data = {}
+        vcf_pending_data = []
         current_pattern = ''
         # Key None stores next unused, value 1 reserved for reference
         current_pattern_legend = {None: 2}
+        encountered_calls = []
         for matrix_format in matrix_formats:
             if matrix_format['dataformat'] == 'matrix':
                 all_matrices.append(matrix_format)
@@ -678,10 +680,14 @@ class GenomeCollection(CollectionStatistics):
                     snp_matrices_best.append(matrix_format)
                 elif matrix_format['filter'] == 'missingdata':
                     snp_matrices_md.append(matrix_format)
+            elif matrix_format['dataformat'] == 'vcf':
+                all_vcfs.append(matrix_format)
         genome_count = len(self._genomes)
         failed_genome_count = len(self._failed_genomes)
         for matrix_format in all_matrices:
-            matrix_format['linetowrite'] = '' + current_contig + "::" + str(current_pos) + "\t"
+            matrix_format['linetowrite'] = "{0}::{1}\t".format(current_contig, str(current_pos))
+        for matrix_format in all_vcfs:
+            matrix_format['linetowrite'] = "{0}\t{1}\t.\t".format(current_contig, str(current_pos))
         reference_call = self._reference.get_call(current_pos, None, current_contig)
         simplified_refcall = Genome.simple_call(reference_call)
         fasta_pending_data['(Reference)'] = simplified_refcall
@@ -693,8 +699,8 @@ class GenomeCollection(CollectionStatistics):
         self.increment_contig_stat('reference_length', current_contig)
         if simplified_refcall != 'N':
             self.increment_contig_stat('reference_clean', current_contig)
-        for matrix_format in all_matrices:
-            matrix_format['linetowrite'] += '' + reference_call + "\t"
+        for matrix_format in ( all_matrices + all_vcfs ):
+            matrix_format['linetowrite'] += "{0}\t".format(reference_call)
         dups_call = self._reference.get_dups_call(current_pos, None, current_contig)
         if dups_call == "1":
             dups_call = True
@@ -779,11 +785,15 @@ class GenomeCollection(CollectionStatistics):
             for matrix_format in ( allcallable_matrices + snp_matrices_best ):
                 matrix_format['linetowrite'] += '' + sample_call + "\t"
             fasta_pending_data[genome_identifier] = simplified_sample_call
+            vcf_current_data = { 'GT': '.', 'was_called': was_called, 'passed_coverage': passed_coverage, 'passed_proportion': passed_proportion }
             if was_called and passed_coverage and passed_proportion and simplified_sample_call != 'N':
                 if simplified_sample_call not in current_pattern_legend:
                     current_pattern_legend[simplified_sample_call] = current_pattern_legend[None]
                     current_pattern_legend[None] += 1
+                    # FIXME indels
+                    encountered_calls.append(simplified_sample_call)
                 current_pattern += '' + str(current_pattern_legend[simplified_sample_call])
+                vcf_current_data['GT'] = current_pattern_legend[simplified_sample_call] - 1
                 for matrix_format in snp_matrices_md:
                     matrix_format['linetowrite'] += '' + sample_call + "\t"
             elif not was_called:
@@ -796,8 +806,9 @@ class GenomeCollection(CollectionStatistics):
                 fasta_pending_data[genome_identifier] = 'N'
                 for matrix_format in snp_matrices_md:
                     matrix_format['linetowrite'] += "N\t"
+            vcf_pending_data.append(vcf_current_data)
         for matrix_format in all_matrices:
-            matrix_format['linetowrite'] += '' + '\t' * failed_genome_count
+            matrix_format['linetowrite'] += '' + "\t" * failed_genome_count
         for genome_nickname in consensus_check:
             if consensus_check[genome_nickname] != 'N':
                 self.record_sample_stat('consensus', genome_nickname, None, None, True)
@@ -845,13 +856,31 @@ class GenomeCollection(CollectionStatistics):
             if current_pattern not in pattern_data:
                 pattern_data[current_pattern] = pattern_data[None]
                 pattern_data[None] += 1
-            matrix_format['linetowrite'] += "'" + current_pattern + "'\t" + str(pattern_data[current_pattern]) + "\n"
+            matrix_format['linetowrite'] += "'{0}'\t{1}\n".format(current_pattern, str(pattern_data[current_pattern]))
+        for matrix_format in all_vcfs:
+            if len(encountered_calls) > 0:
+                matrix_format['linetowrite'] += ",".join(encountered_calls)
+            else:
+                matrix_format['linetowrite'] += "."
+            matrix_format['linetowrite'] += "\t.\tPASS\tAN={0};NS={1}\tGT:FT".format(len(encountered_calls)+1, str(call_data['snpcall']+call_data['indelcall']+call_data['refcall']))
+            for vcf_current_data in vcf_pending_data:
+                matrix_format['linetowrite'] += "\t{0}:".format(str(vcf_current_data['GT']))
+                if not vcf_current_data['was_called']:
+                    matrix_format['linetowrite'] += "NoCall"
+                elif not vcf_current_data['passed_coverage']:
+                    matrix_format['linetowrite'] += "CovFail"
+                elif not vcf_current_data['passed_proportion']:
+                    matrix_format['linetowrite'] += "PropFail"
+                else:
+                    matrix_format['linetowrite'] += "PASS"
+            matrix_format['linetowrite'] += "\n"
         # Determine if a line should be present in a particular matrix
         if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or call_data['snpcall'] + call_data[
             'refcall'] < genome_count or dups_call or not consensus_check:
             for matrix_format in matrix_formats:
-                if matrix_format['dataformat'] == 'matrix' and matrix_format['filter'] == 'bestsnp':
-                    matrix_format['linetowrite'] = None
+                if matrix_format['filter'] == 'bestsnp':
+                    if matrix_format['dataformat'] == 'matrix' or matrix_format['dataformat'] == 'vcf':
+                        matrix_format['linetowrite'] = None
         else:
             for matrix_format in matrix_formats:
                 if matrix_format['dataformat'] == 'fasta' and matrix_format['filter'] == 'bestsnp':
@@ -860,8 +889,9 @@ class GenomeCollection(CollectionStatistics):
                                                                  genome_identifier)
         if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or dups_call:
             for matrix_format in matrix_formats:
-                if matrix_format['dataformat'] == 'matrix' and matrix_format['filter'] == "missingdata":
-                    matrix_format['linetowrite'] = None
+                if matrix_format['filter'] == "missingdata":
+                    if matrix_format['dataformat'] == 'matrix' or matrix_format['dataformat'] == 'vcf':
+                        matrix_format['linetowrite'] = None
         else:
             for matrix_format in matrix_formats:
                 if matrix_format['dataformat'] == 'fasta' and matrix_format['filter'] == 'missingdata':
@@ -888,12 +918,29 @@ class GenomeCollection(CollectionStatistics):
                 else:
                     # must be all callable or missing data
                     matrix_format['handle'].write(
-                        "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\n")
+                        "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\t" +
+                            "Contig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\n")
                 matrix_format['linetowrite'] = ''
             elif matrix_format['dataformat'] == 'fasta':
                 matrix_format['fastadata'] = GenomeStatus()
                 for genome in self._genomes:
                     matrix_format['fastadata'].add_contig(genome.identifier())
+            elif matrix_format['dataformat'] == 'vcf':
+                matrix_format['handle'].write("##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(__version__))
+                for current_contig in self._reference.get_contigs():
+                    matrix_format['handle'].write("##contig=<ID=\"{0}\",length={1}>\n".format(current_contig, self._reference.get_contig_length(current_contig)))
+                for genome in self._genomes:
+                    matrix_format['handle'].write("##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>\n".format(genome.identifier()))
+                matrix_format['handle'].write("##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">\n")
+                matrix_format['handle'].write("##FILTER=<ID=NoCall,Description=\"No call for this sample at this position\">\n")
+                matrix_format['handle'].write("##FILTER=<ID=CovFail,Description=\"Insufficient depth of coverage for this sample at this position\">\n")
+                matrix_format['handle'].write("##FILTER=<ID=PropFail,Description=\"Insufficient proportion of reads were variant for this sample at this position\">\n")
+                matrix_format['handle'].write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+                matrix_format['handle'].write("##FORMAT=<ID=FT,Number=1,Type=String,Description=\"Filters that failed for this sample at this position\">\n")
+                matrix_format['handle'].write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
+                for genome in self._genomes:
+                    matrix_format['handle'].write("\t" + genome.identifier())
+                matrix_format['handle'].write("\n")
         # Key None stores next unused
         pattern_data = {None: 1}
         for current_contig in self.get_contigs():
@@ -901,6 +948,9 @@ class GenomeCollection(CollectionStatistics):
                 self._format_matrix_line(current_contig, current_pos, matrix_formats, pattern_data)
                 for matrix_format in matrix_formats:
                     if matrix_format['dataformat'] == 'matrix' and matrix_format['linetowrite'] is not None:
+                        matrix_format['handle'].write(matrix_format['linetowrite'])
+                        matrix_format['linetowrite'] = ''
+                    if matrix_format['dataformat'] == 'vcf' and matrix_format['linetowrite'] is not None:
                         matrix_format['handle'].write(matrix_format['linetowrite'])
                         matrix_format['linetowrite'] = ''
         for matrix_format in matrix_formats:
@@ -1104,8 +1154,8 @@ class VCFRecord:
                                     self._current_record['global']['REF'][:len(return_value)] != return_value and \
                                     self._current_record['global']['REF'][-len(return_value):] == return_value:
                         return_value = self._current_record['alts'][0]
-        elif len(self._current_record['alts']) > 1:
-            return_value = self._current_record['alts'][1]
+        #elif len(self._current_record['alts']) > 1:
+        #    return_value = self._current_record['alts'][1]
         return return_value
 
     def get_coverage(self, current_sample):
@@ -1120,6 +1170,13 @@ class VCFRecord:
         elif 'ADP' in self._current_record['info'] and self._current_record['info']['ADP'] is not None and \
                 self._current_record['info']['ADP'].isdigit():
             sample_coverage = int(self._current_record['info']['ADP']) / len(self._sample_list)
+        # NASP output
+        elif 'FORMAT' in self._current_record['global'] and 'FT' in self._current_record['samples'][current_sample]:
+            failed_filters = self._current_record['samples'][current_sample]['FT'].split(',')
+            if 'CovFail' in failed_filters:
+                sample_coverage = -1
+            elif 'PASS' in failed_filters or 'PropFail' in failed_filters:
+                sample_coverage = 'PASS'
         return sample_coverage
 
     def get_proportion(self, current_sample, sample_coverage, is_a_snp):
@@ -1150,6 +1207,13 @@ class VCFRecord:
             else:
                 sample_proportion = ( int(call_depths[0]) + int(call_depths[1]) ) / (
                     sample_coverage * len(self._sample_list) )
+        # NASP output
+        elif 'FORMAT' in self._current_record['global'] and 'FT' in self._current_record['samples'][current_sample]:
+            failed_filters = self._current_record['samples'][current_sample]['FT'].split(',')
+            if 'PropFail' in failed_filters:
+                sample_proportion = -1
+            elif 'PASS' in failed_filters:
+                sample_proportion = 'PASS'
         return sample_proportion
 
     def get_sample_info(self, current_sample):

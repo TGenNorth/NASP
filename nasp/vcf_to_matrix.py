@@ -132,12 +132,12 @@ def read_vcf_file(reference, min_coverage, min_proportion, input_file):
                     if sample_info['was_called']:
                         genomes[vcf_sample].set_was_called('Y', current_pos, current_contig)
                     if sample_info['coverage'] is not None:
-                        if sample_info['coverage'] >= min_coverage:
+                        if sample_info['coverage'] == 'PASS' or sample_info['coverage'] >= min_coverage:
                             genomes[vcf_sample].set_coverage_pass('Y', current_pos, current_contig)
                         else:
                             genomes[vcf_sample].set_coverage_pass('N', current_pos, current_contig)
                     if sample_info['proportion'] is not None:
-                        if sample_info['proportion'] >= min_proportion:
+                        if sample_info['proportion'] == 'PASS' or sample_info['proportion'] >= min_proportion:
                             genomes[vcf_sample].set_proportion_pass('Y', current_pos, current_contig)
                         else:
                             genomes[vcf_sample].set_proportion_pass('N', current_pos, current_contig)
@@ -299,6 +299,11 @@ def write_output_matrices(genomes, matrix_folder, matrix_format_choices):
             'filter': 'bestsnp'
         },
         {
+            'filename': '' + matrix_folder + '/bestsnp_matrix.vcf',
+            'dataformat': 'vcf',
+            'filter': 'bestsnp'
+        },
+        {
             'filename': '' + matrix_folder + '/missingdata_matrix.tsv',
             'dataformat': 'matrix',
             'filter': 'missingdata'
@@ -306,6 +311,11 @@ def write_output_matrices(genomes, matrix_folder, matrix_format_choices):
         {
             'filename': '' + matrix_folder + '/missingdata_matrix.snpfasta',
             'dataformat': 'fasta',
+            'filter': 'missingdata'
+        },
+        {
+            'filename': '' + matrix_folder + '/missingdata_matrix.vcf',
+            'dataformat': 'vcf',
             'filter': 'missingdata'
         }]
     genomes.write_to_matrices(matrix_formats)
