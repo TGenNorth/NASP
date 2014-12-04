@@ -279,8 +279,7 @@ def write_output_matrices(genomes, matrix_folder, matrix_format_choices):
     Defines the matrix types for future expansion of custom matrix options.
     This information eventually should come from the user interface and be
     included in the XML configuration file, rather than hardcoded here.
-    The matrix_format_choices option comes from the XML to here, and then
-    is currently discarded.
+    The matrix_format_choices option comes from the XML to here.
     """
     matrix_formats = [
         {
@@ -318,6 +317,24 @@ def write_output_matrices(genomes, matrix_folder, matrix_format_choices):
             'dataformat': 'vcf',
             'filter': 'missingdata'
         }]
+    # The XML format transferring this information should be more elaborate someday.
+    if matrix_format_choices is not None and matrix_format_choices == "include_allref_pos":
+        matrix_formats.extend( [
+            {
+                'filename': '' + matrix_folder + '/withallrefpos_matrix.tsv',
+                'dataformat': 'matrix',
+                'filter': 'includeref'
+            },
+            {
+                'filename': '' + matrix_folder + '/withallrefpos_matrix.snpfasta',
+                'dataformat': 'fasta',
+                'filter': 'includeref'
+            },
+            {
+                'filename': '' + matrix_folder + '/withallrefpos_matrix.vcf',
+                'dataformat': 'vcf',
+                'filter': 'includeref'
+            }] )
     genomes.write_to_matrices(matrix_formats)
 
 

@@ -497,10 +497,10 @@ def _get_user_input(reference, output_folder):
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
-#    include_missing = input("\nDo you want to allow uncalled and filtered positions in the filtered matrix [N]? ")
-#    if re.match('^[Yy]', include_missing):
-#        configuration["filter_matrix_format"] = "missingdata"
-#        logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])
+    include_allref_pos = input("\nDo you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]? ")
+    if re.match('^[Yy]', include_allref_pos):
+        configuration["filter_matrix_format"] = "include_allref_pos"
+        logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])
 
     return configuration
 

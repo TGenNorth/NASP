@@ -437,7 +437,7 @@ class GenomeMeta(object):
         """
         identifier = self._nickname
         if len(self._generators) > 0:
-            identifier = '' + identifier + "::" + ( ','.join(self._generators) )
+            identifier = "{0}::{1}".format(identifier, ','.join(self._generators))
         return identifier
 
     @staticmethod
@@ -813,7 +813,7 @@ class GenomeCollection(CollectionStatistics):
                 all_matrices.append(matrix_format)
                 if matrix_format['filter'] == 'allcallable':
                     allcallable_matrices.append(matrix_format)
-                elif matrix_format['filter'] == 'bestsnp':
+                elif matrix_format['filter'] == 'bestsnp' or matrix_format['filter'] == 'includeref':
                     snp_matrices_best.append(matrix_format)
                 elif matrix_format['filter'] == 'missingdata':
                     snp_matrices_md.append(matrix_format)
@@ -856,7 +856,7 @@ class GenomeCollection(CollectionStatistics):
             genome_identifier = genome.identifier()
             genome_path = genome.file_path()
             was_called = genome.get_was_called(current_pos, current_contig)
-            call_data['callstring'] += '' + was_called
+            call_data['callstring'] += was_called
             if was_called == 'Y':
                 was_called = True
                 call_data['called'] += 1
@@ -864,7 +864,7 @@ class GenomeCollection(CollectionStatistics):
                 was_called = False
             self.record_sample_stat('was_called', genome_nickname, genome_identifier, genome_path, was_called)
             passed_coverage = genome.get_coverage_pass(current_pos, current_contig)
-            call_data['covstring'] += '' + passed_coverage
+            call_data['covstring'] += passed_coverage
             if passed_coverage == 'Y' or passed_coverage == '-':
                 passed_coverage = True
                 call_data['passcov'] += 1
@@ -873,7 +873,7 @@ class GenomeCollection(CollectionStatistics):
             self.record_sample_stat('passed_coverage_filter', genome_nickname, genome_identifier, genome_path,
                                     passed_coverage)
             passed_proportion = genome.get_proportion_pass(current_pos, current_contig)
-            call_data['propstring'] += '' + passed_proportion
+            call_data['propstring'] += passed_proportion
             if passed_proportion == 'Y' or passed_proportion == '-':
                 passed_proportion = True
                 call_data['passprop'] += 1
@@ -920,7 +920,7 @@ class GenomeCollection(CollectionStatistics):
                 if not dups_call:
                     self.record_sample_stat('quality_breadth', genome_nickname, genome_identifier, genome_path, False)
             for matrix_format in ( allcallable_matrices + snp_matrices_best ):
-                matrix_format['linetowrite'] += '' + sample_call + "\t"
+                matrix_format['linetowrite'] += "{0}\t".format(sample_call)
             fasta_pending_data[genome_identifier] = simplified_sample_call
             vcf_current_data = { 'GT': '.', 'was_called': was_called, 'passed_coverage': passed_coverage, 'passed_proportion': passed_proportion }
             if was_called and passed_coverage and passed_proportion and simplified_sample_call != 'N':
@@ -929,10 +929,10 @@ class GenomeCollection(CollectionStatistics):
                     current_pattern_legend[None] += 1
                     # FIXME indels
                     encountered_calls.append(simplified_sample_call)
-                current_pattern += '' + str(current_pattern_legend[simplified_sample_call])
+                current_pattern += str(current_pattern_legend[simplified_sample_call])
                 vcf_current_data['GT'] = current_pattern_legend[simplified_sample_call] - 1
                 for matrix_format in snp_matrices_md:
-                    matrix_format['linetowrite'] += '' + sample_call + "\t"
+                    matrix_format['linetowrite'] += "{0}\t".format(sample_call)
             elif not was_called:
                 current_pattern += 'N'
                 fasta_pending_data[genome_identifier] = 'N'
@@ -945,7 +945,7 @@ class GenomeCollection(CollectionStatistics):
                     matrix_format['linetowrite'] += "N\t"
             vcf_pending_data.append(vcf_current_data)
         for matrix_format in all_matrices:
-            matrix_format['linetowrite'] += '' + "\t" * failed_genome_count
+            matrix_format['linetowrite'] += "\t" * failed_genome_count
         for genome_nickname in consensus_check:
             if consensus_check[genome_nickname] != 'N':
                 self.record_sample_stat('consensus', genome_nickname, None, None, True)
@@ -985,10 +985,9 @@ class GenomeCollection(CollectionStatistics):
         if not dups_call and call_data['snpcall'] > 0:
             self.increment_contig_stat('any_snps', current_contig)
         for matrix_format in all_matrices:
-            matrix_format['linetowrite'] += '' + str(dups_call) + "\t" + str(consensus_check) + "\t"
+            matrix_format['linetowrite'] += "{0}\t{1}\t".format(str(dups_call), str(consensus_check))
         for matrix_format in ( allcallable_matrices + snp_matrices_md ):
-            matrix_format['linetowrite'] += '' + str(call_data['callstring']) + "\t" + str(
-                call_data['covstring']) + "\t" + str(call_data['propstring']) + "\t"
+            matrix_format['linetowrite'] += "{0}\t{1}\t{2}\t".format(str(call_data['callstring']), str(call_data['covstring']), str(call_data['propstring']))
         for matrix_format in all_matrices:
             if current_pattern not in pattern_data:
                 pattern_data[current_pattern] = pattern_data[None]
@@ -1012,6 +1011,7 @@ class GenomeCollection(CollectionStatistics):
                     matrix_format['linetowrite'] += "PASS"
             matrix_format['linetowrite'] += "\n"
         # Determine if a line should be present in a particular matrix
+        # bestsnp outputs
         if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or call_data['snpcall'] + call_data[
             'refcall'] < genome_count or dups_call or not consensus_check:
             for matrix_format in matrix_formats:
@@ -1024,6 +1024,7 @@ class GenomeCollection(CollectionStatistics):
                     for genome_identifier in fasta_pending_data:
                         matrix_format['fastadata'].append_contig(fasta_pending_data[genome_identifier],
                                                                  genome_identifier)
+        # missing data outputs
         if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or dups_call:
             for matrix_format in matrix_formats:
                 if matrix_format['filter'] == "missingdata":
@@ -1032,6 +1033,19 @@ class GenomeCollection(CollectionStatistics):
         else:
             for matrix_format in matrix_formats:
                 if matrix_format['dataformat'] == 'fasta' and matrix_format['filter'] == 'missingdata':
+                    for genome_identifier in fasta_pending_data:
+                        matrix_format['fastadata'].append_contig(fasta_pending_data[genome_identifier],
+                                                                 genome_identifier)
+        # including ref outputs
+        if call_data['indelcall'] > 0 or call_data['snpcall'] + call_data[
+            'refcall'] < genome_count or dups_call or not consensus_check:
+            for matrix_format in matrix_formats:
+                if matrix_format['filter'] == 'includeref':
+                    if matrix_format['dataformat'] == 'matrix' or matrix_format['dataformat'] == 'vcf':
+                        matrix_format['linetowrite'] = None
+        else:
+            for matrix_format in matrix_formats:
+                if matrix_format['dataformat'] == 'fasta' and matrix_format['filter'] == 'includeref':
                     for genome_identifier in fasta_pending_data:
                         matrix_format['fastadata'].append_contig(fasta_pending_data[genome_identifier],
                                                                  genome_identifier)
@@ -1046,10 +1060,10 @@ class GenomeCollection(CollectionStatistics):
             if matrix_format['dataformat'] == 'matrix':
                 matrix_format['handle'].write("LocusID\tReference\t")
                 for genome in self._genomes:
-                    matrix_format['handle'].write('' + genome.identifier() + "\t")
+                    matrix_format['handle'].write("{0}\t".format(genome.identifier()))
                 for genome_path in self._failed_genomes:
-                    matrix_format['handle'].write('' + genome_path + "\t")
-                if matrix_format['filter'] == 'bestsnp':
+                    matrix_format['handle'].write("{0}\t".format(genome_path))
+                if matrix_format['filter'] == 'bestsnp' or matrix_format['filter'] == 'includeref':
                     matrix_format['handle'].write(
                         "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tPattern\tPattern#\n")
                 else:
@@ -1110,19 +1124,19 @@ class GenomeCollection(CollectionStatistics):
         denominator_stat = 'reference_length'
         general_handle.write("Contig\t")
         for current_stat in general_stat_array:
-            general_handle.write('' + current_stat + "\t")
+            general_handle.write("{0}\t".format(current_stat))
             if current_stat != denominator_stat:
-                general_handle.write('' + current_stat + " (%)\t")
+                general_handle.write("{0} (%)\t".format(current_stat))
         general_handle.write("\n")
-        general_handle.write("\tstat descriptions go here\n")
+        general_handle.write("\tstat descriptions go here\n") # FIXME
         for current_contig in ( [None] + self.get_contigs() ):
             denominator_value = self.get_contig_stat(denominator_stat, current_contig)
             if current_contig is None:
                 general_handle.write("Whole Genome\t")
             else:
-                general_handle.write('' + current_contig + "\t")
+                general_handle.write("{0}\t".format(current_contig))
             for current_stat in general_stat_array:
-                general_handle.write('' + str(self.get_contig_stat(current_stat, current_contig)) + "\t")
+                general_handle.write("{0}\t".format(str(self.get_contig_stat(current_stat, current_contig))))
                 if current_stat != denominator_stat:
                     general_handle.write(
                         "%.2f%%\t" % ( self.get_contig_stat(current_stat, current_contig) / denominator_value * 100 ))
@@ -1140,10 +1154,10 @@ class GenomeCollection(CollectionStatistics):
         denominator_value = self.get_contig_stat(denominator_stat)
         sample_handle.write("Sample\tSample::Analysis\t")
         for current_stat in sample_stat_array:
-            sample_handle.write('' + current_stat + "\t")
-            sample_handle.write('' + current_stat + " (%)\t")
+            sample_handle.write("{0}\t".format(current_stat))
+            sample_handle.write("{0} (%)\t".format(current_stat))
         sample_handle.write("\n")
-        sample_handle.write("\tstat descriptions go here\n\n")
+        sample_handle.write("\tstat descriptions go here\n\n") # FIXME
         for current_sample in ( [None] + sorted(self._genome_identifiers.keys()) ):
             for current_analysis in ['any', 'all']:
                 if current_sample is not None:
@@ -1152,8 +1166,7 @@ class GenomeCollection(CollectionStatistics):
                 if current_sample is None:
                     sample_handle.write("\t")
                 for current_stat in sample_stat_array:
-                    sample_handle.write(
-                        '' + str(self.get_cumulative_stat(current_stat, current_analysis, current_sample)) + "\t")
+                    sample_handle.write("{0}\t".format(str(self.get_cumulative_stat(current_stat, current_analysis, current_sample))))
                     if current_stat != denominator_stat:
                         sample_handle.write("%.2f%%\t" % (self.get_cumulative_stat(current_stat, current_analysis, current_sample) / denominator_value * 100))
                 sample_handle.write("\n")
@@ -1162,8 +1175,7 @@ class GenomeCollection(CollectionStatistics):
                     ( sample_identifier, sample_path ) = current_analysis
                     sample_handle.write("{0}\t{1}\t".format(current_sample, sample_identifier))
                     for current_stat in sample_stat_array:
-                        sample_handle.write('' + str(
-                            self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path)) + "\t")
+                        sample_handle.write("{0}\t".format(str(self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path))))
                         if current_stat != denominator_stat:
                             sample_handle.write("%.2f%%\t" % (self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path) / denominator_value * 100))
                     sample_handle.write("\n")
