@@ -1051,6 +1051,7 @@ class GenomeCollection(CollectionStatistics):
                                                                  genome_identifier)
         self.flush_cumulative_stat_cache()
 
+    # NOTE(jtravis): Fix documentation _write_matrix_line() does not exist
     def send_to_matrix_handles(self, matrix_formats):
         """
         Writes headers and handles per-matrix logic.  Calls _write_matrix_line

@@ -4,6 +4,7 @@
 from __future__ import print_function
 from optparse import OptionParser
 import fileinput
+# TODO(jtravis): remove unused subprocess import
 import subprocess
 import sys
 try:

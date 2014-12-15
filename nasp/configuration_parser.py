@@ -24,6 +24,9 @@ snpcaller_list = []
 
 
 def _parse_args():
+    """
+    Returns:
+    """
     import argparse
 
     parser = argparse.ArgumentParser(description="Meant to be called from the pipeline automatically.")
@@ -32,6 +35,10 @@ def _parse_args():
 
 
 def _parse_options(options_node):
+    """
+    Args:
+        options_node (xml.etree.ElementTree.Element):
+    """
     configuration["run_name"] = options_node.findtext('RunName')
     configuration["output_folder"] = options_node.findtext('OutputFolder')
     reference_node = options_node.find('Reference')
@@ -48,6 +55,14 @@ def _parse_options(options_node):
 
 
 def _find_reads(folder, filepath):
+    """
+    Args:
+        folder (xml.etree.ElementTree.Element): The Folder parent Element
+        filepath (str): Path to the folder where the fasta files are located
+
+    Returns:
+        int: Number of unique read files found, not including paired files
+    """
     import os
     import re
 
@@ -81,6 +96,16 @@ def _find_reads(folder, filepath):
 
 
 def _find_files(folder, filepath, filetype, extension):
+    """
+    Args:
+        folder:
+        filepath:
+        filetype:
+        extension:
+
+    Returns:
+        int:
+    """
     import os
     import re
 
@@ -102,6 +127,13 @@ def _find_files(folder, filepath, filetype, extension):
 
 
 def _get_reads(folder):
+    """
+    Args:
+        folder (xml.etree.ElementTree.Element):
+
+    Returns:
+        int:
+    """
     from os import path
 
     filepath = folder.get('path')
@@ -122,6 +154,13 @@ def _get_reads(folder):
 
 
 def _get_fastas(folder):
+    """
+    Args:
+        folder (xml.etree.ElementTree.Element):
+
+    Returns:
+        int:
+    """
     from os import path
 
     filepath = folder.get('path')
@@ -136,6 +175,13 @@ def _get_fastas(folder):
 
 
 def _get_bams(folder):
+    """
+    Args:
+        folder (xml.etree.ElementTree.Element):
+
+    Returns:
+        int:
+    """
     from os import path
 
     filepath = folder.get('path')
@@ -150,6 +196,13 @@ def _get_bams(folder):
 
 
 def _get_vcfs(folder):
+    """
+    Args:
+        folder (xml.etree.ElementTree.Element):
+
+    Returns:
+        int:
+    """
     from os import path
 
     filepath = folder.get('path')
@@ -164,6 +217,10 @@ def _get_vcfs(folder):
 
 
 def _parse_files(files_node):
+    """
+    Args:
+        files_node (xml.etree.ElementTree.Element):
+    """
     for folder in files_node.findall('ReadFolder'):
         _get_reads(folder)
     configuration["reads"] = read_list
@@ -179,6 +236,14 @@ def _parse_files(files_node):
 
 
 def _get_application(app_node, name=None):
+    """
+    Args:
+        app_node (xml.etree.ElementTree.Element):
+        name (str):
+
+    Returns:
+        (str, str, str, dict): job name, command path, command arguments, dispatcher parameters
+    """
     name = name or app_node.get('name')
     path = app_node.get('path')
     args = app_node.findtext('AdditionalArgs', default="")
@@ -195,6 +260,10 @@ def _get_application(app_node, name=None):
 
 
 def _parse_applications(applications_node):
+    """
+    Args:
+        applications_node (xml.etree.ElementTree.Element):
+    """
     if applications_node.find('Picard'):
         configuration["picard"] = _get_application(applications_node.find('Picard'), "Picard")
     configuration["samtools"] = _get_application(applications_node.find('Samtools'), "Samtools")
@@ -217,6 +286,13 @@ def _parse_applications(applications_node):
 
 
 def _write_reads(node, read_list):
+    """
+    Args:
+        node:
+        read_list:
+
+    Returns:
+    """
     import os
     from collections import defaultdict
 
@@ -245,6 +321,15 @@ def _write_reads(node, read_list):
 
 
 def _write_files(node, file_list, foldernode, filenode):
+    """
+    Args:
+        node:
+        file_list:
+        foldernode:
+        filenode:
+
+    Returns:
+    """
     import os
     from collections import defaultdict
 
@@ -262,6 +347,14 @@ def _write_files(node, file_list, foldernode, filenode):
 
 
 def _write_application(node, details, app_type):
+    """
+    Args:
+        node:
+        details:
+        app_type:
+
+    Returns:
+    """
     (name, path, args, job_parms) = details
     app_node = ElementTree.SubElement(node, app_type, {'name': name, 'path': path})
     arg_node = ElementTree.SubElement(app_node, "AdditionalArguments")
@@ -280,6 +373,13 @@ def _write_application(node, details, app_type):
 
 
 def _write_config_node(root, xml_file):
+    """
+    Args:
+        root:
+        xml_file:
+
+    Returns:
+    """
     from xml.dom import minidom
 
     dom = minidom.parseString(ElementTree.tostring(root, 'utf-8'))
@@ -290,6 +390,10 @@ def _write_config_node(root, xml_file):
 
 
 def write_config(configuration):
+    """
+    Args:
+        configuration:
+    """
     import os
 
     root = ElementTree.Element("NaspInputData")
@@ -373,8 +477,11 @@ def write_config(configuration):
 def parse_config(config_file):
     """
 
-    :param config_file: path to an XML formatted configuration file
-    :return: configuration dictionary
+    Args:
+        config_file (str): path to an XML formatted configuration file
+
+    Returns:
+        dict: configuration dictionary
     """
     xmltree = ElementTree.parse(config_file)
     root = xmltree.getroot()

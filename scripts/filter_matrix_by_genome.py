@@ -47,7 +47,7 @@ if __name__ == "__main__":
     parser.add_option("-g", "--genomes", dest="genomes",
                       help="/path/to/genomes_file [REQUIRED]",
                       action="store", type="string")
-     parser.add_option("-a", "--actions", dest="action",
+    parser.add_option("-a", "--actions", dest="action",
                       help="action to perform (keep, remove), defaults to keep",
                       action="store", type="string", default="keep")
     options, args = parser.parse_args()
@@ -55,6 +55,7 @@ if __name__ == "__main__":
     mandatories = ["in_matrix", "prefix", "genomes"]
     for m in mandatories:
         if not options.__dict__[m]:
+            # FIXME(jtravis): replace print with print()q
             print "\nMust provide %s.\n" %m
             parser.print_help()
             exit(-1)

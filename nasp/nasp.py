@@ -12,6 +12,33 @@ Created on Jun 11, 2014
 
 nasp_version = __version__
 import logging
+import os
+
+
+try:
+    import readline
+    import glob
+
+    def complete(text, state):
+        """
+        Tab autocomplete for prompts.
+
+        Args:
+            text (str): current user input
+            state (int): index from 0 to n until the function returns a non-string value
+
+        Returns:
+            str: matching file at the current state index
+        """
+        matches = glob.glob(text+'*')
+        return matches[state] + os.sep if os.path.isdir(matches[state]) else matches[state]
+
+    readline.set_completer_delims('')
+    readline.parse_and_bind("tab: complete")
+    readline.set_completer(complete)
+except ImportError:
+    # The readline module is unavailable, tab-autocomplete will not work
+    pass
 
 
 def _parse_args():
@@ -173,6 +200,7 @@ def _get_application_path(application):
     return app_path
 
 
+# TODO(jtravis): search CLASSPATH
 def _get_java_path(jarfile):
     import os
     import fnmatch

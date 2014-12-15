@@ -26,6 +26,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
     import re
     import os
 
+    # TODO(jtravis): remove unused output variable
     output = jobid = None
     logging.info("command = %s" % command)
     if job_submitter == "PBS":
@@ -222,6 +223,7 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
         aligner_command = "%s mem -R %s %s -t %s %s %s %s" % (path, bam_string, args, ncpus, reference, read1, read2)
     else:
         aligner_name = "bwa"
+        # Parse read file basename
         old_format_string = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
                                               re.IGNORECASE) else ""
         work_dir = os.path.join(output_folder, aligner_name)
@@ -258,6 +260,19 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
 
 
 def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
+    """
+    Args:
+        read_tuple:
+        aligner (list): name, path, args, job parameters
+        samtools:
+        job_submitter (str):
+        index_job_id (tuple): (jobid, action)
+        reference:
+        output_folder:
+
+    Returns:
+        tuple: bam nickname, job id, path to bam file
+    """
     import os
 
     (name, read1) = read_tuple[0:2]
