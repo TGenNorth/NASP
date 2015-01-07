@@ -1,0 +1,920 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nasp.nasp &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>nasp.nasp</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for nasp.nasp</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python3</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&quot;Darrin Lemmer&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;0.9.8&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s">&quot;dlemmer@tgen.org&quot;</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Jun 11, 2014</span>
+
+<span class="sd">@author: dlemmer</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">nasp_version</span> <span class="o">=</span> <span class="n">__version__</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">nasp.dependency</span> <span class="kn">import</span> <span class="n">Application</span><span class="p">,</span> <span class="n">NaspFile</span><span class="p">,</span> <span class="n">ReadFile</span><span class="p">,</span> <span class="n">JobParameters</span>
+<span class="kn">from</span> <span class="nn">nasp</span> <span class="kn">import</span> <span class="n">dependency</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">readline</span>
+    <span class="kn">import</span> <span class="nn">glob</span>
+<div class="viewcode-block" id="complete"><a class="viewcode-back" href="../../nasp.html#nasp.nasp.complete">[docs]</a>    <span class="k">def</span> <span class="nf">complete</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tab autocomplete for prompts.</span>
+<span class="sd">    </span>
+<span class="sd">        Args:</span>
+<span class="sd">	    text (str): Current user input.</span>
+<span class="sd">	    state (int): Index from 0 to n until the function returns a non-string value.</span>
+<span class="sd">    </span>
+<span class="sd">        Returns:</span>
+<span class="sd">	    str: Matching file at the current state index.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">text</span><span class="o">+</span><span class="s">&#39;*&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matches</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">matches</span><span class="p">[</span><span class="n">state</span><span class="p">])</span> <span class="k">else</span> <span class="n">matches</span><span class="p">[</span><span class="n">state</span><span class="p">]</span>
+    
+    </div>
+    <span class="n">readline</span><span class="o">.</span><span class="n">set_completer_delims</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">readline</span><span class="o">.</span><span class="n">parse_and_bind</span><span class="p">(</span><span class="s">&quot;tab: complete&quot;</span><span class="p">)</span>
+    <span class="n">readline</span><span class="o">.</span><span class="n">set_completer</span><span class="p">(</span><span class="n">complete</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="c"># Support for readline was not compiled in this Python distribution</span>
+    <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_args</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">argparse</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s">&quot;nasp&quot;</span><span class="p">,</span>
+                                     <span class="n">description</span><span class="o">=</span><span class="s">&quot;This is the experimental </span><span class="se">\&quot;</span><span class="s">Northern Arizona SNP Pipeline</span><span class="se">\&quot;</span><span class="s">, version </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">nasp_version</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;reference_fasta&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&quot;?&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the reference fasta.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;output_folder&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&quot;?&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Folder to store the output files.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--config&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the configuration xml file.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_expand_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): filename path to expand</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: absolute filepath with any variables expanded</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">extension</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return all files in path with the given extension</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): Directory to search for files</span>
+<span class="sd">        extension (str): Extension of files to match</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of NaspFile:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># TODO compare glob vs os.walk</span>
+    <span class="kn">import</span> <span class="nn">glob</span>
+
+    <span class="n">file_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;*.&quot;</span> <span class="o">+</span> <span class="n">extension</span><span class="p">)):</span>
+        <span class="c"># sample_name is the filename without the extension</span>
+        <span class="n">sample_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filepath</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">nasp_file</span> <span class="o">=</span> <span class="n">NaspFile</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">sample_name</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="n">file_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nasp_file</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">nasp_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">file_list</span>
+
+
+<span class="k">def</span> <span class="nf">_find_reads</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the fasta files found under path</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): Directory to search for fasta files</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of ReadFile: Fasta files found under path</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">read_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="nb">file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="n">is_read</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;(.*)(\.fastq(?:\.gz)?)$&#39;</span><span class="p">,</span> <span class="nb">file</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_read</span><span class="p">:</span>
+            <span class="n">sample_name</span> <span class="o">=</span> <span class="n">is_read</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">is_paired</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;^(.*)(_[R]?)([12])(.*)$&#39;</span><span class="p">,</span> <span class="n">sample_name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_paired</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">is_paired</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="s">&#39;1&#39;</span><span class="p">:</span>  <span class="c"># If paired, only process read 1, so we don&#39;t double count the pair</span>
+                    <span class="n">sample_name</span> <span class="o">=</span> <span class="n">is_paired</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">read1</span> <span class="o">=</span> <span class="nb">file</span>
+                    <span class="n">read2</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s</span><span class="s">2</span><span class="si">%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">is_paired</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">is_paired</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">is_paired</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">is_read</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">read2</span><span class="p">)):</span>
+                        <span class="c">#read = (sample_name, os.path.join(path, read1), os.path.join(path, read2))</span>
+                        <span class="n">read</span> <span class="o">=</span> <span class="n">ReadFile</span><span class="p">(</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">sample_name</span><span class="p">,</span>
+                            <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">read1</span><span class="p">),</span>
+                            <span class="n">path2</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">read2</span><span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="n">read_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Cannot find </span><span class="si">%s</span><span class="s">, the matching read to </span><span class="si">%s</span><span class="s">. Skipping...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">read2</span><span class="p">,</span> <span class="n">read1</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c">#read = (sample_name, os.path.join(path, file))</span>
+                <span class="n">read</span> <span class="o">=</span> <span class="n">ReadFile</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">sample_name</span><span class="p">,</span>
+                    <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">read1</span><span class="p">),</span>
+                    <span class="n">path2</span><span class="o">=</span><span class="s">&quot;&quot;</span>
+                <span class="p">)</span>
+                <span class="n">read_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">read</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">read_list</span>
+
+
+<span class="k">def</span> <span class="nf">_get_bams</span><span class="p">(</span><span class="n">cwd</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the .bam and .sam files found in cwd or the path specified by the user.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cwd (str): Default directory to search for .bam files</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of NaspFile: bam and sam files found</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">bam_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Do you have pre-aligned SAM/BAM files you wish to include [N]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;Where are these files located [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="n">cwd</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">_expand_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">path</span> <span class="k">else</span> <span class="n">cwd</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Looking for sams/bams in </span><span class="si">%s</span><span class="s">...&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">bam_list</span> <span class="o">=</span> <span class="n">_find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;bam&quot;</span><span class="p">)</span>
+        <span class="n">bam_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;sam&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">bam_list</span>
+
+
+<span class="k">def</span> <span class="nf">_get_vcfs</span><span class="p">(</span><span class="n">cwd</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the VCF files found in cwd or the path specified by the user.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cwd (str): Default directory to search for VCF files.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list of NaspFile: vcf files found</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">vcf_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Do you have pre-called VCFfiles you wish to include [N]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;Where are these files located [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="n">cwd</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">_expand_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">path</span> <span class="k">else</span> <span class="n">cwd</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Looking for vcfs in </span><span class="si">%s</span><span class="s">...&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">vcf_list</span> <span class="o">=</span> <span class="n">_find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;vcf&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">vcf_list</span>
+
+
+<span class="k">def</span> <span class="nf">_get_external_fastas</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="n">exclude</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of NaspFile objects representing the external fasta files found</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cwd (str): Default directory to search</span>
+<span class="sd">        exclude (str):</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: List of NaspFile</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">fasta_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Do you have fasta files for external genomes you wish to include [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;Where are these files located [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="n">cwd</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">_expand_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">path</span> <span class="k">else</span> <span class="n">cwd</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Looking for external fastas in </span><span class="si">%s</span><span class="s">...&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">fasta_list</span> <span class="o">=</span> <span class="n">_find_files</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;fasta&quot;</span><span class="p">)</span>
+        <span class="c"># remove the reference from the fasta_list if it is in there</span>
+        <span class="k">for</span> <span class="n">fasta_tuple</span> <span class="ow">in</span> <span class="n">fasta_list</span><span class="p">:</span>
+            <span class="n">fasta</span> <span class="o">=</span> <span class="n">fasta_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">fasta</span> <span class="o">==</span> <span class="n">exclude</span><span class="p">:</span>
+                <span class="n">fasta_list</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">fasta_tuple</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fasta_list</span>
+
+
+<span class="k">def</span> <span class="nf">_get_reads</span><span class="p">(</span><span class="n">cwd</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of ReadFile objects representing the fasta files found</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cwd (str): Default directory to search for reads</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: List of ReadFile</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">read_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Do you have read files you wish to include [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;Where are these files located [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="n">cwd</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">_expand_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">path</span> <span class="k">else</span> <span class="n">cwd</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Looking for read files in </span><span class="si">%s</span><span class="s">...&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">read_list</span> <span class="o">=</span> <span class="n">_find_reads</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">read_list</span>
+
+
+<span class="c"># FIXME(jtravis): The user can get stuck in an infinite loop here</span>
+<span class="k">def</span> <span class="nf">_get_application_path</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        filename (str): application to find</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Path to the application</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">app_path</span> <span class="o">=</span> <span class="n">dependency</span><span class="o">.</span><span class="n">find_executable</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">app_path</span><span class="p">:</span>
+        <span class="n">app_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Unable to find &#39;</span><span class="si">%s</span><span class="s">&#39;, please enter the full path: &quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="c"># Verify the file exists and is executable</span>
+    <span class="n">mode</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">F_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span>
+    <span class="k">if</span> <span class="n">app_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;.jar&quot;</span><span class="p">):</span>
+        <span class="c"># .jar files do not require the executable bit</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">F_OK</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">app_path</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="n">app_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s">&quot;</span><span class="se">\n</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39; either does not exist or you don&#39;t have permission to run it, please enter the full path to &#39;</span><span class="si">%s</span><span class="s">&#39;: &quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">app_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="c"># Verify the file exists and is executable</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">F_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span>
+        <span class="k">if</span> <span class="n">app_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;.jar&quot;</span><span class="p">):</span>
+            <span class="c"># .jar files do not require the executable bit</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">F_OK</span>
+    <span class="k">return</span> <span class="n">app_path</span>
+
+
+<span class="k">def</span> <span class="nf">_get_advanced_settings</span><span class="p">(</span><span class="n">defaults</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        defaults (Application): Default settings if the user does not define them</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Application: The application settings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;Would you like to set advanced </span><span class="si">%s</span><span class="s"> settings [N]? &quot;</span> <span class="o">%</span> <span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">alt_version</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  Would you like to use an alternate </span><span class="si">%s</span><span class="s"> version [N]? &quot;</span> <span class="o">%</span> <span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">alt_version</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;    What is the full path to the </span><span class="si">%s</span><span class="s"> runtime you wish to use [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="k">if</span> <span class="n">path</span> <span class="k">else</span> <span class="n">defaults</span><span class="o">.</span><span class="n">path</span>
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span><span class="p">):</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+                    <span class="s">&quot;    &#39;</span><span class="si">%s</span><span class="s">&#39; either does not exist or you don&#39;t have permission to run it, please enter the full path to &#39;</span><span class="si">%s</span><span class="s">&#39;: &quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">path</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                <span class="c">#</span>
+                <span class="n">path</span> <span class="o">=</span> <span class="n">defaults</span><span class="o">.</span><span class="n">path</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  What additional arguments would you like to pass to </span><span class="si">%s</span><span class="s"> [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">additional_args</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">_replace</span><span class="p">(</span><span class="n">additional_args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  What queue/partition should </span><span class="si">%s</span><span class="s"> run on [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;queue&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">queue</span><span class="p">:</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;queue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">queue</span>
+        <span class="n">mem</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  How much memory (GB) will </span><span class="si">%s</span><span class="s"> require [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;mem_requested&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;^[1-9][0-9]*$&quot;</span><span class="p">,</span> <span class="n">mem</span><span class="p">):</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;mem_requested&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mem</span>
+        <span class="n">cpus</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  How many CPUs do you want </span><span class="si">%s</span><span class="s"> to use [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;num_cpus&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;^[1-9][0-9]*$&quot;</span><span class="p">,</span> <span class="n">cpus</span><span class="p">):</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;num_cpus&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cpus</span>
+        <span class="n">hours</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  How many hours will </span><span class="si">%s</span><span class="s"> take to run [</span><span class="si">%s</span><span class="s">]? &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">defaults</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;walltime&#39;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&quot;^[1-9][0-9]*$&quot;</span><span class="p">,</span> <span class="n">hours</span><span class="p">):</span>
+            <span class="n">defaults</span><span class="o">.</span><span class="n">job_parameters</span><span class="p">[</span><span class="s">&#39;walltime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hours</span>
+
+    <span class="k">return</span> <span class="n">defaults</span>
+
+
+<span class="k">def</span> <span class="nf">_get_aligners</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">default_param</span> <span class="o">=</span> <span class="n">JobParameters</span><span class="p">(</span>
+        <span class="n">mem_requested</span><span class="o">=</span><span class="s">&quot;10&quot;</span><span class="p">,</span>
+        <span class="n">num_cpus</span><span class="o">=</span><span class="s">&quot;4&quot;</span><span class="p">,</span>
+        <span class="n">walltime</span><span class="o">=</span><span class="s">&quot;36&quot;</span><span class="p">,</span>
+        <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="n">args</span>
+    <span class="p">)</span>
+
+    <span class="n">aligner_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">bwa_path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    <span class="k">print</span><span class="p">(</span>
+        <span class="s">&quot;</span><span class="se">\n</span><span class="s">This pipeline currently supports three aligners: BWA, Novoalign, and SNAP.</span><span class="se">\n</span><span class="s">You can also provide pre-aligned BAM files, and you can choose as many options as you want.&quot;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run BWA samp/se [N]?* &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">bwa_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;bwa&quot;</span><span class="p">)</span>
+        <span class="n">bwa_sampe_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;BWA-sampe&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">bwa_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">aligner_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bwa_sampe_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">bwa_sampe_settings</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run BWA mem [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">bwa_path</span><span class="p">:</span>
+            <span class="n">bwa_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;bwa&quot;</span><span class="p">)</span>
+        <span class="n">bwa_mem_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;BWA-mem&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">bwa_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">aligner_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bwa_mem_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">bwa_mem_settings</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run Bowtie2 [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">bt2_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;bowtie2&quot;</span><span class="p">)</span>
+        <span class="n">bt2_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;Bowtie2&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">bt2_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">aligner_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bt2_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">bt2_settings</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run Novoalign [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">novo_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;novoalign&quot;</span><span class="p">)</span>
+        <span class="n">novo_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;Novoalign&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">novo_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;-r all&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">aligner_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">novo_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">novo_settings</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run SNAP [N]?* &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">snap_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;snap&quot;</span><span class="p">)</span>
+        <span class="n">snap_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;SNAP&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">snap_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">aligner_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">snap_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">snap_settings</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">aligner_list</span>
+
+
+<span class="k">def</span> <span class="nf">_get_snpcallers</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">default_param</span> <span class="o">=</span> <span class="n">JobParameters</span><span class="p">(</span>
+        <span class="n">mem_requested</span><span class="o">=</span><span class="s">&quot;10&quot;</span><span class="p">,</span>
+        <span class="n">num_cpus</span><span class="o">=</span><span class="s">&quot;4&quot;</span><span class="p">,</span>
+        <span class="n">walltime</span><span class="o">=</span><span class="s">&quot;36&quot;</span><span class="p">,</span>
+        <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="n">args</span>
+    <span class="p">)</span>
+
+    <span class="n">snpcaller_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">using_gatk</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">print</span><span class="p">(</span>
+        <span class="s">&quot;</span><span class="se">\n</span><span class="s">This pipeline currently supports four SNP callers: GATK, SolSNP, VarScan, and SAMtools, and you can provide VCF files.</span><span class="se">\n</span><span class="s">You can choose as many options as you want.&quot;</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run GATK [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">gatk_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;GenomeAnalysisTK.jar&quot;</span><span class="p">)</span>
+        <span class="n">gatk_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;GATK&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">gatk_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;-stand_call_conf 100 -stand_emit_conf 100 -ploidy 1&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">snpcaller_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gatk_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">gatk_settings</span><span class="p">)</span>
+        <span class="n">using_gatk</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run SolSNP [N]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">solsnp_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;SolSNP.jar&quot;</span><span class="p">)</span>
+        <span class="n">solsnp_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;SolSNP&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">solsnp_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">snpcaller_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">solsnp_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">solsnp_settings</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run VarScan [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">varscan_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;VarScan.jar&quot;</span><span class="p">)</span>
+        <span class="n">varscan_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;VarScan&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">varscan_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">snpcaller_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">varscan_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">varscan_settings</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Would you like to run SAMtools [Y]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">samtools_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;bcftools&quot;</span><span class="p">)</span>
+        <span class="n">samtools_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+            <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;SAMtools&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">samtools_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">default_param</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">snpcaller_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">samtools_settings</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">samtools_settings</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">snpcaller_list</span><span class="p">,</span> <span class="n">using_gatk</span>
+
+
+<span class="k">def</span> <span class="nf">_get_job_submitter</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">job_submitter</span> <span class="o">=</span> <span class="s">&quot;invalid&quot;</span>
+    <span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+        <span class="s">&quot;</span><span class="se">\n</span><span class="s">What system do you use for job management (PBS/TORQUE, SLURM, SGE*, and &#39;none&#39; are currently supported) [PBS]? &quot;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">job_submitter</span> <span class="o">==</span> <span class="s">&quot;invalid&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^(PBS|Torque|qsub)$&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span> <span class="ow">or</span> <span class="n">response</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">job_submitter</span> <span class="o">=</span> <span class="s">&quot;PBS&quot;</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^(SLURM|sbatch)$&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+            <span class="n">job_submitter</span> <span class="o">=</span> <span class="s">&quot;SLURM&quot;</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^SGE&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+            <span class="n">job_submitter</span> <span class="o">=</span> <span class="s">&quot;SGE&quot;</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^none$&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+            <span class="n">job_submitter</span> <span class="o">=</span> <span class="s">&quot;NONE&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  </span><span class="si">%s</span><span class="s"> is not a valid job management system, please enter another [PBS]? &quot;</span> <span class="o">%</span> <span class="n">response</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">job_submitter</span> <span class="o">!=</span> <span class="s">&quot;NONE&quot;</span><span class="p">:</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s">&quot;  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? &quot;</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  What additional arguments do you need to pass to the job management system []? &quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">job_submitter</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">args</span>
+
+
+<span class="k">def</span> <span class="nf">_get_user_input</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">output_folder</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+
+    <span class="n">configuration</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Welcome to the experimental python NASP version </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="n">nasp_version</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;* Starred features are less well tested, and may not work.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">output_folder</span><span class="p">:</span>
+        <span class="n">output_folder</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Where would you like output files to be written [nasp_results]? &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">output_folder</span><span class="p">:</span>
+            <span class="n">output_folder</span> <span class="o">=</span> <span class="s">&quot;nasp_results&quot;</span>
+    <span class="n">output_folder</span> <span class="o">=</span> <span class="n">_expand_path</span><span class="p">(</span><span class="n">output_folder</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_folder</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s">&quot;</span><span class="se">\n</span><span class="s">Output folder </span><span class="si">%s</span><span class="s"> already exists!</span><span class="se">\n</span><span class="s">Files in it may be overwritten!</span><span class="se">\n</span><span class="s">Should we continue anyway [N]? &quot;</span> <span class="o">%</span> <span class="n">output_folder</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Operation cancelled!&quot;</span><span class="p">)</span>
+            <span class="n">quit</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_folder</span>
+
+    <span class="n">logfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="s">&quot;runlog.txt&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> </span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">,</span>
+                        <span class="n">datefmt</span><span class="o">=</span><span class="s">&#39;%m/</span><span class="si">%d</span><span class="s">/%Y %H:%M:%S&#39;</span><span class="p">,</span>
+                        <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
+                        <span class="n">filemode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">reference</span><span class="p">:</span>
+        <span class="n">reference</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Where is the reference fasta file you would like to use? &quot;</span><span class="p">)</span>
+    <span class="n">reference</span> <span class="o">=</span> <span class="n">_expand_path</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">reference</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Cannot continue because reference file </span><span class="si">%s</span><span class="s"> does not seem to exist!&quot;</span> <span class="o">%</span> <span class="n">reference</span><span class="p">)</span>
+        <span class="n">quit</span><span class="p">()</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;reference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">NaspFile</span><span class="p">(</span>
+        <span class="n">sample</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">reference</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">path</span><span class="o">=</span><span class="n">reference</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Reference = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;reference&quot;</span><span class="p">])</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+        <span class="s">&quot;</span><span class="se">\n</span><span class="s">Do you want to check the reference for duplicated regions</span><span class="se">\n</span><span class="s">and skip SNPs that fall in those regions [Y]? &quot;</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;find_dups&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;False&quot;</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Nn]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="k">else</span> <span class="s">&quot;True&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;FindDups = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;find_dups&quot;</span><span class="p">])</span>
+
+    <span class="p">(</span><span class="n">job_submitter</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span> <span class="o">=</span> <span class="n">_get_job_submitter</span><span class="p">()</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">job_submitter</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;JobSubmitter = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">])</span>
+
+    <span class="c"># TODO: Warning, not OS-independent! Should find a better way to do this.</span>
+    <span class="c"># Setting the run name to be whatever the output folder is named.</span>
+    <span class="c"># TODO: Prompt the user for run name</span>
+    <span class="n">name_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;^.*/(.*)$&#39;</span><span class="p">,</span> <span class="n">output_folder</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;run_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;RunName = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;run_name&quot;</span><span class="p">])</span>
+
+    <span class="n">samtools_path</span> <span class="o">=</span> <span class="n">dependency</span><span class="o">.</span><span class="n">find_executable</span><span class="p">(</span><span class="s">&quot;samtools&quot;</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;Samtools&quot;</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">samtools_path</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Samtools = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">])</span>
+
+    <span class="n">run_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">&quot;Index&quot;</span><span class="p">,</span>
+        <span class="n">path</span><span class="o">=</span><span class="n">run_path</span><span class="p">,</span>
+        <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">job_parameters</span><span class="o">=</span><span class="n">JobParameters</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">&#39;nasp_index&#39;</span><span class="p">,</span>
+            <span class="n">num_cpus</span><span class="o">=</span><span class="s">&#39;1&#39;</span><span class="p">,</span>
+            <span class="n">mem_requested</span><span class="o">=</span><span class="s">&#39;2&#39;</span><span class="p">,</span>
+            <span class="n">walltime</span><span class="o">=</span><span class="s">&#39;4&#39;</span><span class="p">,</span>
+            <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="n">args</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Index = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">])</span>
+
+    <span class="n">fasta_list</span> <span class="o">=</span> <span class="n">_get_external_fastas</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="n">reference</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;assemblies&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fasta_list</span>
+
+    <span class="k">if</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;find_dups&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">fasta_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">nucmer_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;nucmer&quot;</span><span class="p">)</span>
+        <span class="n">nucmer_args</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fasta_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">deltafilter_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;delta-filter&quot;</span><span class="p">)</span>
+            <span class="n">deltafilter_args</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;  Would you like to set advanced NUCmer settings [N]? &quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+                <span class="n">nucmer_args</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+                    <span class="s">&quot;  What additional arguments would you like to pass to &#39;nucmer&#39; while importing external genomes? &quot;</span><span class="p">)</span>
+                <span class="n">deltafilter_args</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+                    <span class="s">&quot;  What additional arguments would you like to pass to &#39;delta-filter&#39; while importing external genomes? &quot;</span><span class="p">)</span>
+            <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;assembly_importer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;AssemblyImporter&quot;</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">deltafilter_path</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="n">deltafilter_args</span><span class="p">,</span>
+                <span class="n">job_parameters</span><span class="o">=</span><span class="n">JobParameters</span><span class="p">(</span>
+                    <span class="n">num_cpus</span><span class="o">=</span><span class="s">&#39;1&#39;</span><span class="p">,</span>
+                    <span class="n">mem_requested</span><span class="o">=</span><span class="s">&#39;2&#39;</span><span class="p">,</span>
+                    <span class="n">walltime</span><span class="o">=</span><span class="s">&#39;1&#39;</span><span class="p">,</span>
+                    <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
+                    <span class="n">args</span><span class="o">=</span><span class="n">args</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;AssemblyImporter = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;assembly_importer&quot;</span><span class="p">])</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;dup_finder&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">&quot;DupFinder&quot;</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">nucmer_path</span><span class="p">,</span>
+            <span class="n">additional_args</span><span class="o">=</span><span class="n">nucmer_args</span><span class="p">,</span>
+            <span class="n">job_parameters</span><span class="o">=</span><span class="n">JobParameters</span><span class="p">(</span>
+                <span class="n">num_cpus</span><span class="o">=</span><span class="s">&#39;1&#39;</span><span class="p">,</span>
+                <span class="n">mem_requested</span><span class="o">=</span><span class="s">&#39;2&#39;</span><span class="p">,</span>
+                <span class="n">walltime</span><span class="o">=</span><span class="s">&#39;1&#39;</span><span class="p">,</span>
+                <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="n">args</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;DupFinder = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;dup_finder&quot;</span><span class="p">])</span>
+
+    <span class="n">read_list</span> <span class="o">=</span> <span class="n">_get_reads</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;reads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">read_list</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">read_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Getting Aligners...&quot;</span><span class="p">)</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;aligners&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_aligners</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;aligners&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">bam_list</span> <span class="o">=</span> <span class="n">_get_bams</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;alignments&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bam_list</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bam_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;bam_index&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">&quot;BamIndex&quot;</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">run_path</span><span class="p">,</span>
+            <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">job_parameters</span><span class="o">=</span><span class="n">JobParameters</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&#39;nasp_bamindex&#39;</span><span class="p">,</span>
+                <span class="n">num_cpus</span><span class="o">=</span><span class="s">&#39;1&#39;</span><span class="p">,</span>
+                <span class="n">mem_requested</span><span class="o">=</span><span class="s">&#39;2&#39;</span><span class="p">,</span>
+                <span class="n">walltime</span><span class="o">=</span><span class="s">&#39;4&#39;</span><span class="p">,</span>
+                <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
+                <span class="n">additional_args</span><span class="o">=</span><span class="n">args</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;BamIndex = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;bam_index&quot;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">read_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">bam_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Getting SNP Callers...&quot;</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;snpcallers&quot;</span><span class="p">],</span> <span class="n">using_gatk</span><span class="p">)</span> <span class="o">=</span> <span class="n">_get_snpcallers</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">using_gatk</span><span class="p">:</span>
+            <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;picard&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&quot;Picard&quot;</span><span class="p">,</span>
+                <span class="c"># NOTE: Why is this just the path and not a path to the executable?</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">_get_application_path</span><span class="p">(</span><span class="s">&quot;CreateSequenceDictionary.jar&quot;</span><span class="p">))</span>
+            <span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Picard = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;picard&quot;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;snpcallers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">vcf_list</span> <span class="o">=</span> <span class="n">_get_vcfs</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;vcfs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vcf_list</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">read_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">bam_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">vcf_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">coverage_filter</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s">&quot;</span><span class="se">\n</span><span class="s">This pipeline can do filtering based on coverage.</span><span class="se">\n</span><span class="s">If you do not want filtering based on coverage, enter 0.</span><span class="se">\n</span><span class="s">What is your minimum coverage threshold [10]? &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">coverage_filter</span><span class="p">:</span>
+            <span class="n">coverage_filter</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;coverage_filter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">coverage_filter</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;CoverageFilter = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;coverage_filter&quot;</span><span class="p">])</span>
+
+        <span class="n">proportion_filter</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s">&quot;</span><span class="se">\n</span><span class="s">This pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.</span><span class="se">\n</span><span class="s">If you do not want filtering based on proportion, enter 0.</span><span class="se">\n</span><span class="s">What is the minimum acceptable proportion [0.9]? &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">proportion_filter</span><span class="p">:</span>
+            <span class="n">proportion_filter</span> <span class="o">=</span> <span class="mf">0.9</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;proportion_filter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">proportion_filter</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;ProportionFilter = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;proportion_filter&quot;</span><span class="p">])</span>
+
+    <span class="n">matrix_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run_path</span><span class="p">,</span> <span class="s">&quot;vcf_to_matrix&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">matrix_path</span><span class="p">):</span>
+        <span class="n">matrix_path</span> <span class="o">=</span> <span class="s">&quot;vcf_to_matrix&quot;</span>
+    <span class="c">#FIXME: remove semicolon and possibly print statement</span>
+    <span class="k">print</span><span class="p">();</span>
+    <span class="n">matrix_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span>
+        <span class="n">Application</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s">&quot;MatrixGenerator&quot;</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">matrix_path</span><span class="p">,</span>
+            <span class="n">additional_args</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">job_parameters</span><span class="o">=</span><span class="n">JobParameters</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s">&#39;nasp_matrix&#39;</span><span class="p">,</span>
+                <span class="n">num_cpus</span><span class="o">=</span><span class="s">&#39;12&#39;</span><span class="p">,</span>
+                <span class="n">mem_requested</span><span class="o">=</span><span class="s">&#39;45&#39;</span><span class="p">,</span>
+                <span class="n">walltime</span><span class="o">=</span><span class="s">&#39;48&#39;</span><span class="p">,</span>
+                <span class="n">queue</span><span class="o">=</span><span class="n">queue</span><span class="p">,</span>
+                <span class="n">args</span><span class="o">=</span><span class="n">args</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;matrix_generator&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix_settings</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;MatrixGenerator = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;matrix_generator&quot;</span><span class="p">])</span>
+
+    <span class="n">include_allref_pos</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]? &quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">include_allref_pos</span><span class="p">):</span>
+        <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;filter_matrix_format&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;include_allref_pos&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;FilterMatrixFormat = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;filter_matrix_format&quot;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">configuration</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../nasp.html#nasp.nasp.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">nasp.dispatcher</span> <span class="kn">as</span> <span class="nn">dispatcher</span>
+    <span class="kn">import</span> <span class="nn">nasp.configuration_parser</span> <span class="kn">as</span> <span class="nn">configuration_parser</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">commandline_args</span> <span class="o">=</span> <span class="n">_parse_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+        <span class="n">configuration</span> <span class="o">=</span> <span class="n">configuration_parser</span><span class="o">.</span><span class="n">parse_config</span><span class="p">(</span><span class="n">commandline_args</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">output_folder</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_folder</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+                <span class="s">&quot;</span><span class="se">\n</span><span class="s">Output folder </span><span class="si">%s</span><span class="s"> already exists!</span><span class="se">\n</span><span class="s">Files in it may be overwritten!</span><span class="se">\n</span><span class="s">Should we continue anyway [N]? &quot;</span> <span class="o">%</span> <span class="n">output_folder</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Operation cancelled!&quot;</span><span class="p">)</span>
+                <span class="n">quit</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder</span><span class="p">)</span>
+        <span class="n">logfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="s">&quot;runlog.txt&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                            <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> </span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">,</span>
+                            <span class="n">datefmt</span><span class="o">=</span><span class="s">&#39;%m/</span><span class="si">%d</span><span class="s">/%Y %H:%M:%S&#39;</span><span class="p">,</span>
+                            <span class="n">filename</span><span class="o">=</span><span class="n">logfile</span><span class="p">,</span>
+                            <span class="n">filemode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">configuration</span> <span class="o">=</span> <span class="n">_get_user_input</span><span class="p">(</span><span class="n">commandline_args</span><span class="o">.</span><span class="n">reference_fasta</span><span class="p">,</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">output_folder</span><span class="p">)</span>
+    <span class="n">configuration_parser</span><span class="o">.</span><span class="n">write_config</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
+    <span class="n">dispatcher</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

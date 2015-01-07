@@ -1,0 +1,63 @@
+============
+Installation
+============
+
+Install
+-------
+
+At the command line::
+
+    $ easy_install nasp
+
+Or, if you have virtualenvwrapper installed::
+
+    $ mkvirtualenv nasp
+    $ pip install nasp
+
+Using the "module load" system:
+  If you have configured a module system on your high-performance compute
+  cluster, you can create a NASP module for your users to load.  Refer to your
+  operating system documentation for specifics.  Do not forget to include the
+  software dependencies, as described below.
+
+Update
+------
+::
+
+    $ pip install --upgrade nasp
+
+Uninstall
+---------
+::
+
+    $ pip uninstall nasp
+
+Required Dependencies
+---------------------
+
+Optional Dependencies
+---------------------
+
+.. For information about external tools that are required, or can be
+   utilized, and those versions that have been tested to work with NASP,
+   refer to the included "INSTALL" document.
+
+- MUMmer_ >= 3.23
+- BWA_ >= 0.7.5a
+- Novocraft_ >= 3.02.04
+- VarScan_ >= 2.3.6
+- Samtools_ >= 0.1.19
+- Bowtie2_ >= 2.1.0
+- GATK_
+- Java_ >= 1.7
+
+.. The following are RST named link directives.
+   For example, "GATK_" above will be replaced with <a href="https://www.broadinstitute.org/gatk/">GATK</a>
+.. _GATK: https://www.broadinstitute.org/gatk/
+.. _MUMmer: http://mummer.sourceforge.net/
+.. _BWA: http://bio-bwa.sourceforge.net/
+.. _Novocraft: http://www.novocraft.com/main/page.php?s=novoalign
+.. _VarScan: http://varscan.sourceforge.net/
+.. _Samtools: http://samtools.sourceforge.net/
+.. _Bowtie2: http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
+.. _Java: http://www.java.com/en/

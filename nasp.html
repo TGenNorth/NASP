@@ -1,0 +1,1763 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nasp package &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>nasp package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/nasp.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <div class="section" id="nasp-package">
+<h1>nasp package<a class="headerlink" href="#nasp-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-nasp.configuration_parser">
+<span id="nasp-configuration-parser-module"></span><h2>nasp.configuration_parser module<a class="headerlink" href="#module-nasp.configuration_parser" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.configuration_parser.main">
+<code class="descclassname">nasp.configuration_parser.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/configuration_parser.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.configuration_parser.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nasp.configuration_parser.parse_config">
+<code class="descclassname">nasp.configuration_parser.</code><code class="descname">parse_config</code><span class="sig-paren">(</span><em>config_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/configuration_parser.html#parse_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.configuration_parser.parse_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the XML configuration file into an object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config_file</strong> (<em>str</em>) &#8211; Path to an XML formatted configuration file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary representation of the XML configuration file.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.configuration_parser.write_config">
+<code class="descclassname">nasp.configuration_parser.</code><code class="descname">write_config</code><span class="sig-paren">(</span><em>configuration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/configuration_parser.html#write_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.configuration_parser.write_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the configuration to the output folder as an XML file.
+The filename is &lt;run_name&gt;-config.xml</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>configuration</strong> (<em>dict</em>) &#8211; The configuration object to save</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-nasp.convert_external_genome">
+<span id="nasp-convert-external-genome-module"></span><h2>nasp.convert_external_genome module<a class="headerlink" href="#module-nasp.convert_external_genome" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.convert_external_genome.generate_delta_file">
+<code class="descclassname">nasp.convert_external_genome.</code><code class="descname">generate_delta_file</code><span class="sig-paren">(</span><em>nucmer_path</em>, <em>nucmer_args</em>, <em>delta_filter_path</em>, <em>external_nickname</em>, <em>reference_path</em>, <em>external_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/convert_external_genome.html#generate_delta_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.convert_external_genome.generate_delta_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>nucmer_path</strong> (<em>str</em>) &#8211; Path containing the nucmer executable.</li>
+<li><strong>nucmer_args</strong> (<em>str</em>) &#8211; Arguments that will be passed to the nucmer executable.</li>
+<li><strong>delta_filter_path</strong> (<em>str</em>) &#8211; Path to the NUCmer delta-filter executable.</li>
+<li><strong>reference_path</strong> (<em>str</em>) &#8211; Path to the reference fasta.</li>
+<li><strong>external_path</strong> (<em>str</em>) &#8211; Path to a fasta file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.convert_external_genome.main">
+<code class="descclassname">nasp.convert_external_genome.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/convert_external_genome.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.convert_external_genome.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nasp.convert_external_genome.parse_delta_file">
+<code class="descclassname">nasp.convert_external_genome.</code><code class="descname">parse_delta_file</code><span class="sig-paren">(</span><em>delta_filename</em>, <em>franken_genome</em>, <em>external_genome</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/convert_external_genome.html#parse_delta_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.convert_external_genome.parse_delta_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>parse_delta_file combines a delta encoded alignment from NUCmer with fasta contigs stored in the external_genome
+to create a frankenfasta.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>delta_filename</strong> (<em>str</em>) &#8211; Path to a delta file.</li>
+<li><strong>franken_genome</strong> (<a class="reference internal" href="#nasp.nasp_objects.Genome" title="nasp.nasp_objects.Genome"><em>Genome</em></a>) &#8211; Genome where the combined delta and external fasta will be stored.</li>
+<li><strong>external_genome</strong> (<a class="reference internal" href="#nasp.nasp_objects.Genome" title="nasp.nasp_objects.Genome"><em>Genome</em></a>) &#8211; Genome seeded with an imported fasta file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-nasp.dependency">
+<span id="nasp-dependency-module"></span><h2>nasp.dependency module<a class="headerlink" href="#module-nasp.dependency" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nasp.dependency.Application">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">Application</code><span class="sig-paren">(</span><em>name</em>, <em>path</em>, <em>additional_args</em>, <em>job_parameters</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.Application" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.Application.additional_args">
+<code class="descname">additional_args</code><a class="headerlink" href="#nasp.dependency.Application.additional_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Application.job_parameters">
+<code class="descname">job_parameters</code><a class="headerlink" href="#nasp.dependency.Application.job_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Application.name">
+<code class="descname">name</code><a class="headerlink" href="#nasp.dependency.Application.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Application.path">
+<code class="descname">path</code><a class="headerlink" href="#nasp.dependency.Application.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.ExternalApplication">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">ExternalApplication</code><span class="sig-paren">(</span><em>samtools</em>, <em>matrix_generator</em>, <em>picard</em>, <em>dup_finder</em>, <em>index</em>, <em>bam_index</em>, <em>assembly_importer</em>, <em>aligners</em>, <em>snpcallers</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.ExternalApplication" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.aligners">
+<code class="descname">aligners</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.aligners" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 7</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.assembly_importer">
+<code class="descname">assembly_importer</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.assembly_importer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.bam_index">
+<code class="descname">bam_index</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.bam_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.dup_finder">
+<code class="descname">dup_finder</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.dup_finder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.index">
+<code class="descname">index</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.matrix_generator">
+<code class="descname">matrix_generator</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.matrix_generator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.picard">
+<code class="descname">picard</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.picard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.samtools">
+<code class="descname">samtools</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.samtools" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ExternalApplication.snpcallers">
+<code class="descname">snpcallers</code><a class="headerlink" href="#nasp.dependency.ExternalApplication.snpcallers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 8</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.Filters">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">Filters</code><span class="sig-paren">(</span><em>coverage</em>, <em>proportion</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.Filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.Filters.coverage">
+<code class="descname">coverage</code><a class="headerlink" href="#nasp.dependency.Filters.coverage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Filters.proportion">
+<code class="descname">proportion</code><a class="headerlink" href="#nasp.dependency.Filters.proportion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.Folders">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">Folders</code><span class="sig-paren">(</span><em>read_folder</em>, <em>assembly_folder</em>, <em>alignment_folder</em>, <em>vcf_folder</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.Folders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.Folders.alignment_folder">
+<code class="descname">alignment_folder</code><a class="headerlink" href="#nasp.dependency.Folders.alignment_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Folders.assembly_folder">
+<code class="descname">assembly_folder</code><a class="headerlink" href="#nasp.dependency.Folders.assembly_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Folders.read_folder">
+<code class="descname">read_folder</code><a class="headerlink" href="#nasp.dependency.Folders.read_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Folders.vcf_folder">
+<code class="descname">vcf_folder</code><a class="headerlink" href="#nasp.dependency.Folders.vcf_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.JobParameters">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">JobParameters</code><span class="sig-paren">(</span><em>name</em>, <em>mem_requested</em>, <em>num_cpus</em>, <em>walltime</em>, <em>queue</em>, <em>args</em>, <em>work_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.JobParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.JobParameters.args">
+<code class="descname">args</code><a class="headerlink" href="#nasp.dependency.JobParameters.args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.JobParameters.mem_requested">
+<code class="descname">mem_requested</code><a class="headerlink" href="#nasp.dependency.JobParameters.mem_requested" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.JobParameters.name">
+<code class="descname">name</code><a class="headerlink" href="#nasp.dependency.JobParameters.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.JobParameters.num_cpus">
+<code class="descname">num_cpus</code><a class="headerlink" href="#nasp.dependency.JobParameters.num_cpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.JobParameters.queue">
+<code class="descname">queue</code><a class="headerlink" href="#nasp.dependency.JobParameters.queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.JobParameters.walltime">
+<code class="descname">walltime</code><a class="headerlink" href="#nasp.dependency.JobParameters.walltime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.JobParameters.work_dir">
+<code class="descname">work_dir</code><a class="headerlink" href="#nasp.dependency.JobParameters.work_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.NaspFile">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">NaspFile</code><span class="sig-paren">(</span><em>sample</em>, <em>path</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.NaspFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.NaspFile.path">
+<code class="descname">path</code><a class="headerlink" href="#nasp.dependency.NaspFile.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.NaspFile.sample">
+<code class="descname">sample</code><a class="headerlink" href="#nasp.dependency.NaspFile.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.Options">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">Options</code><span class="sig-paren">(</span><em>output_folder</em>, <em>run_name</em>, <em>job_submitter</em>, <em>filter_matrix_format</em>, <em>reference</em>, <em>filters</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.Options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.Options.filter_matrix_format">
+<code class="descname">filter_matrix_format</code><a class="headerlink" href="#nasp.dependency.Options.filter_matrix_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Options.filters">
+<code class="descname">filters</code><a class="headerlink" href="#nasp.dependency.Options.filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Options.job_submitter">
+<code class="descname">job_submitter</code><a class="headerlink" href="#nasp.dependency.Options.job_submitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Options.output_folder">
+<code class="descname">output_folder</code><a class="headerlink" href="#nasp.dependency.Options.output_folder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Options.reference">
+<code class="descname">reference</code><a class="headerlink" href="#nasp.dependency.Options.reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Options.run_name">
+<code class="descname">run_name</code><a class="headerlink" href="#nasp.dependency.Options.run_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.ReadFile">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">ReadFile</code><span class="sig-paren">(</span><em>name</em>, <em>path</em>, <em>path2</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.ReadFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.ReadFile.name">
+<code class="descname">name</code><a class="headerlink" href="#nasp.dependency.ReadFile.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ReadFile.path">
+<code class="descname">path</code><a class="headerlink" href="#nasp.dependency.ReadFile.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.ReadFile.path2">
+<code class="descname">path2</code><a class="headerlink" href="#nasp.dependency.ReadFile.path2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.dependency.Reference">
+<em class="property">class </em><code class="descclassname">nasp.dependency.</code><code class="descname">Reference</code><span class="sig-paren">(</span><em>name</em>, <em>path</em>, <em>find_dups</em><span class="sig-paren">)</span><a class="headerlink" href="#nasp.dependency.Reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
+<dl class="attribute">
+<dt id="nasp.dependency.Reference.find_dups">
+<code class="descname">find_dups</code><a class="headerlink" href="#nasp.dependency.Reference.find_dups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Reference.name">
+<code class="descname">name</code><a class="headerlink" href="#nasp.dependency.Reference.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nasp.dependency.Reference.path">
+<code class="descname">path</code><a class="headerlink" href="#nasp.dependency.Reference.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="nasp.dependency.UnlistedDependencyError">
+<em class="property">exception </em><code class="descclassname">nasp.dependency.</code><code class="descname">UnlistedDependencyError</code><span class="sig-paren">(</span><em>executable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/dependency.html#UnlistedDependencyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.dependency.UnlistedDependencyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>Warning for developers if they forget to add a dependency to the dictionary of paths</p>
+<dl class="attribute">
+<dt id="nasp.dependency.UnlistedDependencyError.executable">
+<code class="descname">executable</code><a class="headerlink" href="#nasp.dependency.UnlistedDependencyError.executable" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em></p>
+<p>Name of the missing dependency</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.dependency.find_executable">
+<code class="descclassname">nasp.dependency.</code><code class="descname">find_executable</code><span class="sig-paren">(</span><em>executable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/dependency.html#find_executable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.dependency.find_executable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the path to the executable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>executable</strong> (<em>str</em>) &#8211; executable to find</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Path to the executable or an empty string</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference internal" href="#nasp.dependency.UnlistedDependencyError" title="nasp.dependency.UnlistedDependencyError"><code class="xref py py-exc docutils literal"><span class="pre">UnlistedDependencyError</span></code></a> &#8211; 
+The executable is not in the list of dependencies</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-nasp.dispatcher">
+<span id="nasp-dispatcher-module"></span><h2>nasp.dispatcher module<a class="headerlink" href="#module-nasp.dispatcher" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.dispatcher.begin">
+<code class="descclassname">nasp.dispatcher.</code><code class="descname">begin</code><span class="sig-paren">(</span><em>configuration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/dispatcher.html#begin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.dispatcher.begin" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.dispatcher.main">
+<code class="descclassname">nasp.dispatcher.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/dispatcher.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.dispatcher.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="nasp-expensive-loop-module">
+<h2>nasp.expensive loop module<a class="headerlink" href="#nasp-expensive-loop-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-nasp.find_duplicates">
+<span id="nasp-find-duplicates-module"></span><h2>nasp.find_duplicates module<a class="headerlink" href="#module-nasp.find_duplicates" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.find_duplicates.main">
+<code class="descclassname">nasp.find_duplicates.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/find_duplicates.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.find_duplicates.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nasp.find_duplicates.parse_delta_file">
+<code class="descclassname">nasp.find_duplicates.</code><code class="descname">parse_delta_file</code><span class="sig-paren">(</span><em>delta_filename</em>, <em>dups_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/find_duplicates.html#parse_delta_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.find_duplicates.parse_delta_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.find_duplicates.run_nucmer_on_reference">
+<code class="descclassname">nasp.find_duplicates.</code><code class="descname">run_nucmer_on_reference</code><span class="sig-paren">(</span><em>nucmer_path</em>, <em>reference_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/find_duplicates.html#run_nucmer_on_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.find_duplicates.run_nucmer_on_reference" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-nasp.format_fasta">
+<span id="nasp-format-fasta-module"></span><h2>nasp.format_fasta module<a class="headerlink" href="#module-nasp.format_fasta" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.format_fasta.main">
+<code class="descclassname">nasp.format_fasta.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/format_fasta.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.format_fasta.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-nasp.matrix_DTO">
+<span id="nasp-matrix-dto-module"></span><h2>nasp.matrix_DTO module<a class="headerlink" href="#module-nasp.matrix_DTO" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.matrix_DTO.main">
+<code class="descclassname">nasp.matrix_DTO.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/matrix_DTO.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.matrix_DTO.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="nasp.matrix_DTO.parse_dto">
+<code class="descclassname">nasp.matrix_DTO.</code><code class="descname">parse_dto</code><span class="sig-paren">(</span><em>xml_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/matrix_DTO.html#parse_dto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.matrix_DTO.parse_dto" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">(dict, str):</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.matrix_DTO.write_dto">
+<code class="descclassname">nasp.matrix_DTO.</code><code class="descname">write_dto</code><span class="sig-paren">(</span><em>matrix_parms</em>, <em>franken_fastas</em>, <em>vcf_files</em>, <em>xml_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/matrix_DTO.html#write_dto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.matrix_DTO.write_dto" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-nasp.nasp">
+<span id="nasp-nasp-module"></span><h2>nasp.nasp module<a class="headerlink" href="#module-nasp.nasp" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.nasp.complete">
+<code class="descclassname">nasp.nasp.</code><code class="descname">complete</code><span class="sig-paren">(</span><em>text</em>, <em>state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp.html#complete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp.complete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tab autocomplete for prompts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>text</strong> (<em>str</em>) &#8211; Current user input.</li>
+<li><strong>state</strong> (<em>int</em>) &#8211; Index from 0 to n until the function returns a non-string value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Matching file at the current state index.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.nasp.main">
+<code class="descclassname">nasp.nasp.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-nasp.nasp_objects">
+<span id="nasp-nasp-objects-module"></span><h2>nasp.nasp_objects module<a class="headerlink" href="#module-nasp.nasp_objects" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nasp.nasp_objects.CollectionStatistics">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">CollectionStatistics</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#CollectionStatistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.CollectionStatistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Stores a running tally for the statistics for the run.
+Stats are in two categories: per-contig and per-sample.
+Contig stats are basic counts, and percentages based on reference length.
+Sample stats are tallied as x out of y for each position, and then
+counts for each sample, all samples, and any samples, can be computed
+automatically.
+For this reason, the object needs to know when the run moves on to the
+next position, and the flush_cumulative_stat_cache function does this.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.CollectionStatistics.flush_cumulative_stat_cache">
+<code class="descname">flush_cumulative_stat_cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#CollectionStatistics.flush_cumulative_stat_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.CollectionStatistics.flush_cumulative_stat_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the math on the pass/total ratio for the stat cache for the current
+position, writes that to the sample stats for the any/all counts, and
+clears the cache.
+p &gt; 0:  any++
+p = t:  all++</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.CollectionStatistics.get_contig_stat">
+<code class="descname">get_contig_stat</code><span class="sig-paren">(</span><em>stat_id</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#CollectionStatistics.get_contig_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.CollectionStatistics.get_contig_stat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.CollectionStatistics.get_cumulative_stat">
+<code class="descname">get_cumulative_stat</code><span class="sig-paren">(</span><em>stat_id</em>, <em>cum_type</em>, <em>sample_nickname=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#CollectionStatistics.get_cumulative_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.CollectionStatistics.get_cumulative_stat" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>cum_type</strong> (<em>str</em>) &#8211; &#8216;any&#8217; or &#8216;all&#8217;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.CollectionStatistics.get_sample_stat">
+<code class="descname">get_sample_stat</code><span class="sig-paren">(</span><em>stat_id</em>, <em>sample_nickname</em>, <em>sample_identifier</em>, <em>sample_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#CollectionStatistics.get_sample_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.CollectionStatistics.get_sample_stat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.CollectionStatistics.increment_contig_stat">
+<code class="descname">increment_contig_stat</code><span class="sig-paren">(</span><em>stat_id</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#CollectionStatistics.increment_contig_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.CollectionStatistics.increment_contig_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increments the stat for the specified contig, and automatically
+increments the count for the all-contigs tally on the same stat.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.CollectionStatistics.record_sample_stat">
+<code class="descname">record_sample_stat</code><span class="sig-paren">(</span><em>stat_id</em>, <em>sample_nickname</em>, <em>sample_identifier</em>, <em>sample_path</em>, <em>did_pass</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#CollectionStatistics.record_sample_stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.CollectionStatistics.record_sample_stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the sample stat, and then the cumulative stat cache.
+Increments the cache for all samples, and for all analyses
+on this sample.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.FastaGenome">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">FastaGenome</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#FastaGenome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.FastaGenome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nasp.nasp_objects.Genome" title="nasp.nasp_objects.Genome"><code class="xref py py-class docutils literal"><span class="pre">nasp.nasp_objects.Genome</span></code></a>, <a class="reference internal" href="#nasp.nasp_objects.GenomeMeta" title="nasp.nasp_objects.GenomeMeta"><code class="xref py py-class docutils literal"><span class="pre">nasp.nasp_objects.GenomeMeta</span></code></a></p>
+<p>A special type of genome where we know the data came from a fasta file,
+and so we can omit the depth and proportion filters.  Meant to mimic
+a VCFGenome object, with filter checks hard-coded.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.FastaGenome.get_coverage_pass">
+<code class="descname">get_coverage_pass</code><span class="sig-paren">(</span><em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#FastaGenome.get_coverage_pass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.FastaGenome.get_coverage_pass" title="Permalink to this definition">¶</a></dt>
+<dd><p>This filter is not applicable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">&#8216;-&#8216;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.FastaGenome.get_proportion_pass">
+<code class="descname">get_proportion_pass</code><span class="sig-paren">(</span><em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#FastaGenome.get_proportion_pass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.FastaGenome.get_proportion_pass" title="Permalink to this definition">¶</a></dt>
+<dd><p>This filter is not applicable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">&#8216;-&#8216;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.FastaGenome.get_was_called">
+<code class="descname">get_was_called</code><span class="sig-paren">(</span><em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#FastaGenome.get_was_called"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.FastaGenome.get_was_called" title="Permalink to this definition">¶</a></dt>
+<dd><p>A stand-in for the was-called filter that just makes sure the position
+isn&#8217;t an &#8220;N&#8221;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">&#8216;N&#8217; if the call is an X or N, otherwise &#8216;Y&#8217;</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.Genome">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">Genome</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#Genome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.Genome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nasp.nasp_objects.GenomeStatus" title="nasp.nasp_objects.GenomeStatus"><code class="xref py py-class docutils literal"><span class="pre">nasp.nasp_objects.GenomeStatus</span></code></a></p>
+<p>A special type of GenomeStatus where the genome information being stored
+is always actual base calls, as strings.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.Genome.get_call">
+<code class="descname">get_call</code><span class="sig-paren">(</span><em>first_position</em>, <em>last_position=None</em>, <em>contig_name=None</em>, <em>filler_value='X'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#Genome.get_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.Genome.get_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias of get_value, for code clarity</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.Genome.import_fasta_file">
+<code class="descname">import_fasta_file</code><span class="sig-paren">(</span><em>fasta_filename</em>, <em>contig_prefix=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#Genome.import_fasta_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.Genome.import_fasta_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read in a fasta file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fasta_filename</strong> (<em>str</em>) &#8211; fasta file to import</li>
+<li><strong>contig_prefix</strong> (<em>str</em>) &#8211; the prefix will be removed from the parsed contig names</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="nasp.nasp_objects.Genome.reverse_complement">
+<em class="property">static </em><code class="descname">reverse_complement</code><span class="sig-paren">(</span><em>dna_string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#Genome.reverse_complement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.Genome.reverse_complement" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dna_string</strong> (<em>str</em>) &#8211; nucleotide sequence to reverse complement</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Genome</span><span class="o">.</span><span class="n">reverse_complement</span><span class="p">(</span><span class="s">&#39;GATC&#39;</span><span class="p">)</span>
+<span class="go">CTAG</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">nucleotide sequence reverse complement</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.Genome.set_call">
+<code class="descname">set_call</code><span class="sig-paren">(</span><em>new_data</em>, <em>first_position</em>, <em>missing_range_filler='X'</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#Genome.set_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.Genome.set_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias of set_value, for code clarity</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="nasp.nasp_objects.Genome.simple_call">
+<em class="property">static </em><code class="descname">simple_call</code><span class="sig-paren">(</span><em>dna_string</em>, <em>allow_x=False</em>, <em>allow_del=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#Genome.simple_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.Genome.simple_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standardizes the DNA call assumed to be the base at position one.
+Discards insertion data, changes &#8216;U&#8217; to &#8216;T&#8217;, and changes degeneracies to &#8216;N&#8217;.
+&#8216;X&#8217; and deletes are changed to &#8216;N&#8217; by default.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">Genome</span><span class="o">.</span><span class="n">simple_call</span><span class="p">(</span><span class="s">&quot;GATC&quot;</span><span class="p">)</span>
+<span class="go">G</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Genome</span><span class="o">.</span><span class="n">simple_call</span><span class="p">(</span><span class="s">&quot;X&quot;</span><span class="p">)</span>
+<span class="go">N</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Genome</span><span class="o">.</span><span class="n">simple_call</span><span class="p">(</span><span class="s">&quot;U&quot;</span><span class="p">)</span>
+<span class="go">T</span>
+</pre></div>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dna_string</strong> (<em>str</em>) &#8211; Only the first position is considered.</li>
+<li><strong>allow_x</strong> (<em>bool</em>) &#8211; False &#8216;X&#8217; are replaced with &#8216;N&#8217;.</li>
+<li><strong>allow_del</strong> (<em>bool</em>) &#8211; False &#8216;.&#8217; are replaced with &#8216;N&#8217;.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">&#8216;A&#8217;, &#8216;C&#8217;, &#8216;G&#8217;, &#8216;T&#8217;, or &#8216;N&#8217; with optional &#8216;X&#8217; and &#8216;.&#8217;</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">string</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.GenomeCollection">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">GenomeCollection</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nasp.nasp_objects.CollectionStatistics" title="nasp.nasp_objects.CollectionStatistics"><code class="xref py py-class docutils literal"><span class="pre">nasp.nasp_objects.CollectionStatistics</span></code></a></p>
+<p>A &#8220;master matrix&#8221; object, of sorts.
+Carries all the data necessary to make a matrix, although some of it
+is computed on-the-fly as the matrix is actually written, for
+performance reasons.  Stats aren&#8217;t available until after the matrix
+is written, for this reason.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.add_failed_genome">
+<code class="descname">add_failed_genome</code><span class="sig-paren">(</span><em>genome_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.add_failed_genome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.add_failed_genome" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>genome_path</strong> (<em>str</em>) &#8211; Path to genome file that raised an exception during parsing.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.add_genome">
+<code class="descname">add_genome</code><span class="sig-paren">(</span><em>genome</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.add_genome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.add_genome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the genome to the collection, then makes sure the genome list is
+properly set and in order.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.get_contigs">
+<code class="descname">get_contigs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.get_contigs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.get_contigs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.get_dups_call">
+<code class="descname">get_dups_call</code><span class="sig-paren">(</span><em>first_position</em>, <em>last_position=None</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.get_dups_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.get_dups_call" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.reference">
+<code class="descname">reference</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.reference" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.send_to_matrix_handles">
+<code class="descname">send_to_matrix_handles</code><span class="sig-paren">(</span><em>matrix_formats</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.send_to_matrix_handles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.send_to_matrix_handles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes headers and handles per-matrix logic.  Calls _write_matrix_line
+to handle the per-line computation and analysis.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.set_current_contig">
+<code class="descname">set_current_contig</code><span class="sig-paren">(</span><em>contig_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.set_current_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.set_current_contig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.set_reference">
+<code class="descname">set_reference</code><span class="sig-paren">(</span><em>reference</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.set_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.set_reference" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.write_to_matrices">
+<code class="descname">write_to_matrices</code><span class="sig-paren">(</span><em>matrix_formats</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.write_to_matrices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.write_to_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens files for writing; abstracted for flexibility/testing.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeCollection.write_to_stats_files">
+<code class="descname">write_to_stats_files</code><span class="sig-paren">(</span><em>general_filename</em>, <em>sample_filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeCollection.write_to_stats_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeCollection.write_to_stats_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens files for writing; abstracted for flexibility/testing.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.GenomeMeta">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">GenomeMeta</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Stores the metadata associated with a genome.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.add_generators">
+<code class="descname">add_generators</code><span class="sig-paren">(</span><em>generator_array</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.add_generators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.add_generators" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>generator_array</strong> &#8211; A list of analysis tools that have been run on input files to produce</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.file_path">
+<code class="descname">file_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.file_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.file_path" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Path to the source file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.file_type">
+<code class="descname">file_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.file_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.file_type" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="nasp.nasp_objects.GenomeMeta.generate_nickname_from_filename">
+<em class="property">static </em><code class="descname">generate_nickname_from_filename</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.generate_nickname_from_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.generate_nickname_from_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>For single-sample input files that don&#8217;t carry any sample name
+metadata within the file, generate a nickname for the sample by
+removing the extension.  If this fails, generate a random name in the
+format &#8220;file_XXXXXXXX&#8221; where X is an 8-digit random integer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">filename sans extension or &#8220;file_XXXXXXXX&#8221; where X is an 8-digit random integer.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.identifier">
+<code class="descname">identifier</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.identifier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.identifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format: nickname or nickname::generator,generator,...</p>
+<p>Example:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">meant to be recognizable to the user to differentiate
+their sample-analyses.  There can be no assumption that this value is
+unique, because the nickname is often not unique.  As a result, this
+should not be used in-code (EG dictionary keys) to differentiate
+samples.  The best we can do is a ( _file_path, _nickname ) tuple, and
+even that may not be guaranteed to be unique.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.nickname">
+<code class="descname">nickname</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.nickname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.nickname" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Basename without the file extension</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="nasp.nasp_objects.GenomeMeta.reverse_complement">
+<em class="property">static </em><code class="descname">reverse_complement</code><span class="sig-paren">(</span><em>dna_string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.reverse_complement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.reverse_complement" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.set_file_path">
+<code class="descname">set_file_path</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.set_file_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.set_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.set_file_type">
+<code class="descname">set_file_type</code><span class="sig-paren">(</span><em>type_string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.set_file_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.set_file_type" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>type_string</strong> (<em>str</em>) &#8211; frankenfasta or vcf</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">nasp.matrix_DTO._parse_files</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeMeta.set_nickname">
+<code class="descname">set_nickname</code><span class="sig-paren">(</span><em>nickname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeMeta.set_nickname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeMeta.set_nickname" title="Permalink to this definition">¶</a></dt>
+<dd><p>This value should be unique per-file, for multi-sample input files,
+but there is no expectation that this would be unique per run, and
+nothing to enforce even per-file uniqueness.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.GenomeStatus">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">GenomeStatus</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Contains and manipulates any generic data that is per-contig-position.
+This could be any single type of data, like actual bases, filter data,
+depth information, insertion data, pileups, etc.
+In the perl version, this object was originally a hash of lists, and
+converted to a hash of strings for performance.  In this version, it was
+originally a dictionary of strings, and converted to a dictionary of
+lists for performance and flexibility.
+Whether single characters, numbers, boolean values, or a mixture of data
+types are used does not seem to affect memory and performance.
+Storing lists per-contig-position with this class is a complicated
+affair, as several of the manipulation functions assume you mean to
+manipulate a continuous range of positions instead of a single position
+when you do that.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.add_contig">
+<code class="descname">add_contig</code><span class="sig-paren">(</span><em>contig_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.add_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.add_contig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a new empty contig in the genome.
+By default, if an unrecognized contig is encountered, a new empty
+contig will be created and then acted upon.
+Otherwise, add_contig must be called on a new contig first, or an
+InvalidContigName will be thrown.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>contig_name</strong> (<em>str</em>) &#8211; Unique contig description.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference internal" href="#nasp.nasp_objects.InvalidContigName" title="nasp.nasp_objects.InvalidContigName"><code class="xref py py-exc docutils literal"><span class="pre">InvalidContigName</span></code></a> &#8211; 
+If contig_name is undefined.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<p>GenomeStatus.add_contig(&#8216;500WT1_test&#8217;)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.append_contig">
+<code class="descname">append_contig</code><span class="sig-paren">(</span><em>genome_data</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.append_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.append_contig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Places the passed-in data at the position following the last
+defined position on the contig.  If passed a list, will give each
+item in the list its own position.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>genome_data</strong> (<em>list or char</em>) &#8211; List of nucleotide symbols.</li>
+<li><strong>contig_name</strong> (<em>str</em>) &#8211; Unique contig description.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>append_contig([&#8216;G&#8217;, &#8216;A&#8217;, &#8216;T&#8217;, &#8216;C&#8217;, &#8216;N&#8217;], None)
+append_contig([&#8216;0&#8217;, &#8216;0&#8217;, &#8216;0&#8217;, &#8216;0&#8217;, &#8216;0&#8217;], None)
+append_contig( &#8216;A&#8217;, &#8216;(Reference)&#8217; )</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.extend_contig">
+<code class="descname">extend_contig</code><span class="sig-paren">(</span><em>new_length</em>, <em>missing_range_filler</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.extend_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.extend_contig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures the contig is at least new_length positions long</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>new_length</strong> (<em>int</em>) &#8211; Minimum contig length.</li>
+<li><strong>missing_range_filler</strong> (<em>str</em>) &#8211; Placeholder character for undefined areas at the end of the contig.</li>
+<li><strong>contig_name</strong> (<em>str</em>) &#8211; Unique contig description.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.get_contig_length">
+<code class="descname">get_contig_length</code><span class="sig-paren">(</span><em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.get_contig_length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.get_contig_length" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>contig_name</strong> (<em>str</em>) &#8211; Unique contig description.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Number of positions defined in the contig</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">int</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.get_contigs">
+<code class="descname">get_contigs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.get_contigs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.get_contigs" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Sorted list of contig names.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">GenomeStatus</span><span class="o">.</span><span class="n">get_contigs</span><span class="p">()</span>
+<span class="go">[&#39;500WT1_test&#39;, ...]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.get_value">
+<code class="descname">get_value</code><span class="sig-paren">(</span><em>first_position</em>, <em>last_position=None</em>, <em>contig_name=None</em>, <em>filler_value=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.get_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.get_value" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>contig_name</strong> (<em>str</em>) &#8211; Unique contig description.</li>
+<li><strong>first_position</strong> (<em>int</em>) &#8211; 1-indexed first position number.</li>
+<li><strong>last_position</strong> (<em>int</em>) &#8211; Optional last position to select a range or -1 to specify the end of the contig.</li>
+<li><strong>filler_value</strong> (<em>str</em>) &#8211; Optional filler for undefined regions beyond the genome data. Does not modify the data.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Returns the nucleotide at first_position, list of values from
+first_position to last_position inclusive, or None.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.send_to_fasta_handle">
+<code class="descname">send_to_fasta_handle</code><span class="sig-paren">(</span><em>output_handle</em>, <em>contig_prefix=''</em>, <em>max_chars_per_line=80</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.send_to_fasta_handle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.send_to_fasta_handle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assumes the genome data is in string format or stringifiable and one
+character per position, and then writes it in to the handle open for
+writing.  The file format is like a typical fasta were the genome
+data to be base calls (but no checks are performed).</p>
+<p>The contigs are sorted by name, not the order they were created.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>output_handle</strong> (<em>file object</em>) &#8211; File to append FASTA string.</li>
+<li><strong>contig_prefix</strong> (<em>str</em>) &#8211; Prefix for all contig names.</li>
+<li><strong>max_chars_per_line</strong> (<em>int</em>) &#8211; A positive value will limit the max chars per line.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.set_current_contig">
+<code class="descname">set_current_contig</code><span class="sig-paren">(</span><em>contig_name</em>, <em>create_contig=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.set_current_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.set_current_contig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the most-recently-referenced contig without actually performing
+any action on the data.
+Can be called to return the current contig without changing it if
+given a contig_name of None.
+Will create the contig if it has not been encountered yet by
+default, or throw an InvalidContigName otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>contig_name</strong> (<em>str</em>) &#8211; Unique contig description or None to query the current contig name.</li>
+<li><strong>create_contig</strong> (<em>bool</em>) &#8211; If True and the contig does not exist, an empty contig will be created.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Name of the last accessed contig or None.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">str</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#nasp.nasp_objects.InvalidContigName" title="nasp.nasp_objects.InvalidContigName"><code class="xref py py-exc docutils literal"><span class="pre">InvalidContigName</span></code></a> &#8211; 
+If create_contig is False and the contig does not exist.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Example</p>
+<p>GenomeStatus.set_current_contig(&#8216;500WT1_test&#8217;)
+GenomeStatus.set_current_contig(None)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.set_value">
+<code class="descname">set_value</code><span class="sig-paren">(</span><em>new_data</em>, <em>position_number</em>, <em>missing_range_filler='!'</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.set_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.set_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the value at position_number on the contig.
+If passed a list, will change the continuous range of positions
+starting at position_number, one position per list item.
+Will extend the contig with missing_range_filler filling undefined
+values if the position to set is beyond the end of the contig.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>new_data</strong> (<em>str or list</em>) &#8211; Single or list of nucleotide symbols.</li>
+<li><strong>position_number</strong> (<em>int</em>) &#8211; 1-indexed contig position number.</li>
+<li><strong>missing_range_filler</strong> (<em>str</em>) &#8211; Filler for undefined regions before the set value. Modifies the data.</li>
+<li><strong>contig_name</strong> (<em>str</em>) &#8211; Unique contig description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.GenomeStatus.write_to_fasta_file">
+<code class="descname">write_to_fasta_file</code><span class="sig-paren">(</span><em>output_filename</em>, <em>contig_prefix=''</em>, <em>max_chars_per_line=80</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#GenomeStatus.write_to_fasta_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.GenomeStatus.write_to_fasta_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the passed filename and passes to send_to_fasta_handle.
+This is a separate function so that unit testing is easier, and
+file names or open file handles can be used as destinations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>output_filename</strong> (<em>str</em>) &#8211; Output filename.</li>
+<li><strong>contig_prefix</strong> (<em>str</em>) &#8211; Prefix for all contig names.</li>
+<li><strong>max_chars_per_line</strong> (<em>int</em>) &#8211; A positive value will limit the max contig chars per line.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.IndelList">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">IndelList</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#IndelList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.IndelList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>For storing indel data separately from the reference-indexed position
+data.  Mostly a relic from when calls were stored as a long string with
+one character per position.  Might still have some use for indel
+implementation, but might be no longer useful.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="nasp.nasp_objects.InvalidContigName">
+<em class="property">exception </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">InvalidContigName</code><span class="sig-paren">(</span><em>invalid_contig</em>, <em>contig_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#InvalidContigName"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.InvalidContigName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>A contig was referenced that is not known to exist in this run.
+For the most part, this exception isn&#8217;t used because encountering
+an unknown contig either means we should create it or we should
+discard the data that follows.  However, there are potential times
+where we need to take more extreme action.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="nasp.nasp_objects.MalformedInputFile">
+<em class="property">exception </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">MalformedInputFile</code><span class="sig-paren">(</span><em>data_file</em>, <em>error_message=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#MalformedInputFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.MalformedInputFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>There was an error parsing the input file.
+Give the information we can to the user in the stderr stream.
+Let&#8217;s hope they read it.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="nasp.nasp_objects.ReferenceCallMismatch">
+<em class="property">exception </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">ReferenceCallMismatch</code><span class="sig-paren">(</span><em>old_call</em>, <em>new_call</em>, <em>data_file=None</em>, <em>contig_name=None</em>, <em>position_number=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#ReferenceCallMismatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.ReferenceCallMismatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>At two different points in the run, the reference call appeared, and the
+two calls disagreed.  This probably means the user is analyzing two
+different sets of data as if they belong together, in error.  This is
+a very bad thing.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.ReferenceGenome">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">ReferenceGenome</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#ReferenceGenome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.ReferenceGenome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nasp.nasp_objects.Genome" title="nasp.nasp_objects.Genome"><code class="xref py py-class docutils literal"><span class="pre">nasp.nasp_objects.Genome</span></code></a></p>
+<p>A special type of genome that is to be used as our reference.
+Unlike other genomes, we know there will only be one, it carries duplicate
+region data, and we don&#8217;t need to store any metadata about it.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.ReferenceGenome.get_dups_call">
+<code class="descname">get_dups_call</code><span class="sig-paren">(</span><em>first_position</em>, <em>last_position=None</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#ReferenceGenome.get_dups_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.ReferenceGenome.get_dups_call" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.ReferenceGenome.import_dups_file">
+<code class="descname">import_dups_file</code><span class="sig-paren">(</span><em>dups_filename</em>, <em>contig_prefix=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#ReferenceGenome.import_dups_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.ReferenceGenome.import_dups_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for _import_dups_line for flexibility and testing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dups_filename</strong> (<em>str</em>) &#8211; Path to a fasta-style file where each contig position is either a 1 or 0 representing
+the presence or absence of a duplicate region.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">nasp.find_duplicates</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.VCFGenome">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">VCFGenome</code><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFGenome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFGenome" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#nasp.nasp_objects.Genome" title="nasp.nasp_objects.Genome"><code class="xref py py-class docutils literal"><span class="pre">nasp.nasp_objects.Genome</span></code></a>, <a class="reference internal" href="#nasp.nasp_objects.GenomeMeta" title="nasp.nasp_objects.GenomeMeta"><code class="xref py py-class docutils literal"><span class="pre">nasp.nasp_objects.GenomeMeta</span></code></a></p>
+<p>A standard sample for analysis.  Has genome data, metadata, and data for
+the three filters.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFGenome.get_coverage_pass">
+<code class="descname">get_coverage_pass</code><span class="sig-paren">(</span><em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFGenome.get_coverage_pass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFGenome.get_coverage_pass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFGenome.get_proportion_pass">
+<code class="descname">get_proportion_pass</code><span class="sig-paren">(</span><em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFGenome.get_proportion_pass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFGenome.get_proportion_pass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFGenome.get_was_called">
+<code class="descname">get_was_called</code><span class="sig-paren">(</span><em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFGenome.get_was_called"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFGenome.get_was_called" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFGenome.set_coverage_pass">
+<code class="descname">set_coverage_pass</code><span class="sig-paren">(</span><em>pass_value</em>, <em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFGenome.set_coverage_pass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFGenome.set_coverage_pass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFGenome.set_proportion_pass">
+<code class="descname">set_proportion_pass</code><span class="sig-paren">(</span><em>pass_value</em>, <em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFGenome.set_proportion_pass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFGenome.set_proportion_pass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFGenome.set_was_called">
+<code class="descname">set_was_called</code><span class="sig-paren">(</span><em>pass_value</em>, <em>current_pos</em>, <em>contig_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFGenome.set_was_called"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFGenome.set_was_called" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nasp.nasp_objects.VCFRecord">
+<em class="property">class </em><code class="descclassname">nasp.nasp_objects.</code><code class="descname">VCFRecord</code><span class="sig-paren">(</span><em>file_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>VCF parser, object representing an input VCF being read.</p>
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.fetch_next_record">
+<code class="descname">fetch_next_record</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.fetch_next_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.fetch_next_record" title="Permalink to this definition">¶</a></dt>
+<dd><p>We&#8217;re done with the current line, let&#8217;s move to the next.
+Populates all the information at the position we&#8217;ll need for parsing
+parts of the next line.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_contig">
+<code class="descname">get_contig</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_contig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_coverage">
+<code class="descname">get_coverage</code><span class="sig-paren">(</span><em>current_sample</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_coverage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_coverage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_position">
+<code class="descname">get_position</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_position" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_proportion">
+<code class="descname">get_proportion</code><span class="sig-paren">(</span><em>current_sample</em>, <em>sample_coverage</em>, <em>is_a_snp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_proportion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_proportion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_reference_call">
+<code class="descname">get_reference_call</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_reference_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_reference_call" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_sample_call">
+<code class="descname">get_sample_call</code><span class="sig-paren">(</span><em>current_sample</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_sample_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_sample_call" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_sample_info">
+<code class="descname">get_sample_info</code><span class="sig-paren">(</span><em>current_sample</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_sample_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_sample_info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nasp.nasp_objects.VCFRecord.get_samples">
+<code class="descname">get_samples</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#VCFRecord.get_samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.VCFRecord.get_samples" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.nasp_objects.main">
+<code class="descclassname">nasp.nasp_objects.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/nasp_objects.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.nasp_objects.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-nasp.vcf_to_matrix">
+<span id="nasp-vcf-to-matrix-module"></span><h2>nasp.vcf_to_matrix module<a class="headerlink" href="#module-nasp.vcf_to_matrix" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.determine_file_type">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">determine_file_type</code><span class="sig-paren">(</span><em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#determine_file_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.determine_file_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the file type from the packed input filename string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.get_file_path">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">get_file_path</code><span class="sig-paren">(</span><em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#get_file_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.get_file_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the file path from the packed input filename string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.import_external_fasta">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">import_external_fasta</code><span class="sig-paren">(</span><em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#import_external_fasta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.import_external_fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a FastaGenome object, set its metadata, and populate it with the
+data from a fasta file.
+Must return the data as the single item in an array, because other file
+formats potentially contain several genomes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list of FastaGenome:</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.import_reference">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">import_reference</code><span class="sig-paren">(</span><em>reference</em>, <em>reference_path</em>, <em>dups_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#import_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.import_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take an empty reference object and populate it with the data from a
+reference file, and a dups file if any.
+Does not return anything, as the passed-in object is modified.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.main">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main flow control function for the script.  Is sequential over the
+following steps:
+1.  Parse arguments
+2.  Read in reference
+3.  Read in all query genomes in parallel
+4.  Write output matrices
+5.  Write stats files</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.manage_input_thread">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">manage_input_thread</code><span class="sig-paren">(</span><em>reference</em>, <em>min_coverage</em>, <em>min_proportion</em>, <em>input_q</em>, <em>output_q</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#manage_input_thread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.manage_input_thread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Manage one input file worker thread, for reading the data from the file.
+Input filenames are pulled one at a time from the input queue, and the
+genome data from the read-in files is placed on the output queue.
+When an input filename of &#8220;None&#8221; appears, we know we&#8217;re done and put
+&#8220;None&#8221; on the output queue so the controlling thread knows we won&#8217;t be
+adding more data.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.parse_input_files">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">parse_input_files</code><span class="sig-paren">(</span><em>input_files</em>, <em>num_threads</em>, <em>genomes</em>, <em>min_coverage</em>, <em>min_proportion</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#parse_input_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.parse_input_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use a pool of worker threads to, in parallel, read in the input files.
+Populate the genome collection with the read-in data.
+This is the &#8220;poison pill&#8221; thread management algorithm, where threads are
+each given a &#8220;you can stop now&#8221; task once the actual queue of tasks is
+complete.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.read_vcf_file">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">read_vcf_file</code><span class="sig-paren">(</span><em>reference</em>, <em>min_coverage</em>, <em>min_proportion</em>, <em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#read_vcf_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.read_vcf_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit VCF to be read in to VCF parser, populate genome data and filter
+data from the parsed VCF data, return a list of the read-in genomes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.set_genome_metadata">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">set_genome_metadata</code><span class="sig-paren">(</span><em>genome</em>, <em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#set_genome_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.set_genome_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all the metadata from the packed input filename string</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.write_output_matrices">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">write_output_matrices</code><span class="sig-paren">(</span><em>genomes</em>, <em>matrix_folder</em>, <em>matrix_format_choices</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#write_output_matrices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.write_output_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write matrices from genome collection data.
+Defines the matrix types for future expansion of custom matrix options.
+This information eventually should come from the user interface and be
+included in the XML configuration file, rather than hardcoded here.
+The matrix_format_choices option comes from the XML to here.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="nasp.vcf_to_matrix.write_stats_data">
+<code class="descclassname">nasp.vcf_to_matrix.</code><code class="descname">write_stats_data</code><span class="sig-paren">(</span><em>genomes</em>, <em>stats_folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nasp/vcf_to_matrix.html#write_stats_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nasp.vcf_to_matrix.write_stats_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write stats data from genome collection to preset filenames</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-nasp">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-nasp" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

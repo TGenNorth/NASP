@@ -1,0 +1,530 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nasp.dispatcher &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>nasp.dispatcher</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for nasp.dispatcher</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python3</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&quot;Darrin Lemmer&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;0.9.8&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s">&quot;dlemmer@tgen.org&quot;</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Mar 4, 2014</span>
+
+<span class="sd">@author: dlemmer</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">job</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_args</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">argparse</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s">&quot;Meant to be called from the pipeline automatically.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--config&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the configuration xml file.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_submit_job</span><span class="p">(</span><span class="n">job_submitter</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">job_parms</span><span class="p">,</span> <span class="n">waitfor_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hold</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">notify</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+
+    <span class="c"># TODO(jtravis): remove unused output variable</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">jobid</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;command = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">command</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">job_submitter</span> <span class="o">==</span> <span class="s">&quot;PBS&quot;</span><span class="p">:</span>
+        <span class="n">waitfor</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">waitfor_id</span><span class="p">:</span>
+            <span class="n">dependency_string</span> <span class="o">=</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">waitfor_id</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s">&#39;afterok&#39;</span>
+            <span class="n">waitfor</span> <span class="o">=</span> <span class="s">&quot;-W depend=</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dependency_string</span><span class="p">,</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;queue&quot;</span><span class="p">]:</span>
+            <span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;-q </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;queue&quot;</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;args&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">hold</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="s">&quot; -h&quot;</span>
+        <span class="k">if</span> <span class="n">notify</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="s">&quot; -m e&quot;</span>
+        <span class="n">submit_command</span> <span class="o">=</span> <span class="s">&quot;qsub -d </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> -w </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> -l ncpus=</span><span class="si">%s</span><span class="s">,mem=</span><span class="si">%s</span><span class="s">gb,walltime=</span><span class="si">%s</span><span class="s">:00:00 -m a -N </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;work_dir&quot;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;work_dir&quot;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;num_cpus&#39;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;mem_requested&#39;</span><span class="p">],</span>
+            <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;walltime&#39;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span> <span class="n">waitfor</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;submit_command = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">submit_command</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">getoutput</span><span class="p">(</span><span class="s">&quot;echo </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s"> | </span><span class="si">%s</span><span class="s"> - &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">submit_command</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;output = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+        <span class="n">job_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;^(\d+)\..*$&#39;</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">job_match</span><span class="p">:</span>
+            <span class="n">jobid</span> <span class="o">=</span> <span class="n">job_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job not submitted!!&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;WARNING: Job not submitted: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">job_submitter</span> <span class="o">==</span> <span class="s">&quot;SLURM&quot;</span><span class="p">:</span>
+        <span class="n">waitfor</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">waitfor_id</span><span class="p">:</span>
+            <span class="n">dependency_string</span> <span class="o">=</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">waitfor_id</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s">&#39;afterok&#39;</span>
+            <span class="n">waitfor</span> <span class="o">=</span> <span class="s">&quot;-d </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dependency_string</span><span class="p">,</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;queue&quot;</span><span class="p">]:</span>
+            <span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;-p </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;queue&quot;</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;args&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">hold</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="s">&quot; -H&quot;</span>
+        <span class="k">if</span> <span class="n">notify</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="s">&quot; --mail-type=END&quot;</span>
+        <span class="n">submit_command</span> <span class="o">=</span> <span class="s">&quot;sbatch -D </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> -c</span><span class="si">%s</span><span class="s"> --mem=</span><span class="si">%s</span><span class="s">000 --mail-type=FAIL -J </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;work_dir&quot;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;num_cpus&#39;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;mem_requested&#39;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span> <span class="n">waitfor</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span>
+            <span class="n">args</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;submit_command = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">submit_command</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">getoutput</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> --wrap=</span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">submit_command</span><span class="p">,</span> <span class="n">command</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;output = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+        <span class="n">job_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;^Submitted batch job (\d+)$&#39;</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">job_match</span><span class="p">:</span>
+            <span class="n">jobid</span> <span class="o">=</span> <span class="n">job_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job not submitted!!&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;WARNING: Job not submitted: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">job_submitter</span> <span class="o">==</span> <span class="s">&quot;SGE&quot;</span><span class="p">:</span>
+        <span class="n">waitfor</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">waitfor_id</span><span class="p">:</span>
+            <span class="n">waitfor</span> <span class="o">=</span> <span class="s">&quot;-hold_jid </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">,</span> <span class="s">&quot;,&quot;</span><span class="p">,</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;queue&quot;</span><span class="p">]:</span>
+            <span class="n">queue</span> <span class="o">=</span> <span class="s">&quot;-q </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;queue&quot;</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;args&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">hold</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="s">&quot; -h&quot;</span>
+        <span class="k">if</span> <span class="n">notify</span><span class="p">:</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="s">&quot; -m e&quot;</span>
+        <span class="n">mem_needed</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;mem_requested&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span>
+        <span class="c"># Apparently the number of processors a job uses is controlled by the queue it is running on in SGE, so there is no way to request a specific number of CPUs??</span>
+        <span class="n">submit_command</span> <span class="o">=</span> <span class="s">&quot;qsub -cwd </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> -wd </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> -l h_data=</span><span class="si">%s</span><span class="s">gb,h_rt=</span><span class="si">%s</span><span class="s">:00:00 -m a -N </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;work_dir&quot;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&quot;work_dir&quot;</span><span class="p">],</span> <span class="n">mem_needed</span><span class="p">,</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;walltime&#39;</span><span class="p">],</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span> <span class="n">waitfor</span><span class="p">,</span>
+            <span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;submit_command = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">submit_command</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">getoutput</span><span class="p">(</span><span class="s">&quot;echo </span><span class="se">\&quot;</span><span class="si">%s</span><span class="se">\&quot;</span><span class="s"> | </span><span class="si">%s</span><span class="s"> - &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">submit_command</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;output = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+        <span class="n">job_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;^(\d+)\..*$&#39;</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">job_match</span><span class="p">:</span>
+            <span class="n">jobid</span> <span class="o">=</span> <span class="n">job_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Job not submitted!!&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;WARNING: Job not submitted: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">output</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="s">&#39;; &#39;</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+        <span class="n">work_dir</span> <span class="o">=</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;work_dir&#39;</span><span class="p">]</span>
+        <span class="n">dependency_check</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">waitfor_id</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">,</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">pid_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">work_dir</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">_dependent_pids&quot;</span> <span class="o">%</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
+                <span class="n">pid_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">pid_filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+                <span class="n">pids</span> <span class="o">=</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
+                <span class="n">pid_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pids</span><span class="p">))</span>
+                <span class="n">pid_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">dependency_check</span> <span class="o">=</span> <span class="s">&quot;while [ -s </span><span class="si">%s</span><span class="s"> ]; do sleep 600; for pid in `cat </span><span class="si">%s</span><span class="s">`; do kill -0 </span><span class="se">\&quot;</span><span class="s">$pid</span><span class="se">\&quot;</span><span class="s"> 2&gt;/dev/null || sed -i </span><span class="se">\&quot;</span><span class="s">/^$pid$/d</span><span class="se">\&quot;</span><span class="s"> </span><span class="si">%s</span><span class="s">; done; done; rm </span><span class="si">%s</span><span class="s">; &quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">pid_filename</span><span class="p">,</span> <span class="n">pid_filename</span><span class="p">,</span> <span class="n">pid_filename</span><span class="p">,</span> <span class="n">pid_filename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pid</span> <span class="o">=</span> <span class="n">waitfor_id</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">dependency_check</span> <span class="o">=</span> <span class="s">&quot;while kill -0 </span><span class="si">%s</span><span class="s">; do sleep 300; done; &quot;</span> <span class="o">%</span> <span class="n">pid</span>
+        <span class="c"># cpu_check = &quot;grep &#39;cpu &#39; /proc/stat | awk &#39;{usage=($2+$4)/($2+$4+$5)} END {print 1-usage}&#39;&quot;</span>
+        <span class="n">total_mem</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">getoutput</span><span class="p">(</span><span class="s">&quot;free -g | grep Mem: | awk &#39;{ print $2 }&#39;&quot;</span><span class="p">)</span>
+        <span class="n">mem_requested</span> <span class="o">=</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;mem_requested&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">mem_requested</span> <span class="o">&gt;</span> <span class="n">total_mem</span><span class="p">:</span>
+            <span class="n">mem_requested</span> <span class="o">=</span> <span class="n">total_mem</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;total_mem = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">total_mem</span><span class="p">)</span>
+        <span class="n">mem_needed</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">mem_requested</span><span class="p">)</span> <span class="o">*</span> <span class="mi">750</span>
+        <span class="n">mem_check</span> <span class="o">=</span> <span class="s">&quot;while [ `free -m | grep cache: | awk &#39;{ print $4 }&#39;` -lt </span><span class="si">%d</span><span class="s"> ]; do sleep 300; done; &quot;</span> <span class="o">%</span> <span class="n">mem_needed</span>
+        <span class="n">submit_command</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s%s%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dependency_check</span><span class="p">,</span> <span class="n">mem_check</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;submit_command = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">submit_command</span><span class="p">)</span>
+        <span class="n">output_log</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">work_dir</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">.out&quot;</span> <span class="o">%</span> <span class="n">job_parms</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]),</span> <span class="n">os</span><span class="o">.</span><span class="n">O_WRONLY</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_CREAT</span><span class="p">)</span>
+        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">submit_command</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">output_log</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">work_dir</span><span class="p">)</span>
+        <span class="n">jobid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;jobid = </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">jobid</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jobid</span>
+
+
+<span class="k">def</span> <span class="nf">_release_hold</span><span class="p">(</span><span class="n">job_submitter</span><span class="p">,</span> <span class="n">job_id</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+
+    <span class="k">if</span> <span class="n">job_submitter</span> <span class="o">==</span> <span class="s">&quot;PBS&quot;</span> <span class="ow">or</span> <span class="n">job_submitter</span> <span class="o">==</span> <span class="s">&quot;SGE&quot;</span><span class="p">:</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="s">&quot;qrls </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span>
+    <span class="k">elif</span> <span class="n">job_submitter</span> <span class="o">==</span> <span class="s">&quot;SLURM&quot;</span><span class="p">:</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="s">&quot;scontrol release </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">job_id</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;command = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">getoutput</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;output = </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_align_reads</span><span class="p">(</span><span class="n">read</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">index_job_id</span><span class="p">,</span> <span class="n">reference</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        read_tuple (ReadFile):</span>
+<span class="sd">        configuration (dict):</span>
+<span class="sd">        index_job_id:</span>
+<span class="sd">        reference (str):</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        [(bam_nickname, job_id, final_file, aligner, snpcaller)]:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+    <span class="n">aligner_output</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">aligner</span> <span class="ow">in</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;aligners&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;bwa&#39;</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+            <span class="n">bwa_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Bwa</span><span class="p">(</span><span class="n">read</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">],</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">bwa_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">bwa_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">index_job_id</span><span class="p">,))</span>
+
+            <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                <span class="n">aligner_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">bwa_job</span><span class="o">.</span><span class="n">bam_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">bwa_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;b(ow)?t(ie)?2&#39;</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+            <span class="n">bowtie2_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Bowtie2</span><span class="p">(</span><span class="n">read</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">],</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">bowtie2_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">bowtie2_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">index_job_id</span><span class="p">,))</span>
+
+            <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                <span class="n">aligner_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">bowtie2_job</span><span class="o">.</span><span class="n">bam_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">bowtie2_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;novo&#39;</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+            <span class="n">novo_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Novoalign</span><span class="p">(</span><span class="n">read</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">],</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">novo_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">novo_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">index_job_id</span><span class="p">,))</span>
+
+            <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                <span class="n">aligner_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">novo_job</span><span class="o">.</span><span class="n">bam_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">novo_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;snap&#39;</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+            <span class="n">snap_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Snap</span><span class="p">(</span><span class="n">read</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">],</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">snap_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">snap_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">index_job_id</span><span class="p">,))</span>
+
+            <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                <span class="n">aligner_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">snap_job</span><span class="o">.</span><span class="n">bam_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">snap_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Unknown aligner </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> found, don&#39;t know what to do. Skipping...&quot;</span> <span class="o">%</span> <span class="n">aligner</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">aligner_output</span>
+
+
+<span class="k">def</span> <span class="nf">_call_snps</span><span class="p">(</span><span class="n">aligner_output</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">reference</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        aligner_output (list):</span>
+<span class="sd">        configuration (dict):</span>
+<span class="sd">        reference (str):</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        [(str, str, str, str, str)]: (vcf_nickname, job_id, final_file, aligner, snpcaller)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">snpcaller_output</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">nickname</span><span class="p">,</span> <span class="n">aligner_job_id</span><span class="p">,</span> <span class="n">bam_file</span><span class="p">,</span> <span class="n">aligner_name</span><span class="p">)</span> <span class="ow">in</span> <span class="n">aligner_output</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">aligner_job_id</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">snpcaller</span> <span class="ow">in</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;snpcallers&quot;</span><span class="p">]:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">snpcaller</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;gatk&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+                    <span class="n">gatk_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Gatk</span><span class="p">(</span><span class="n">nickname</span><span class="p">,</span> <span class="n">bam_file</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+                    <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">gatk_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">gatk_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">aligner_job_id</span><span class="p">,))</span>
+
+                    <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                        <span class="n">snpcaller_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">gatk_job</span><span class="o">.</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">gatk_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner_name</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;solsnp&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+                    <span class="n">solsnp_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Solsnp</span><span class="p">(</span><span class="n">nickname</span><span class="p">,</span> <span class="n">bam_file</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+                    <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">solsnp_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">solsnp_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">aligner_job_id</span><span class="p">,))</span>
+
+                    <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                        <span class="n">snpcaller_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">solsnp_job</span><span class="o">.</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">solsnp_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner_name</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;varscan&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+                    <span class="n">varscan_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Varscan</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">],</span> <span class="n">nickname</span><span class="p">,</span> <span class="n">bam_file</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+                    <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">varscan_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">varscan_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">aligner_job_id</span><span class="p">,))</span>
+
+                    <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                        <span class="n">snpcaller_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">varscan_job</span><span class="o">.</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">varscan_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner_name</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;samtools&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+                    <span class="n">samtools_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Samtools</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;samtools&quot;</span><span class="p">],</span> <span class="n">nickname</span><span class="p">,</span> <span class="n">bam_file</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+                    <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">samtools_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">samtools_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">aligner_job_id</span><span class="p">,))</span>
+
+                    <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                        <span class="n">snpcaller_output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">samtools_job</span><span class="o">.</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">samtools_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">,</span> <span class="n">aligner_name</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Unknown SNP caller </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s"> found, don&#39;t know what to do. Skipping...&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">snpcaller_output</span>
+
+
+<span class="c"># def _index_bams(configuration, index_job_id):</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     Args:</span>
+<span class="c">#         configuration (dict):</span>
+<span class="c">#         index_job_id:</span>
+<span class="c">#</span>
+<span class="c">#     Returns:</span>
+<span class="c">#         (list, str):</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     import os</span>
+<span class="c">#</span>
+<span class="c">#     alignments = configuration[&quot;alignments&quot;]</span>
+<span class="c">#     output_folder = configuration[&quot;output_folder&quot;]</span>
+<span class="c">#     job_parms = configuration[&quot;bam_index&quot;][3]</span>
+<span class="c">#     sampath = configuration[&quot;samtools&quot;][1]</span>
+<span class="c">#     bam_folder = os.path.join(output_folder, &quot;bams&quot;)</span>
+<span class="c">#     if not os.path.exists(bam_folder):</span>
+<span class="c">#         os.makedirs(bam_folder)</span>
+<span class="c">#     bam_files = []</span>
+<span class="c">#     command_parts = []</span>
+<span class="c">#     for (name, bam) in alignments:</span>
+<span class="c">#         new_file = os.path.join(bam_folder, &quot;%s.bam&quot; % name)</span>
+<span class="c">#         bam_files.append((name, new_file))</span>
+<span class="c">#         command_parts.append(&quot;ln -s -f %s %s&quot; % (bam, new_file))</span>
+<span class="c">#         command_parts.append(&quot;%s index %s&quot; % (sampath, new_file))</span>
+<span class="c">#     command = &quot;\n&quot;.join(command_parts)</span>
+<span class="c">#     job_parms[&#39;work_dir&#39;] = bam_folder</span>
+<span class="c">#     job_id = _submit_job(configuration[&quot;job_submitter&quot;], command, job_parms, (index_job_id,))</span>
+<span class="c">#     return bam_files, job_id</span>
+
+
+<div class="viewcode-block" id="begin"><a class="viewcode-back" href="../../nasp.html#nasp.dispatcher.begin">[docs]</a><span class="k">def</span> <span class="nf">begin</span><span class="p">(</span><span class="n">configuration</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        configuration (dict):</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">index_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">IndexReference</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&#39;aligners&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;snpcallers&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;samtools&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;picard&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;index&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;reference&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;output_folder&#39;</span><span class="p">])</span>
+    <span class="n">index_job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">index_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">index_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">hold</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">reference</span> <span class="o">=</span> <span class="n">index_job</span><span class="o">.</span><span class="n">final_file</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">index_job_id</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Failed to submit the index job, there is no point in continuing. Please try again.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">()</span>
+    <span class="n">dups_file</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">job_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">vcf_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">franken_fastas</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;find_dups&quot;</span><span class="p">]:</span>
+        <span class="n">find_dups_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">FindDups</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;dup_finder&quot;</span><span class="p">],</span> <span class="n">reference</span><span class="p">)</span>
+        <span class="n">dups_file</span> <span class="o">=</span> <span class="n">find_dups_job</span><span class="o">.</span><span class="n">final_file</span>
+        <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">find_dups_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">find_dups_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">index_job_id</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+            <span class="n">job_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">assembly</span> <span class="ow">in</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;assemblies&quot;</span><span class="p">]:</span>
+        <span class="n">external_genome_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">ExternalGenome</span><span class="p">(</span><span class="n">assembly</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;dup_finder&quot;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;assembly_importer&quot;</span><span class="p">],</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;output_folder&quot;</span><span class="p">])</span>
+        <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">external_genome_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">external_genome_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">index_job_id</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+            <span class="n">job_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+            <span class="n">franken_fastas</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">assembly</span><span class="o">.</span><span class="n">sample</span><span class="p">,</span> <span class="s">&quot;nucmer&quot;</span><span class="p">,</span> <span class="n">external_genome_job</span><span class="o">.</span><span class="n">final_file</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;alignments&quot;</span><span class="p">]:</span>
+        <span class="n">pre_aligned</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">index_bam_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">IndexBam</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&#39;bam_index&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;samtools&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;alignments&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;output_folder&#39;</span><span class="p">])</span>
+        <span class="n">bamindex_job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">index_bam_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">index_bam_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">index_job_id</span><span class="p">,))</span>
+        <span class="k">for</span> <span class="n">bam_file</span> <span class="ow">in</span> <span class="n">index_bam_job</span><span class="o">.</span><span class="n">bam_files</span><span class="p">:</span>
+            <span class="n">pre_aligned</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">bam_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">bamindex_job_id</span><span class="p">,</span> <span class="n">bam_file</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;pre-aligned&quot;</span><span class="p">))</span>
+        <span class="n">snpcaller_output</span> <span class="o">=</span> <span class="n">_call_snps</span><span class="p">(</span><span class="n">pre_aligned</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">reference</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">final_file</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">)</span> <span class="ow">in</span> <span class="n">snpcaller_output</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                <span class="n">job_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+                <span class="n">vcf_files</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">,</span> <span class="n">final_file</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">read_tuple</span> <span class="ow">in</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;reads&quot;</span><span class="p">]:</span>
+        <span class="n">aligner_output</span> <span class="o">=</span> <span class="n">_align_reads</span><span class="p">(</span><span class="n">read_tuple</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">index_job_id</span><span class="p">,</span> <span class="n">reference</span><span class="p">)</span>
+        <span class="n">snpcaller_output</span> <span class="o">=</span> <span class="n">_call_snps</span><span class="p">(</span><span class="n">aligner_output</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">reference</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">job_id</span><span class="p">,</span> <span class="n">final_file</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">)</span> <span class="ow">in</span> <span class="n">snpcaller_output</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">job_id</span><span class="p">:</span>
+                <span class="n">job_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+                <span class="n">vcf_files</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">vcf_nickname</span><span class="p">,</span> <span class="n">aligner</span><span class="p">,</span> <span class="n">snpcaller</span><span class="p">,</span> <span class="n">final_file</span><span class="p">))</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">vcf</span><span class="p">)</span> <span class="ow">in</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&quot;vcfs&quot;</span><span class="p">]:</span>
+        <span class="n">vcf_files</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;pre-aligned&quot;</span><span class="p">,</span> <span class="s">&quot;pre-called&quot;</span><span class="p">,</span> <span class="n">vcf</span><span class="p">))</span>
+
+    <span class="n">matrix_job</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">Matrix</span><span class="p">(</span><span class="n">dups_file</span><span class="p">,</span> <span class="n">vcf_files</span><span class="p">,</span> <span class="n">franken_fastas</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;matrix_generator&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;coverage_filter&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;proportion_filter&#39;</span><span class="p">],</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;filter_matrix_format&#39;</span><span class="p">],</span> <span class="n">job_ids</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s">&#39;output_folder&#39;</span><span class="p">])</span>
+    <span class="n">job_id</span> <span class="o">=</span> <span class="n">_submit_job</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">matrix_job</span><span class="o">.</span><span class="n">command</span><span class="p">,</span> <span class="n">matrix_job</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="p">(</span><span class="n">matrix_job</span><span class="o">.</span><span class="n">jobs_to_wait_for</span><span class="p">,</span> <span class="s">&#39;afterany&#39;</span><span class="p">),</span> <span class="n">notify</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">_release_hold</span><span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s">&quot;job_submitter&quot;</span><span class="p">],</span> <span class="n">index_job_id</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../nasp.html#nasp.dispatcher.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">nasp.configuration_parser</span> <span class="kn">as</span> <span class="nn">configuration_parser</span>
+
+    <span class="n">commandline_args</span> <span class="o">=</span> <span class="n">_parse_args</span><span class="p">()</span>
+    <span class="n">configuration</span> <span class="o">=</span> <span class="n">configuration_parser</span><span class="o">.</span><span class="n">parse_config</span><span class="p">(</span><span class="n">commandline_args</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">begin</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

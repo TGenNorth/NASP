@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nasp.find_duplicates &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>nasp.find_duplicates</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for nasp.find_duplicates</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python3</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&quot;David Smith&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;0.9.8&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s">&quot;dsmith@tgen.org&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        parser.Namespace:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">argparse</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s">&quot;Meant to be called from the pipeline automatically.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--nucmerpath&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;nucmer&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the &#39;nucmer&#39; executable.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--reference&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the reference fasta file.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+<span class="c"># TODO: This should eventually be moved to the main job manager section</span>
+<div class="viewcode-block" id="run_nucmer_on_reference"><a class="viewcode-back" href="../../nasp.html#nasp.find_duplicates.run_nucmer_on_reference">[docs]</a><span class="k">def</span> <span class="nf">run_nucmer_on_reference</span><span class="p">(</span><span class="n">nucmer_path</span><span class="p">,</span> <span class="n">reference_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        nucmer_path (str):</span>
+<span class="sd">        reference_path (str):</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+
+    <span class="n">return_code</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">nucmer_path</span><span class="p">,</span> <span class="s">&quot;--prefix=reference&quot;</span><span class="p">,</span> <span class="s">&quot;--maxmatch&quot;</span><span class="p">,</span> <span class="s">&quot;--nosimplify&quot;</span><span class="p">,</span> <span class="n">reference_path</span><span class="p">,</span> <span class="n">reference_path</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">return_code</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="s">&quot;NASP WARNING: nucmer may have encountered errors during reference duplicates checking, proceeding anyway</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_parse_delta_line</span><span class="p">(</span><span class="n">line_from_delta_file</span><span class="p">,</span> <span class="n">dups_data</span><span class="p">,</span> <span class="n">current_contigs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        line_from_delta_file (str):</span>
+<span class="sd">        dups_data:</span>
+<span class="sd">        current_contigs:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="n">line_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;^&gt;([^ ]+) ([^ ]+) (\d+) (\d+)\s*$&#39;</span><span class="p">,</span> <span class="n">line_from_delta_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">line_match</span><span class="p">:</span>
+        <span class="n">current_contigs</span> <span class="o">=</span> <span class="p">(</span> <span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">contig_0_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+        <span class="n">contig_1_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+        <span class="n">dups_data</span><span class="o">.</span><span class="n">add_contig</span><span class="p">(</span><span class="n">current_contigs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">dups_data</span><span class="o">.</span><span class="n">add_contig</span><span class="p">(</span><span class="n">current_contigs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">contig_0_end</span> <span class="o">&gt;</span> <span class="n">dups_data</span><span class="o">.</span><span class="n">get_contig_length</span><span class="p">(</span><span class="n">current_contigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">dups_data</span><span class="o">.</span><span class="n">extend_contig</span><span class="p">(</span><span class="n">contig_0_end</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">,</span> <span class="n">current_contigs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">contig_0_end</span> <span class="o">&gt;</span> <span class="n">dups_data</span><span class="o">.</span><span class="n">get_contig_length</span><span class="p">(</span><span class="n">current_contigs</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">dups_data</span><span class="o">.</span><span class="n">extend_contig</span><span class="p">(</span><span class="n">contig_1_end</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">,</span> <span class="n">current_contigs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">line_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;^(\d+) (\d+) (\d+) (\d+) \d+ \d+ \d+\s*$&#39;</span><span class="p">,</span> <span class="n">line_from_delta_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line_match</span><span class="p">:</span>
+            <span class="n">contig_0_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">contig_0_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">contig_1_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+            <span class="n">contig_1_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">current_contigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">current_contigs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="p">(</span> <span class="n">contig_0_start</span> <span class="o">!=</span> <span class="n">contig_1_start</span> <span class="p">)</span> <span class="ow">and</span> <span class="p">(</span> <span class="n">contig_0_end</span> <span class="o">!=</span> <span class="n">contig_1_end</span> <span class="p">)</span> <span class="p">):</span>
+                <span class="k">if</span> <span class="n">contig_0_end</span> <span class="o">&lt;</span> <span class="n">contig_0_start</span><span class="p">:</span>
+                    <span class="n">contig_0_end</span><span class="p">,</span> <span class="n">contig_0_start</span> <span class="o">=</span> <span class="n">contig_0_start</span><span class="p">,</span> <span class="n">contig_0_end</span>
+                <span class="k">if</span> <span class="n">contig_1_end</span> <span class="o">&lt;</span> <span class="n">contig_1_start</span><span class="p">:</span>
+                    <span class="n">contig_1_end</span><span class="p">,</span> <span class="n">contig_1_start</span> <span class="o">=</span> <span class="n">contig_1_start</span><span class="p">,</span> <span class="n">contig_1_end</span>
+                <span class="n">dups_data</span><span class="o">.</span><span class="n">set_value</span><span class="p">((</span> <span class="s">&quot;1&quot;</span> <span class="o">*</span> <span class="p">(</span> <span class="n">contig_0_end</span> <span class="o">-</span> <span class="n">contig_0_start</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span> <span class="p">),</span> <span class="n">contig_0_start</span><span class="p">,</span> <span class="s">&quot;!&quot;</span><span class="p">,</span>
+                                    <span class="n">current_contigs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">dups_data</span><span class="o">.</span><span class="n">set_value</span><span class="p">((</span> <span class="s">&quot;1&quot;</span> <span class="o">*</span> <span class="p">(</span> <span class="n">contig_1_end</span> <span class="o">-</span> <span class="n">contig_1_start</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span> <span class="p">),</span> <span class="n">contig_1_start</span><span class="p">,</span> <span class="s">&quot;!&quot;</span><span class="p">,</span>
+                                    <span class="n">current_contigs</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">current_contigs</span>
+
+
+<span class="c"># TODO: Move to GenomeStatus constructor</span>
+<div class="viewcode-block" id="parse_delta_file"><a class="viewcode-back" href="../../nasp.html#nasp.find_duplicates.parse_delta_file">[docs]</a><span class="k">def</span> <span class="nf">parse_delta_file</span><span class="p">(</span><span class="n">delta_filename</span><span class="p">,</span> <span class="n">dups_data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        delta_filename (str):</span>
+<span class="sd">        dups_data:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">current_contigs</span> <span class="o">=</span> <span class="p">(</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span> <span class="p">)</span>
+    <span class="n">delta_handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">delta_filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line_from_delta_file</span> <span class="ow">in</span> <span class="n">delta_handle</span><span class="p">:</span>
+        <span class="n">current_contigs</span> <span class="o">=</span> <span class="n">_parse_delta_line</span><span class="p">(</span><span class="n">line_from_delta_file</span><span class="p">,</span> <span class="n">dups_data</span><span class="p">,</span> <span class="n">current_contigs</span><span class="p">)</span>
+    <span class="n">delta_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../nasp.html#nasp.find_duplicates.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">nasp.nasp_objects</span> <span class="kn">import</span> <span class="n">GenomeStatus</span>
+
+    <span class="n">commandline_args</span> <span class="o">=</span> <span class="n">_parse_args</span><span class="p">()</span>
+    <span class="n">run_nucmer_on_reference</span><span class="p">(</span><span class="n">commandline_args</span><span class="o">.</span><span class="n">nucmerpath</span><span class="p">,</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">reference</span><span class="p">)</span>
+    <span class="n">dups_data</span> <span class="o">=</span> <span class="n">GenomeStatus</span><span class="p">()</span>
+    <span class="n">parse_delta_file</span><span class="p">(</span><span class="s">&quot;reference.delta&quot;</span><span class="p">,</span> <span class="n">dups_data</span><span class="p">)</span>
+    <span class="n">dups_data</span><span class="o">.</span><span class="n">write_to_fasta_file</span><span class="p">(</span><span class="s">&quot;duplicates.txt&quot;</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

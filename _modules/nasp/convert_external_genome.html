@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nasp.convert_external_genome &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>nasp.convert_external_genome</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for nasp.convert_external_genome</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python3</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&quot;David Smith&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s">&quot;0.9.8&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s">&quot;dsmith@tgen.org&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_args</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">argparse</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s">&quot;Meant to be called from the pipeline automatically.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--nucmerpath&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;nucmer&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the &#39;nucmer&#39; executable.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--nucmerargs&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Optional arguments to pass to the &#39;nucmer&#39; executable.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--deltafilterpath&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;delta-filter&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the &#39;delta-filter&#39; executable.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--reference&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the reference fasta file.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--external&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Path to the external genome fasta file.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&quot;--name&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Name of this external genome.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+<span class="c"># TODO: This should eventually be moved to the main job manager section</span>
+<div class="viewcode-block" id="generate_delta_file"><a class="viewcode-back" href="../../nasp.html#nasp.convert_external_genome.generate_delta_file">[docs]</a><span class="k">def</span> <span class="nf">generate_delta_file</span><span class="p">(</span><span class="n">nucmer_path</span><span class="p">,</span> <span class="n">nucmer_args</span><span class="p">,</span> <span class="n">delta_filter_path</span><span class="p">,</span> <span class="n">external_nickname</span><span class="p">,</span> <span class="n">reference_path</span><span class="p">,</span> <span class="n">external_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Args:</span>
+<span class="sd">        nucmer_path (str): Path containing the nucmer executable.</span>
+<span class="sd">        nucmer_args (str): Arguments that will be passed to the nucmer executable.</span>
+<span class="sd">        delta_filter_path (str): Path to the NUCmer delta-filter executable.</span>
+<span class="sd">        external_nickname (str):</span>
+<span class="sd">        reference_path (str): Path to the reference fasta.</span>
+<span class="sd">        external_path (str): Path to a fasta file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">subprocess</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+
+    <span class="n">return_code</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">nucmer_path</span><span class="p">,</span> <span class="p">(</span> <span class="s">&quot;--prefix=&quot;</span> <span class="o">+</span> <span class="n">external_nickname</span> <span class="p">),</span> <span class="n">reference_path</span><span class="p">,</span> <span class="n">external_path</span><span class="p">]</span> <span class="o">+</span> <span class="n">nucmer_args</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">return_code</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="s">&quot;NASP WARNING: nucmer may have encountered errors while processing external genome &#39;&quot;</span> <span class="o">+</span> <span class="n">external_nickname</span> <span class="o">+</span> <span class="s">&quot;&#39;, proceeding anyway</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">((</span> <span class="n">external_nickname</span> <span class="o">+</span> <span class="s">&quot;.filtered.delta&quot;</span> <span class="p">),</span> <span class="s">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">filtered_delta_handle</span><span class="p">:</span>
+        <span class="n">return_code</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="n">delta_filter_path</span><span class="p">,</span> <span class="s">&quot;-q&quot;</span><span class="p">,</span> <span class="s">&quot;-r&quot;</span><span class="p">,</span> <span class="s">&quot;-o&quot;</span><span class="p">,</span> <span class="s">&quot;100&quot;</span><span class="p">,</span> <span class="p">(</span> <span class="n">external_nickname</span> <span class="o">+</span> <span class="s">&quot;.delta&quot;</span> <span class="p">)],</span>
+                                      <span class="n">stdout</span><span class="o">=</span><span class="n">filtered_delta_handle</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_code</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="s">&quot;NASP WARNING: delta-filter may have encountered errors while processing external genome &#39;&quot;</span> <span class="o">+</span> <span class="n">external_nickname</span> <span class="o">+</span> <span class="s">&quot;&#39;, proceeding anyway</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_update_genome_from_delta_data</span><span class="p">(</span><span class="n">franken_genome</span><span class="p">,</span> <span class="n">external_genome</span><span class="p">,</span> <span class="n">parser_state</span><span class="p">,</span> <span class="n">distance_covered</span><span class="p">,</span> <span class="n">is_external_insert</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Appends a range of contigs for the external_genome from the current position up to the distance_covered.</span>
+<span class="sd">    TODO (jtravis): Fix best guess documentation to describe what this function does.</span>
+<span class="sd">    NOTE (jtravis): The NUCmer show-aligns command might perform a similar task as parse_delta_file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        franken_genome (Genome): Genome where the aligned contigs will be appended.</span>
+<span class="sd">        external_genome (Genome): Genome with external fasta contigs that need to be aligned.</span>
+<span class="sd">        parser_state (dict):</span>
+<span class="sd">        distance_covered (int): Position before an insert or delete relative to a reference genome.</span>
+<span class="sd">        is_external_insert (bool): True if the current delta is non-negative.</span>
+<span class="sd">        # NOTE: is_external_insert conveys the same information as distance_covered in that they are both based on the</span>
+<span class="sd">        # delta value. distance_covered has simply been decremented.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Parser state after adding the aligned external_genome contigs to the franken_fasta</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">nasp.nasp_objects</span> <span class="kn">import</span> <span class="n">Genome</span>
+
+    <span class="k">if</span> <span class="n">distance_covered</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">distance_covered</span> <span class="o">=</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;final_pos&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;reference_pos&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">is_external_insert</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">if</span> <span class="n">distance_covered</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_is_reversed&#39;</span><span class="p">]:</span>
+            <span class="n">matching_segment</span> <span class="o">=</span> <span class="n">Genome</span><span class="o">.</span><span class="n">reverse_complement</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">external_genome</span><span class="o">.</span><span class="n">get_call</span><span class="p">((</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">distance_covered</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">),</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">])))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">matching_segment</span> <span class="o">=</span> <span class="n">external_genome</span><span class="o">.</span><span class="n">get_call</span><span class="p">(</span><span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">],</span> <span class="p">(</span><span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">distance_covered</span> <span class="o">-</span> <span class="mi">1</span> <span class="p">))</span>
+        <span class="n">franken_genome</span><span class="o">.</span><span class="n">set_call</span><span class="p">(</span><span class="n">matching_segment</span><span class="p">,</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;reference_pos&#39;</span><span class="p">],</span> <span class="s">&#39;X&#39;</span><span class="p">)</span>
+    <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;reference_pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;reference_pos&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">distance_covered</span>
+    <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="o">-</span><span class="n">distance_covered</span> <span class="k">if</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_is_reversed&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="n">distance_covered</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_external_insert</span><span class="p">:</span>
+        <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_is_reversed&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">franken_genome</span><span class="o">.</span><span class="n">set_call</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;reference_pos&#39;</span><span class="p">],</span> <span class="s">&#39;!&#39;</span><span class="p">)</span>
+        <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;reference_pos&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">parser_state</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_delta_line</span><span class="p">(</span><span class="n">line_from_delta_file</span><span class="p">,</span> <span class="n">franken_genome</span><span class="p">,</span> <span class="n">external_genome</span><span class="p">,</span> <span class="n">parser_state</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses a line from the delta file. If the line is a delta, it appends a contig range to the franken_fasta from</span>
+<span class="sd">    the external_genome based on the delta and current position stored in the parser_state. Otherwise, stores the</span>
+<span class="sd">    information from the current line in the parser_state to be used when a delta is read.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        line_from_delta_file (str):</span>
+<span class="sd">        franken_genome (Genome):</span>
+<span class="sd">        external_genome (Genome):</span>
+<span class="sd">        parser_state (dict):</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">     `&quot;The &#39;delta&#39; file format&quot; &lt;http://mummer.sourceforge.net/manual/&gt;`_</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        path/to/reference path/to/query</span>
+<span class="sd">        NUCMER</span>
+<span class="sd">        &gt;NC_007790.1 NC_007790.1 3125 3125</span>
+<span class="sd">        1 3125 1 3125 0 0 0</span>
+<span class="sd">        0</span>
+<span class="sd">        ...</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">re</span>
+
+    <span class="c"># Parse alignment header</span>
+    <span class="n">line_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;^&gt;([^ ]+) ([^ ]+) (\d+) \d+\s*$&#39;</span><span class="p">,</span> <span class="n">line_from_delta_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">line_match</span><span class="p">:</span>
+        <span class="n">current_contig</span> <span class="o">=</span> <span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">external_genome</span><span class="o">.</span><span class="n">set_current_contig</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;contig_sizes&#39;</span><span class="p">][</span><span class="n">current_contig</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+        <span class="n">franken_genome</span><span class="o">.</span><span class="n">add_contig</span><span class="p">(</span><span class="n">current_contig</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c"># Parse alignment data</span>
+        <span class="n">line_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;^(\d+) (\d+) (\d+) (\d+) \d+ \d+ \d+\s*$&#39;</span><span class="p">,</span> <span class="n">line_from_delta_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">line_match</span><span class="p">:</span>
+            <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;reference_pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;final_pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+            <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_is_reversed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">True</span> <span class="k">if</span> <span class="p">(</span> <span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;external_pos&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span> <span class="p">)</span> <span class="k">else</span> <span class="bp">False</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Parse alignment delta</span>
+            <span class="n">line_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;^(\-?)(\d+)\s*$&#39;</span><span class="p">,</span> <span class="n">line_from_delta_file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">line_match</span><span class="p">:</span>
+                <span class="n">distance_covered</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="n">is_external_insert</span> <span class="o">=</span> <span class="p">(</span> <span class="bp">True</span> <span class="k">if</span> <span class="p">(</span> <span class="n">line_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="s">&#39;-&#39;</span> <span class="p">)</span> <span class="k">else</span> <span class="bp">False</span> <span class="p">)</span>
+                <span class="n">parser_state</span> <span class="o">=</span> <span class="n">_update_genome_from_delta_data</span><span class="p">(</span><span class="n">franken_genome</span><span class="p">,</span> <span class="n">external_genome</span><span class="p">,</span> <span class="n">parser_state</span><span class="p">,</span>
+                                                              <span class="n">distance_covered</span><span class="p">,</span> <span class="n">is_external_insert</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser_state</span>
+
+
+<div class="viewcode-block" id="parse_delta_file"><a class="viewcode-back" href="../../nasp.html#nasp.convert_external_genome.parse_delta_file">[docs]</a><span class="k">def</span> <span class="nf">parse_delta_file</span><span class="p">(</span><span class="n">delta_filename</span><span class="p">,</span> <span class="n">franken_genome</span><span class="p">,</span> <span class="n">external_genome</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    parse_delta_file combines a delta encoded alignment from NUCmer with fasta contigs stored in the external_genome</span>
+<span class="sd">    to create a frankenfasta.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        delta_filename (str): Path to a delta file.</span>
+<span class="sd">        franken_genome (Genome): Genome where the combined delta and external fasta will be stored.</span>
+<span class="sd">        external_genome (Genome): Genome seeded with an imported fasta file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser_state</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="s">&#39;contig_sizes&#39;</span><span class="p">,</span> <span class="s">&#39;reference_pos&#39;</span><span class="p">,</span> <span class="s">&#39;external_pos&#39;</span><span class="p">,</span> <span class="s">&#39;final_pos&#39;</span><span class="p">,</span> <span class="s">&#39;external_is_reversed&#39;</span><span class="p">],</span>
+                            <span class="p">[</span><span class="nb">dict</span><span class="p">(),</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">]))</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">delta_filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">delta_handle</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line_from_delta_file</span> <span class="ow">in</span> <span class="n">delta_handle</span><span class="p">:</span>
+            <span class="n">parser_state</span> <span class="o">=</span> <span class="n">_parse_delta_line</span><span class="p">(</span><span class="n">line_from_delta_file</span><span class="p">,</span> <span class="n">franken_genome</span><span class="p">,</span> <span class="n">external_genome</span><span class="p">,</span> <span class="n">parser_state</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">current_contig</span> <span class="ow">in</span> <span class="n">franken_genome</span><span class="o">.</span><span class="n">get_contigs</span><span class="p">():</span>
+        <span class="n">franken_genome</span><span class="o">.</span><span class="n">extend_contig</span><span class="p">(</span><span class="n">parser_state</span><span class="p">[</span><span class="s">&#39;contig_sizes&#39;</span><span class="p">][</span><span class="n">current_contig</span><span class="p">],</span> <span class="s">&#39;X&#39;</span><span class="p">,</span> <span class="n">current_contig</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../nasp.html#nasp.convert_external_genome.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">nasp.nasp_objects</span> <span class="kn">import</span> <span class="n">Genome</span><span class="p">,</span> <span class="n">GenomeMeta</span>
+
+    <span class="n">commandline_args</span> <span class="o">=</span> <span class="n">_parse_args</span><span class="p">()</span>
+    <span class="n">external_nickname</span> <span class="o">=</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="n">GenomeMeta</span><span class="o">.</span><span class="n">generate_nickname_from_filename</span><span class="p">(</span>
+        <span class="n">commandline_args</span><span class="o">.</span><span class="n">external</span><span class="p">)</span>
+    <span class="n">external_genome</span> <span class="o">=</span> <span class="n">Genome</span><span class="p">()</span>
+    <span class="n">external_genome</span><span class="o">.</span><span class="n">import_fasta_file</span><span class="p">(</span><span class="n">commandline_args</span><span class="o">.</span><span class="n">external</span><span class="p">)</span>
+    <span class="n">generate_delta_file</span><span class="p">(</span><span class="n">commandline_args</span><span class="o">.</span><span class="n">nucmerpath</span><span class="p">,</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">nucmerargs</span><span class="p">,</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">deltafilterpath</span><span class="p">,</span>
+                        <span class="n">external_nickname</span><span class="p">,</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">reference</span><span class="p">,</span> <span class="n">commandline_args</span><span class="o">.</span><span class="n">external</span><span class="p">)</span>
+    <span class="n">franken_genome</span> <span class="o">=</span> <span class="n">Genome</span><span class="p">()</span>
+    <span class="n">parse_delta_file</span><span class="p">((</span> <span class="n">external_nickname</span> <span class="o">+</span> <span class="s">&quot;.filtered.delta&quot;</span> <span class="p">),</span> <span class="n">franken_genome</span><span class="p">,</span> <span class="n">external_genome</span><span class="p">)</span>
+    <span class="n">franken_genome</span><span class="o">.</span><span class="n">write_to_fasta_file</span><span class="p">(</span><span class="n">external_nickname</span> <span class="o">+</span> <span class="s">&quot;.frankenfasta&quot;</span><span class="p">,</span> <span class="s">&quot;franken::&quot;</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

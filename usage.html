@@ -1,0 +1,948 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Usage &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="index.html"/>
+        <link rel="next" title="Contributing" href="contributing.html"/>
+        <link rel="prev" title="Installation" href="installation.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Usage</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/usage.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="nasp">
+<h2>nasp<a class="headerlink" href="#nasp" title="Permalink to this headline">¶</a></h2>
+<p>Nasp is the pipeline. The other scripts included in this section are internal programs that</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: nasp [-h] [--config CONFIG] [reference_fasta] [output_folder]
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="39%" />
+<col width="61%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Positional Arguments</th>
+<th class="head">(Optional)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>ReferenceFasta</td>
+<td>Path to the reference fasta.</td>
+</tr>
+<tr class="row-odd"><td>OutputFolder</td>
+<td>Folder to store the output files.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="39%" />
+<col width="61%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Flags</th>
+<th class="head">(Optional)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>-h, &#8211;help</td>
+<td>show this help message and exit</td>
+</tr>
+<tr class="row-odd"><td>&#8211;config CONFIG</td>
+<td>Path to the configuration xml file.</td>
+</tr>
+</tbody>
+</table>
+<p>You will then be prompted to answer a few questions about your analysis:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ nasp
+Welcome to the experimental python NASP version 0.9.8.
+* Starred features are less well tested, and may not work.
+</pre></div>
+</div>
+<p>NASP will write all the files it creates including any vcf, bam, fasta, tsv, etc to this folder:</p>
+<div class="highlight-python"><div class="highlight"><pre>Where would you like output files to be written [nasp_results]? results
+
+Where is the reference fasta file you would like to use? ./examples/example_1/reference.fasta
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Tip</p>
+<p class="last">If your Python includes the <cite>readline</cite> module, you can use tab completion to help fill in the file paths.
+Try typing the first few characters followed by the <cite>Tab</cite> key to complete the folder name.</p>
+</div>
+<p>The nucmer aligner will scan the reference file for duplicate regions.:</p>
+<div class="highlight-python"><div class="highlight"><pre>Do you want to check the reference for duplicated regions
+and skip SNPs that fall in those regions [Y]?
+</pre></div>
+</div>
+<p>gdfgdsgs:</p>
+<div class="highlight-python"><div class="highlight"><pre>What system do you use for job management (PBS/TORQUE, SLURM, SGE*, and &#39;none&#39; are currently supported) [PBS]?
+  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []?
+  What additional arguments do you need to pass to the job management system []?
+</pre></div>
+</div>
+<p>External genomes are fasta files not created by NASP such as from a public repository:</p>
+<div class="highlight-python"><div class="highlight"><pre>Do you have fasta files for external genomes you wish to include [Y]?
+Where are these files located [/home/jtravis/NASP]? ./examples/example_1
+  Would you like to set advanced NUCmer settings [N]?
+</pre></div>
+</div>
+<p>fastq.gz read files:</p>
+<div class="highlight-python"><div class="highlight"><pre>Do you have read files you wish to include [Y]?
+Where are these files located [/home/jtravis/NASP]? ./examples/example_1
+</pre></div>
+</div>
+<p>fdsfdsfds:</p>
+<div class="highlight-python"><div class="highlight"><pre>This pipeline currently supports three aligners: BWA, Novoalign, and SNAP.
+You can also provide pre-aligned BAM files, and you can choose as many options as you want.
+
+Would you like to run BWA samp/se [N]?*
+
+Would you like to run BWA mem [Y]?
+Would you like to set advanced BWA-mem settings [N]?
+
+Would you like to run Bowtie2 [Y]?
+Would you like to set advanced Bowtie2 settings [N]?
+
+Would you like to run Novoalign [Y]?
+Would you like to set advanced Novoalign settings [N]?
+
+Would you like to run SNAP [N]?*
+
+Do you have pre-aligned SAM/BAM files you wish to include [N]?
+</pre></div>
+</div>
+<p>dfsdfdsf:</p>
+<div class="highlight-python"><div class="highlight"><pre>This pipeline currently supports four SNP callers: GATK, SolSNP, VarScan, and SAMtools, and you can provide VCF files.
+You can choose as many options as you want.
+
+Would you like to run GATK [Y]?
+
+Unable to find &#39;GenomeAnalysisTK.jar&#39;, please enter the full path to &#39;GenomeAnalysisTK.jar&#39;: /packages/GenomeAnalysisTK/2.7-2/GenomeAnalysisTK.jar
+Would you like to set advanced GATK settings [N]?
+
+Would you like to run SolSNP [N]?
+
+Would you like to run VarScan [Y]?
+Would you like to set advanced VarScan settings [N]?
+
+Would you like to run SAMtools [Y]?
+Would you like to set advanced SAMtools settings [N]?
+
+Unable to find &#39;CreateSequenceDictionary.jar&#39;, please enter the full path to &#39;CreateSequenceDictionary.jar&#39;: /packages/tnorth/bin/CreateSequenceDictionary.jar
+</pre></div>
+</div>
+<p>dfgfdgsd:</p>
+<div class="highlight-python"><div class="highlight"><pre>Do you have pre-called VCFfiles you wish to include [N]?
+</pre></div>
+</div>
+<p>fdsfdsfds:</p>
+<div class="highlight-python"><div class="highlight"><pre>This pipeline can do filtering based on coverage.
+If you do not want filtering based on coverage, enter 0.
+What is your minimum coverage threshold [10]?
+</pre></div>
+</div>
+<p>sdfsdfsd:</p>
+<div class="highlight-python"><div class="highlight"><pre>This pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.
+If you do not want filtering based on proportion, enter 0.
+What is the minimum acceptable proportion [0.9]?
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> for commandline arguments you can pass to the MatrixGenerator. This is not typically required.:</p>
+<div class="highlight-python"><div class="highlight"><pre>Would you like to set advanced MatrixGenerator settings [N]?
+</pre></div>
+</div>
+<p>asdfsafsad:</p>
+<div class="highlight-python"><div class="highlight"><pre>Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]?
+</pre></div>
+</div>
+<p>Optionally, if you are re-running a previous analysis with the same (or
+similar) options, you can pass in an xml-based configuration file (this
+is written out to your output_folder after running the command-line
+interface) using the format:</p>
+<p><cite>nasp.py &#8211;config</cite></p>
+</div>
+<div class="section" id="format-fasta">
+<h2>format_fasta<a class="headerlink" href="#format-fasta" title="Permalink to this headline">¶</a></h2>
+<p>Reformats a fasta to be split 80 characters per line, with system line-endings.</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: format_fasta [-h] --inputfasta INPUTFASTA --outputfasta OUTPUTFASTA
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--inputfasta <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to input fasta.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--outputfasta <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to output fasta.</td></tr>
+</tbody>
+</table>
+</div></blockquote>
+</div>
+<div class="section" id="find-duplicates">
+<h2>find_duplicates<a class="headerlink" href="#find-duplicates" title="Permalink to this headline">¶</a></h2>
+<p>Scans the reference genome for duplicates using the nucmer aligner and transforms the resulting delta to a fasta file.:</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: find_duplicates [-h] [--nucmerpath NUCMERPATH] --reference REFERENCE
+</pre></div>
+</div>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--nucmerpath <var>NUCMERPATH</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to the &#8216;nucmer&#8217; executable.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--reference <var>REFERENCE</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to the reference fasta file.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="vcf-to-matrix">
+<span id="id1"></span><h2>vcf_to_matrix<a class="headerlink" href="#vcf-to-matrix" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>vcf_to_matrix --mode=xml --num-threads=1 --dto-file DTO_FILE
+</pre></div>
+</div>
+<p>Options:</p>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--mode <var>mode</var></span></kbd></td>
+<td>Data passing mode
+MODE  can be either &#8216;commandline&#8217; or &#8216;xml&#8217;.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--reference-fasta <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to input reference fasta file.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--reference-dups <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to input reference dups file.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--input-files <var>files</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to input VCF/fasta files for matrix conversion.
+INPUT_FILES is a list of file paths</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--matrix-folder <var>path</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Name of folder to write output matries to.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--stats-folder <var>path</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Name of folder to write statistics files to.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--minimum-coverage <var>number</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Minimum coverage depth at a position.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--minimum-proportion <var>number</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Minimum proportion of reads that must match the call at a position.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--num-threads <var>number</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Number of threads to use when processing input.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--dto-file <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to a matrix_dto XML file that defines all the parameters.</td></tr>
+</tbody>
+</table>
+<img alt="vcf_to_matrix output matrices venn diagram" src="_images/MatricesVennDiagram.png" />
+<div class="section" id="matrices">
+<h3>Matrices<a class="headerlink" href="#matrices" title="Permalink to this headline">¶</a></h3>
+<p>The conventions used for what data is stored are as follows:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Genomes:</dt>
+<dd><ul class="first last simple">
+<li>A, C, G, T, U:  The respective call.</li>
+<li>N:  Called &#8220;N&#8221; according to upstream analysis tools.</li>
+<li>X:  Not called by upstream analysis tools.</li>
+<li>. or empty string:  A deletion relative to reference.</li>
+<li>String of length &gt;1:  An insertion relative to reference.</li>
+<li>Any other single letter:  A degeneracy.</li>
+</ul>
+</dd>
+<dt>Duplicate region data:</dt>
+<dd><ul class="first last simple">
+<li>0:  Position not in a region that is duplicated within the reference.</li>
+<li>1:  Position is in a region that is duplicated.</li>
+<li>-:  Duplicate checking at this position was skipped by the user.</li>
+</ul>
+</dd>
+<dt>Filters:</dt>
+<dd><ul class="first last">
+<li><p class="first">Y:  This position passed its filter.</p>
+</li>
+<li><p class="first">N:  This position failed its filter.</p>
+</li>
+<li><p class="first">?:  The filter could not be checked, and so the position is assumed to have failed.</p>
+</li>
+<li><dl class="first docutils">
+<dt>-:  The filter was not applicable, or skipped, or could not be checked for a known reason,</dt>
+<dd><p class="first last">and so is assumed to have passed.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<ul class="simple">
+<li>master_matrix.tsv</li>
+<li>bestsnp_matrix.tsv</li>
+<li>bestsnp_matrix.snpfasta</li>
+<li>bestsnp_matrix.vcf</li>
+<li>missingdata_matrix.tsv</li>
+<li>missingdata_matrix.snpfasta</li>
+<li>missingdata_matrix.vcf</li>
+<li>withallrefpos_matrix.tsv</li>
+<li>withallrefpos_matrix.snpfasta</li>
+<li>withallrefpos_matrix.vcf</li>
+</ul>
+</div>
+<div class="section" id="statistics">
+<h3>Statistics<a class="headerlink" href="#statistics" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils" id="id2">
+<caption><span class="caption-text">general_stats.tsv</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Contig</th>
+<th class="head">reference_length</th>
+<th class="head">reference_clean</th>
+<th class="head">reference_clean (%)</th>
+<th class="head">reference_duplicated</th>
+<th class="head">reference_duplicated (%)</th>
+<th class="head">all_called</th>
+<th class="head">all_called (%)</th>
+<th class="head">all_passed_coverage</th>
+<th class="head">all_passed_coverage (%)</th>
+<th class="head">all_passed_proportion</th>
+<th class="head">all_passed_proportion (%)</th>
+<th class="head">all_passed_consensus</th>
+<th class="head">all_passed_consensus (%)</th>
+<th class="head">quality_breadth</th>
+<th class="head">quality_breadth (%)</th>
+<th class="head">any_snps</th>
+<th class="head">any_snps (%)</th>
+<th class="head">best_snps</th>
+<th class="head">best_snps (%)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>&nbsp;</td>
+<td>stat descriptions go here</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>Whole Genome</td>
+<td>3977</td>
+<td>3977</td>
+<td>100.00%</td>
+<td>0</td>
+<td>0.00%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>5</td>
+<td>0.13%</td>
+<td>5</td>
+<td>0.13%</td>
+</tr>
+<tr class="row-even"><td>500WT1_test</td>
+<td>3977</td>
+<td>3977</td>
+<td>100.00%</td>
+<td>0</td>
+<td>0.00%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>5</td>
+<td>0.13%</td>
+<td>5</td>
+<td>0.13%</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils" id="id3">
+<caption><span class="caption-text">sample_stats.tsv</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+<col width="6%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Sample</th>
+<th class="head">Sample::Analysis</th>
+<th class="head">was_called</th>
+<th class="head">was_called (%)</th>
+<th class="head">passed_coverage_filter</th>
+<th class="head">passed_coverage_filter (%)</th>
+<th class="head">passed_proportion_filter</th>
+<th class="head">passed_proportion_filter (%)</th>
+<th class="head">quality_breadth</th>
+<th class="head">quality_breadth (%)</th>
+<th class="head">called_reference</th>
+<th class="head">called_reference (%)</th>
+<th class="head">called_snp</th>
+<th class="head">called_snp (%)</th>
+<th class="head">called_degen</th>
+<th class="head">called_degen (%)</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>stat descriptions go here</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-even"><td>[any]</td>
+<td>&nbsp;</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3968</td>
+<td>99.77%</td>
+<td>5</td>
+<td>0.13%</td>
+<td>0</td>
+<td>0.00%</td>
+</tr>
+<tr class="row-odd"><td>[all]</td>
+<td>&nbsp;</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3968</td>
+<td>99.77%</td>
+<td>5</td>
+<td>0.13%</td>
+<td>0</td>
+<td>0.00%</td>
+</tr>
+<tr class="row-even"><td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>example_1_L001</td>
+<td>[any]</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3968</td>
+<td>99.77%</td>
+<td>5</td>
+<td>0.13%</td>
+<td>0</td>
+<td>0.00%</td>
+</tr>
+<tr class="row-even"><td>example_1_L001</td>
+<td>[all]</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3968</td>
+<td>99.77%</td>
+<td>5</td>
+<td>0.13%</td>
+<td>0</td>
+<td>0.00%</td>
+</tr>
+<tr class="row-odd"><td>example_1_L001</td>
+<td>example_1_L001::Bowtie2,GATK</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3974</td>
+<td>99.92%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3973</td>
+<td>99.90%</td>
+<td>3968</td>
+<td>99.77%</td>
+<td>5</td>
+<td>0.13%</td>
+<td>0</td>
+<td>0.00%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="filter-matrix-by-coord-py">
+<h2>filter_matrix_by_coord.py<a class="headerlink" href="#filter-matrix-by-coord-py" title="Permalink to this headline">¶</a></h2>
+<p>Filter matrix based on a list of known SNPs</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: format_fasta [-h] --inputfasta INPUTFASTA --outputfasta OUTPUTFASTA
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--inputfasta <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to input fasta.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--outputfasta <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to output fasta.</td></tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>The following scripts will be available:</p>
+<ul class="simple">
+<li>filter_matrix_by_coord.py</li>
+<li>filter_matrix_by_genome.py</li>
+<li>filter_matrix_remove_genomes.py</li>
+<li>matrix_to_fasta.py</li>
+<li>report_single_snps_single_isolate.py</li>
+</ul>
+<p>Running NASP with the example data and default settings on a PBS cluster results in the following output::</p>
+<div class="highlight-python"><div class="highlight"><pre>results
+├── bowtie2
+│   ├── example_1_L001-bowtie2.bam
+│   ├── example_1_L001-bowtie2.bam.bai
+│   ├── example_1_L001-bowtie2.mpileup
+│   ├── nasp_bowtie2_example_1_L001.e293242
+│   └── nasp_bowtie2_example_1_L001.o293242
+├── bwamem
+│   ├── example_1_L001-bwamem.bam
+│   ├── example_1_L001-bwamem.bam.bai
+│   ├── example_1_L001-bwamem.mpileup
+│   ├── nasp_bwamem_example_1_L001.e293241
+│   └── nasp_bwamem_example_1_L001.o293241
+├── external
+│   ├── example_1.delta
+│   ├── example_1.fasta
+│   ├── example_1.filtered.delta
+│   ├── example_1.frankenfasta
+│   ├── nasp_AssemblyImporter_example_1.e293240
+│   └── nasp_AssemblyImporter_example_1.o293240
+├── gatk
+│   ├── example_1_L001-bowtie2-gatk.vcf
+│   ├── example_1_L001-bowtie2-gatk.vcf.idx
+│   ├── example_1_L001-bwamem-gatk.vcf
+│   ├── example_1_L001-bwamem-gatk.vcf.idx
+│   ├── example_1_L001-novo-gatk.vcf
+│   ├── example_1_L001-novo-gatk.vcf.idx
+│   ├── nasp_gatk_example_1_L001-bowtie2.e293247
+│   ├── nasp_gatk_example_1_L001-bowtie2.o293247
+│   ├── nasp_gatk_example_1_L001-bwamem.e293244
+│   ├── nasp_gatk_example_1_L001-bwamem.o293244
+│   ├── nasp_gatk_example_1_L001-novo.e293250
+│   └── nasp_gatk_example_1_L001-novo.o293250
+├── matrices
+│   ├── bestsnp_matrix.snpfasta
+│   ├── bestsnp_matrix.tsv
+│   ├── bestsnp_matrix.vcf
+│   ├── master_matrix.tsv
+│   ├── missingdata_matrix.snpfasta
+│   ├── missingdata_matrix.tsv
+│   └── missingdata_matrix.vcf
+├── matrix_dto.xml
+├── nasp_matrix.e293253
+├── nasp_matrix.o293253
+├── novo
+│   ├── example_1_L001-novo.bam
+│   ├── example_1_L001-novo.bam.bai
+│   ├── example_1_L001-novo.mpileup
+│   ├── nasp_novo_example_1_L001.e293243
+│   └── nasp_novo_example_1_L001.o293243
+├── pycallgraph.nasp.6dd3611.png
+├── reference
+│   ├── duplicates.txt
+│   ├── nasp_DupFinder.e293239
+│   ├── nasp_DupFinder.o293239
+│   ├── nasp_index.e293238
+│   ├── nasp_index.o293238
+│   ├── reference.1.bt2
+│   ├── reference.2.bt2
+│   ├── reference.3.bt2
+│   ├── reference.4.bt2
+│   ├── reference.delta
+│   ├── reference.dict
+│   ├── reference.fasta
+│   ├── reference.fasta.amb
+│   ├── reference.fasta.ann
+│   ├── reference.fasta.bwt
+│   ├── reference.fasta.fai
+│   ├── reference.fasta.idx
+│   ├── reference.fasta.pac
+│   ├── reference.fasta.sa
+│   ├── reference.rev.1.bt2
+│   └── reference.rev.2.bt2
+├── results-config.xml
+├── runlog.txt
+├── samtools
+│   ├── example_1_L001-bowtie2-samtools.vcf
+│   ├── example_1_L001-bwamem-samtools.vcf
+│   ├── example_1_L001-novo-samtools.vcf
+│   ├── nasp_samtools_example_1_L001-bowtie2.e293249
+│   ├── nasp_samtools_example_1_L001-bowtie2.o293249
+│   ├── nasp_samtools_example_1_L001-bwamem.e293246
+│   ├── nasp_samtools_example_1_L001-bwamem.o293246
+│   ├── nasp_samtools_example_1_L001-novo.e293252
+│   └── nasp_samtools_example_1_L001-novo.o293252
+├── statistics
+│   ├── general_stats.tsv
+│   └── sample_stats.tsv
+└── varscan
+    ├── example_1_L001-bowtie2-varscan.vcf
+    ├── example_1_L001-bowtie2.txt
+    ├── example_1_L001-bwamem-varscan.vcf
+    ├── example_1_L001-bwamem.txt
+    ├── example_1_L001-novo-varscan.vcf
+    ├── example_1_L001-novo.txt
+    ├── nasp_varscan_example_1_L001-bowtie2.e293248
+    ├── nasp_varscan_example_1_L001-bowtie2.o293248
+    ├── nasp_varscan_example_1_L001-bwamem.e293245
+    ├── nasp_varscan_example_1_L001-bwamem.o293245
+    ├── nasp_varscan_example_1_L001-novo.e293251
+    └── nasp_varscan_example_1_L001-novo.o293251
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing"/>Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral" title="Installation"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -1,0 +1,395 @@
+=====
+Usage
+=====
+
+nasp
+----
+
+Nasp is the pipeline. The other scripts included in this section are internal programs that ::
+
+    usage: nasp [-h] [--config CONFIG] [reference_fasta] [output_folder]
+
+.. For listing command-line options:
+
+.. X-a            command-line option "a"
+.. X-b file       options can have arguments
+              and long descriptions
+.. X--long        options can be long also
+.. X--input=file  long options can also have
+              arguments
+
+.. X--very-long-option
+              The description can also start on the next line.
+
+.. X              The description may contain multiple body elements,
+.. X              regardless of where it starts.
+
+.. X-x, -y, -z    Multiple options are an "option group".
+.. X-v, --verbose  Commonly-seen: short & long options.
+.. X-1 file, --one=file, --two file
+              Multiple options with arguments.
+.. X/V            DOS/VMS-style options too
+
++-----------------------+------------------------------------+
+| Positional Arguments  | (Optional)                         |
++=======================+====================================+
+| ReferenceFasta        | Path to the reference fasta.       |
++-----------------------+------------------------------------+
+| OutputFolder          | Folder to store the output files.  |
++-----------------------+------------------------------------+
+
++-----------------------+------------------------------------+
+| Flags                 | (Optional)                         |
++=======================+====================================+
+| -h, --help            | show this help message and exit    |
++-----------------------+------------------------------------+
+| --config CONFIG       | Path to the configuration xml file.|
++-----------------------+------------------------------------+
+
+
+You will then be prompted to answer a few questions about your analysis::
+
+    $ nasp
+    Welcome to the experimental python NASP version 0.9.8.
+    * Starred features are less well tested, and may not work.
+
+NASP will write all the files it creates including any vcf, bam, fasta, tsv, etc to this folder::
+
+    Where would you like output files to be written [nasp_results]? results
+
+    Where is the reference fasta file you would like to use? ./examples/example_1/reference.fasta
+
+.. tip:: If your Python includes the `readline` module, you can use tab completion to help fill in the file paths.
+   Try typing the first few characters followed by the `Tab` key to complete the folder name.
+
+The nucmer aligner will scan the reference file for duplicate regions.::
+
+    Do you want to check the reference for duplicated regions
+    and skip SNPs that fall in those regions [Y]?
+
+gdfgdsgs::
+
+    What system do you use for job management (PBS/TORQUE, SLURM, SGE*, and 'none' are currently supported) [PBS]?
+      Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []?
+      What additional arguments do you need to pass to the job management system []?
+
+External genomes are fasta files not created by NASP such as from a public repository::
+
+    Do you have fasta files for external genomes you wish to include [Y]?
+    Where are these files located [/home/jtravis/NASP]? ./examples/example_1
+      Would you like to set advanced NUCmer settings [N]?
+
+fastq.gz read files::
+
+    Do you have read files you wish to include [Y]?
+    Where are these files located [/home/jtravis/NASP]? ./examples/example_1
+
+fdsfdsfds::
+
+    This pipeline currently supports three aligners: BWA, Novoalign, and SNAP.
+    You can also provide pre-aligned BAM files, and you can choose as many options as you want.
+
+    Would you like to run BWA samp/se [N]?*
+
+    Would you like to run BWA mem [Y]?
+    Would you like to set advanced BWA-mem settings [N]?
+
+    Would you like to run Bowtie2 [Y]?
+    Would you like to set advanced Bowtie2 settings [N]?
+
+    Would you like to run Novoalign [Y]?
+    Would you like to set advanced Novoalign settings [N]?
+
+    Would you like to run SNAP [N]?*
+
+    Do you have pre-aligned SAM/BAM files you wish to include [N]?
+
+dfsdfdsf::
+
+    This pipeline currently supports four SNP callers: GATK, SolSNP, VarScan, and SAMtools, and you can provide VCF files.
+    You can choose as many options as you want.
+
+    Would you like to run GATK [Y]?
+
+    Unable to find 'GenomeAnalysisTK.jar', please enter the full path to 'GenomeAnalysisTK.jar': /packages/GenomeAnalysisTK/2.7-2/GenomeAnalysisTK.jar
+    Would you like to set advanced GATK settings [N]?
+
+    Would you like to run SolSNP [N]?
+
+    Would you like to run VarScan [Y]?
+    Would you like to set advanced VarScan settings [N]?
+
+    Would you like to run SAMtools [Y]?
+    Would you like to set advanced SAMtools settings [N]?
+
+    Unable to find 'CreateSequenceDictionary.jar', please enter the full path to 'CreateSequenceDictionary.jar': /packages/tnorth/bin/CreateSequenceDictionary.jar
+
+dfgfdgsd::
+
+    Do you have pre-called VCFfiles you wish to include [N]?
+
+fdsfdsfds::
+
+    This pipeline can do filtering based on coverage.
+    If you do not want filtering based on coverage, enter 0.
+    What is your minimum coverage threshold [10]?
+
+sdfsdfsd::
+
+    This pipeline can do filtering based on the proportion of reads that match the call made by the SNP caller.
+    If you do not want filtering based on proportion, enter 0.
+    What is the minimum acceptable proportion [0.9]?
+
+See vcf_to_matrix_ for commandline arguments you can pass to the MatrixGenerator. This is not typically required.::
+
+    Would you like to set advanced MatrixGenerator settings [N]?
+
+asdfsafsad::
+
+    Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]?
+
+Optionally, if you are re-running a previous analysis with the same (or
+similar) options, you can pass in an xml-based configuration file (this
+is written out to your output\_folder after running the command-line
+interface) using the format:
+
+`nasp.py --config`
+
+format_fasta
+------------
+Reformats a fasta to be split 80 characters per line, with system line-endings. ::
+
+    usage: format_fasta [-h] --inputfasta INPUTFASTA --outputfasta OUTPUTFASTA
+
+Options:
+
+    -h, --help  show this help message and exit
+    --inputfasta file  Path to input fasta.
+    --outputfasta file  Path to output fasta.
+
+find_duplicates
+---------------
+Scans the reference genome for duplicates using the nucmer aligner and transforms the resulting delta to a fasta file.::
+
+    usage: find_duplicates [-h] [--nucmerpath NUCMERPATH] --reference REFERENCE
+
+
+-h, --help  show this help message and exit
+--nucmerpath NUCMERPATH  Path to the 'nucmer' executable.
+--reference REFERENCE  Path to the reference fasta file.
+
+.. Internal hyperlink target
+.. _vcf_to_matrix:
+
+vcf_to_matrix
+-------------
+
+::
+
+    vcf_to_matrix --mode=xml --num-threads=1 --dto-file DTO_FILE
+
+.. TODO: Is there a delimiter between INPUT_FILES?
+
+Options:
+
+.. foo -h, --help  show this help message and exit.
+
+--mode mode  Data passing mode
+       MODE  can be either 'commandline' or 'xml'.
+--reference-fasta file  Path to input reference fasta file.
+--reference-dups file  Path to input reference dups file.
+--input-files files  Path to input VCF/fasta files for matrix conversion.
+              INPUT_FILES is a list of file paths
+--matrix-folder path  Name of folder to write output matries to.
+--stats-folder path  Name of folder to write statistics files to.
+--minimum-coverage number  Minimum coverage depth at a position.
+--minimum-proportion number  Minimum proportion of reads that must match the call at a position.
+--num-threads number  Number of threads to use when processing input.
+--dto-file file  Path to a matrix_dto XML file that defines all the parameters.
+
+.. image:: MatricesVennDiagram.png
+   :alt: vcf_to_matrix output matrices venn diagram
+
+Matrices
+========
+
+The conventions used for what data is stored are as follows:
+
+    Genomes:
+        - A, C, G, T, U:  The respective call.
+        - N:  Called "N" according to upstream analysis tools.
+        - X:  Not called by upstream analysis tools.
+        - . or empty string:  A deletion relative to reference.
+        - String of length >1:  An insertion relative to reference.
+        - Any other single letter:  A degeneracy.
+
+    Duplicate region data:
+        - 0:  Position not in a region that is duplicated within the reference.
+        - 1:  Position is in a region that is duplicated.
+        - -:  Duplicate checking at this position was skipped by the user.
+
+    Filters:
+        - Y:  This position passed its filter.
+        - N:  This position failed its filter.
+        - ?:  The filter could not be checked, and so the position is assumed to have failed.
+        - -:  The filter was not applicable, or skipped, or could not be checked for a known reason,
+              and so is assumed to have passed.
+
+- master_matrix.tsv
+- bestsnp_matrix.tsv
+- bestsnp_matrix.snpfasta
+- bestsnp_matrix.vcf
+- missingdata_matrix.tsv
+- missingdata_matrix.snpfasta
+- missingdata_matrix.vcf
+- withallrefpos_matrix.tsv
+- withallrefpos_matrix.snpfasta
+- withallrefpos_matrix.vcf
+
+Statistics
+===========
+
+.. csv-table:: general_stats.tsv
+   :header: "Contig", "reference_length", "reference_clean", "reference_clean (%)", "reference_duplicated", "reference_duplicated (%)", "all_called", "all_called (%)", "all_passed_coverage", "all_passed_coverage (%)", "all_passed_proportion", "all_passed_proportion (%)", "all_passed_consensus", "all_passed_consensus (%)", "quality_breadth", "quality_breadth (%)", "any_snps", "any_snps (%)", "best_snps", "best_snps (%)"
+
+    "", "stat descriptions go here", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+    "Whole Genome", "3977", "3977", "100.00%", "0", "0.00%", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3973", "99.90%", "5", "0.13%", "5", "0.13%"
+    "500WT1_test", "3977", "3977", "100.00%", "0", "0.00%", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3973", "99.90%", "5", "0.13%", "5", "0.13%"
+
+.. csv-table:: sample_stats.tsv
+   :header: "Sample", "Sample::Analysis", "was_called", "was_called (%)", "passed_coverage_filter", "passed_coverage_filter (%)", "passed_proportion_filter", "passed_proportion_filter (%)", "quality_breadth", "quality_breadth (%)", "called_reference", "called_reference (%)", "called_snp", "called_snp (%)", "called_degen", "called_degen (%)"
+
+   "stat descriptions go here", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+   "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+   "[any]", "", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3968", "99.77%", "5", "0.13%", "0", "0.00%"
+   "[all]", "", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3968", "99.77%", "5", "0.13%", "0", "0.00%"
+   "", "", "", "", "", "", "", "", "", "", "", "", "", ""
+   "example_1_L001", "[any]", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3968", "99.77%", "5", "0.13%", "0", "0.00%"
+   "example_1_L001", "[all]", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3968", "99.77%", "5", "0.13%", "0", "0.00%"
+   "example_1_L001", "example_1_L001::Bowtie2,GATK", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3968", "99.77%", "5", "0.13%", "0", "0.00%"
+
+
+filter_matrix_by_coord.py
+-------------------------
+Filter matrix based on a list of known SNPs
+::
+
+    usage: format_fasta [-h] --inputfasta INPUTFASTA --outputfasta OUTPUTFASTA
+
+Options:
+
+    -h, --help  show this help message and exit
+    --inputfasta file  Path to input fasta.
+    --outputfasta file  Path to output fasta.
+
+The following scripts will be available:
+
+- filter_matrix_by_coord.py
+- filter_matrix_by_genome.py
+- filter_matrix_remove_genomes.py
+- matrix_to_fasta.py
+- report_single_snps_single_isolate.py
+
+Running NASP with the example data and default settings on a PBS cluster results in the following output:::
+
+    results
+    ├── bowtie2
+    │   ├── example_1_L001-bowtie2.bam
+    │   ├── example_1_L001-bowtie2.bam.bai
+    │   ├── example_1_L001-bowtie2.mpileup
+    │   ├── nasp_bowtie2_example_1_L001.e293242
+    │   └── nasp_bowtie2_example_1_L001.o293242
+    ├── bwamem
+    │   ├── example_1_L001-bwamem.bam
+    │   ├── example_1_L001-bwamem.bam.bai
+    │   ├── example_1_L001-bwamem.mpileup
+    │   ├── nasp_bwamem_example_1_L001.e293241
+    │   └── nasp_bwamem_example_1_L001.o293241
+    ├── external
+    │   ├── example_1.delta
+    │   ├── example_1.fasta
+    │   ├── example_1.filtered.delta
+    │   ├── example_1.frankenfasta
+    │   ├── nasp_AssemblyImporter_example_1.e293240
+    │   └── nasp_AssemblyImporter_example_1.o293240
+    ├── gatk
+    │   ├── example_1_L001-bowtie2-gatk.vcf
+    │   ├── example_1_L001-bowtie2-gatk.vcf.idx
+    │   ├── example_1_L001-bwamem-gatk.vcf
+    │   ├── example_1_L001-bwamem-gatk.vcf.idx
+    │   ├── example_1_L001-novo-gatk.vcf
+    │   ├── example_1_L001-novo-gatk.vcf.idx
+    │   ├── nasp_gatk_example_1_L001-bowtie2.e293247
+    │   ├── nasp_gatk_example_1_L001-bowtie2.o293247
+    │   ├── nasp_gatk_example_1_L001-bwamem.e293244
+    │   ├── nasp_gatk_example_1_L001-bwamem.o293244
+    │   ├── nasp_gatk_example_1_L001-novo.e293250
+    │   └── nasp_gatk_example_1_L001-novo.o293250
+    ├── matrices
+    │   ├── bestsnp_matrix.snpfasta
+    │   ├── bestsnp_matrix.tsv
+    │   ├── bestsnp_matrix.vcf
+    │   ├── master_matrix.tsv
+    │   ├── missingdata_matrix.snpfasta
+    │   ├── missingdata_matrix.tsv
+    │   └── missingdata_matrix.vcf
+    ├── matrix_dto.xml
+    ├── nasp_matrix.e293253
+    ├── nasp_matrix.o293253
+    ├── novo
+    │   ├── example_1_L001-novo.bam
+    │   ├── example_1_L001-novo.bam.bai
+    │   ├── example_1_L001-novo.mpileup
+    │   ├── nasp_novo_example_1_L001.e293243
+    │   └── nasp_novo_example_1_L001.o293243
+    ├── pycallgraph.nasp.6dd3611.png
+    ├── reference
+    │   ├── duplicates.txt
+    │   ├── nasp_DupFinder.e293239
+    │   ├── nasp_DupFinder.o293239
+    │   ├── nasp_index.e293238
+    │   ├── nasp_index.o293238
+    │   ├── reference.1.bt2
+    │   ├── reference.2.bt2
+    │   ├── reference.3.bt2
+    │   ├── reference.4.bt2
+    │   ├── reference.delta
+    │   ├── reference.dict
+    │   ├── reference.fasta
+    │   ├── reference.fasta.amb
+    │   ├── reference.fasta.ann
+    │   ├── reference.fasta.bwt
+    │   ├── reference.fasta.fai
+    │   ├── reference.fasta.idx
+    │   ├── reference.fasta.pac
+    │   ├── reference.fasta.sa
+    │   ├── reference.rev.1.bt2
+    │   └── reference.rev.2.bt2
+    ├── results-config.xml
+    ├── runlog.txt
+    ├── samtools
+    │   ├── example_1_L001-bowtie2-samtools.vcf
+    │   ├── example_1_L001-bwamem-samtools.vcf
+    │   ├── example_1_L001-novo-samtools.vcf
+    │   ├── nasp_samtools_example_1_L001-bowtie2.e293249
+    │   ├── nasp_samtools_example_1_L001-bowtie2.o293249
+    │   ├── nasp_samtools_example_1_L001-bwamem.e293246
+    │   ├── nasp_samtools_example_1_L001-bwamem.o293246
+    │   ├── nasp_samtools_example_1_L001-novo.e293252
+    │   └── nasp_samtools_example_1_L001-novo.o293252
+    ├── statistics
+    │   ├── general_stats.tsv
+    │   └── sample_stats.tsv
+    └── varscan
+        ├── example_1_L001-bowtie2-varscan.vcf
+        ├── example_1_L001-bowtie2.txt
+        ├── example_1_L001-bwamem-varscan.vcf
+        ├── example_1_L001-bwamem.txt
+        ├── example_1_L001-novo-varscan.vcf
+        ├── example_1_L001-novo.txt
+        ├── nasp_varscan_example_1_L001-bowtie2.e293248
+        ├── nasp_varscan_example_1_L001-bowtie2.o293248
+        ├── nasp_varscan_example_1_L001-bwamem.e293245
+        ├── nasp_varscan_example_1_L001-bwamem.o293245
+        ├── nasp_varscan_example_1_L001-novo.e293251
+        └── nasp_varscan_example_1_L001-novo.o293251

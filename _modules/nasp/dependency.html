@@ -1,0 +1,425 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nasp.dependency &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../usage.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>nasp.dependency</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for nasp.dependency</h1><div class="highlight"><pre>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;jtravis&#39;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The namedtuples in this modules are class definitions representing the XML configuration file sections.</span>
+
+<span class="sd">This module also defines a dictionary of paths to external dependencies and a function to locate them.</span>
+<span class="sd">It does not differentiate between required and optional dependencies.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">Reference</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Reference&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;path&#39;</span><span class="p">,</span> <span class="s">&#39;find_dups&#39;</span><span class="p">])</span>
+<span class="n">Reference</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+<span class="n">Filters</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Filters&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;coverage&#39;</span><span class="p">,</span> <span class="s">&#39;proportion&#39;</span><span class="p">])</span>
+<span class="n">Filters</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+<span class="c"># NOTE: Would FindDups make sense as an attribute?</span>
+<span class="c"># &lt;Options&gt;</span>
+<span class="c">#    &lt;OutputFolder&gt;/home/dlemmer/nasp_test&lt;/OutputFolder&gt;</span>
+<span class="c">#    &lt;RunName&gt;NASPTestRun&lt;/RunName&gt;</span>
+<span class="c">#    &lt;JobSubmitter&gt;PBS&lt;/JobSubmitter&gt;</span>
+<span class="c">#    &lt;Reference name=&quot;MRSA252&quot; path=&quot;/home/dlemmer/nasp_test/MRSA252.fasta&quot;&gt;</span>
+<span class="c">#        &lt;FindDups&gt;true&lt;/FindDups&gt;</span>
+<span class="c">#    &lt;/Reference&gt;</span>
+<span class="c">#    &lt;Filters&gt;</span>
+<span class="c">#        &lt;CoverageFilter&gt;10&lt;/CoverageFilter&gt;</span>
+<span class="c">#        &lt;ProportionFilter&gt;0.9&lt;/ProportionFilter&gt;</span>
+<span class="c">#    &lt;/Filters&gt;</span>
+<span class="c">#&lt;/Options&gt;</span>
+<span class="n">Options</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Options&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;output_folder&#39;</span><span class="p">,</span> <span class="s">&#39;run_name&#39;</span><span class="p">,</span> <span class="s">&#39;job_submitter&#39;</span><span class="p">,</span> <span class="s">&#39;filter_matrix_format&#39;</span><span class="p">,</span> <span class="s">&#39;reference&#39;</span><span class="p">,</span> <span class="s">&#39;filters&#39;</span><span class="p">])</span>
+<span class="n">Options</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">Reference</span><span class="p">(),</span> <span class="n">Filters</span><span class="p">())</span>
+
+<span class="c"># TODO: replace ReadFile name and NaspFile sample with a class property set based on the path</span>
+<span class="c"># TODO: combine NaspFile and ReadFile?</span>
+<span class="n">ReadFile</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;ReadFile&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;path&#39;</span><span class="p">,</span> <span class="s">&#39;path2&#39;</span><span class="p">])</span>
+<span class="n">ReadFile</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">NaspFile</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;NaspFile&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;sample&#39;</span><span class="p">,</span> <span class="s">&#39;path&#39;</span><span class="p">])</span>
+<span class="n">NaspFile</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+<span class="c"># TODO: replace Files with Folders</span>
+<span class="c"># &lt;Files&gt;</span>
+<span class="c">#   &lt;ReadFolder path=&quot;/home/dlemmer/nasp_test/reads&quot;&gt;</span>
+<span class="c">#       ...</span>
+<span class="c">#   &lt;/ReadFolder&gt;</span>
+<span class="c">#   &lt;AssemblyFolder path=&quot;/home/dlemmer/nasp_test/assemblies&quot;&gt;</span>
+<span class="c">#       ...</span>
+<span class="c">#   &lt;/AssemblyFolder&gt;</span>
+<span class="c">#   &lt;AlignmentFolder path=&quot;/home/dlemmer/nasp_test/bwa&quot;&gt;</span>
+<span class="c">#       ...</span>
+<span class="c">#   &lt;/AlignmentFolder&gt;</span>
+<span class="c">#   &lt;VCFFolder path=&quot;/home/dlemmer/nasp_test/gatk&quot;&gt;</span>
+<span class="c">#       ...</span>
+<span class="c">#   &lt;/VCFFolder&gt;</span>
+<span class="c"># &lt;/Files&gt;</span>
+<span class="n">Folders</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Folders&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;read_folder&#39;</span><span class="p">,</span> <span class="s">&#39;assembly_folder&#39;</span><span class="p">,</span> <span class="s">&#39;alignment_folder&#39;</span><span class="p">,</span> <span class="s">&#39;vcf_folder&#39;</span><span class="p">])</span>
+<span class="n">Folders</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">([],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[])</span>
+
+<span class="c"># TODO: add WorkDir element?</span>
+<span class="c"># &lt;JobParameters name=&quot;&quot;&gt;</span>
+<span class="c">#   &lt;MemRequested&gt;2&lt;/MemRequested&gt;</span>
+<span class="c">#   &lt;NumCPUs&gt;1&lt;/NumCPUs&gt;</span>
+<span class="c">#   &lt;Walltime&gt;1&lt;/Walltime&gt;</span>
+<span class="c">#   &lt;Queue&gt;&lt;/Queue&gt;</span>
+<span class="c">#   &lt;JobSubmitterArgs&gt;&lt;/JobSubmitterArgs&gt;</span>
+<span class="c"># &lt;/JobParameters&gt;</span>
+<span class="n">JobParameters</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;JobParameters&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;mem_requested&#39;</span><span class="p">,</span> <span class="s">&#39;num_cpus&#39;</span><span class="p">,</span> <span class="s">&#39;walltime&#39;</span><span class="p">,</span> <span class="s">&#39;queue&#39;</span><span class="p">,</span> <span class="s">&#39;args&#39;</span><span class="p">,</span> <span class="s">&#39;work_dir&#39;</span><span class="p">])</span>
+<span class="c"># TODO: are any of these integers?</span>
+<span class="n">JobParameters</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">Application</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Application&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;path&#39;</span><span class="p">,</span> <span class="s">&#39;additional_args&#39;</span><span class="p">,</span> <span class="s">&#39;job_parameters&#39;</span><span class="p">])</span>
+<span class="n">Application</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">JobParameters</span><span class="p">())</span>
+
+<span class="c"># TODO: replace the various &lt;TYPE&gt; elements with an Application element</span>
+<span class="c"># &lt;ExternalApplications&gt;</span>
+<span class="c">#   &lt;TYPE path=&quot;/lumberyard/bin/nasp_python/&quot;&gt;</span>
+<span class="c">#       &lt;AdditionalArgs&gt;&lt;/AdditionalArgs&gt;</span>
+<span class="c">#       &lt;JobParameters name=&quot;nasp_index&quot;&gt;...&lt;/JobParameters&gt;</span>
+<span class="c">#   &lt;/TYPE&gt;</span>
+<span class="c"># &lt;/ExternalApplications&gt;</span>
+<span class="n">ExternalApplication</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;ExternalApplication&#39;</span><span class="p">,</span> <span class="p">[</span>
+    <span class="s">&#39;samtools&#39;</span><span class="p">,</span>
+    <span class="s">&#39;matrix_generator&#39;</span><span class="p">,</span>
+    <span class="s">&#39;picard&#39;</span><span class="p">,</span>
+    <span class="s">&#39;dup_finder&#39;</span><span class="p">,</span>
+    <span class="s">&#39;index&#39;</span><span class="p">,</span>
+    <span class="s">&#39;bam_index&#39;</span><span class="p">,</span>
+    <span class="s">&#39;assembly_importer&#39;</span><span class="p">,</span>
+    <span class="s">&#39;aligners&#39;</span><span class="p">,</span>
+    <span class="s">&#39;snpcallers&#39;</span>
+<span class="p">])</span>
+<span class="n">ExternalApplication</span><span class="o">.</span><span class="n">__new__</span><span class="o">.</span><span class="n">__defaults__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Application</span><span class="p">(),</span>
+    <span class="n">Application</span><span class="p">(),</span>
+    <span class="n">Application</span><span class="p">(),</span>
+    <span class="n">Application</span><span class="p">(),</span>
+    <span class="n">Application</span><span class="p">(),</span>
+    <span class="n">Application</span><span class="p">(),</span>
+    <span class="n">Application</span><span class="p">(),</span>
+    <span class="p">[],</span>
+    <span class="p">[]</span>
+<span class="p">)</span>
+
+<span class="n">_index</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;bowtie2-build&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;novoindex&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">_aligner</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;bwa&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;bowtie2&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;novoalign&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;snap&#39;</span><span class="p">:</span> <span class="bp">None</span>
+<span class="p">}</span>
+
+<span class="n">_snpcaller</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;GenomeAnalysisTK.jar&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;CreateSequenceDictionary.jar&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span> <span class="c"># Dependency of GTK</span>
+    <span class="s">&#39;SolSNP.jar&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;VarScan.jar&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;bcftools&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">_other</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;samtools&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;nucmer&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;delta-filter&#39;</span><span class="p">:</span> <span class="bp">None</span>
+<span class="p">}</span>
+
+<span class="n">_scheduler</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;sbatch&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;qsub&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;qrls&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;scontrol&#39;</span><span class="p">:</span> <span class="bp">None</span>
+<span class="p">}</span>
+
+<span class="c"># TODO(jtravis): replace system dependencies with python equivalent</span>
+<span class="n">_system</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;java&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="c"># time.sleep</span>
+    <span class="s">&#39;sleep&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;cat&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="c"># os.kill</span>
+    <span class="s">&#39;kill&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;sed&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="c"># os.remove</span>
+    <span class="s">&#39;rm&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="c"># psutil.*</span>
+    <span class="s">&#39;free&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;grep&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="s">&#39;awk&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="c"># shutil.which</span>
+    <span class="s">&#39;which&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+    <span class="c"># os.walk</span>
+    <span class="s">&#39;find&#39;</span><span class="p">:</span> <span class="bp">None</span>
+<span class="p">}</span>
+
+<span class="n">paths</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">_aligner</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">|</span> <span class="n">_snpcaller</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">|</span> <span class="n">_other</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">|</span> <span class="n">_scheduler</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="o">|</span> <span class="n">_system</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="find_executable"><a class="viewcode-back" href="../../nasp.html#nasp.dependency.find_executable">[docs]</a><span class="k">def</span> <span class="nf">find_executable</span><span class="p">(</span><span class="n">executable</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the path to the executable.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        executable (str): executable to find</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Path to the executable or an empty string</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        UnlistedDependencyError: The executable is not in the list of dependencies</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c"># Warning for developers</span>
+    <span class="k">if</span> <span class="n">executable</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">UnlistedDependencyError</span><span class="p">(</span><span class="n">executable</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c"># shutil requires Python &gt;= 3.3</span>
+        <span class="kn">import</span> <span class="nn">shutil</span>
+
+        <span class="n">mode</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">F_OK</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">X_OK</span>
+        <span class="c"># .jar files do not need the executable bit set</span>
+        <span class="k">if</span> <span class="n">executable</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;.jar&quot;</span><span class="p">):</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">F_OK</span>
+
+        <span class="c"># Search based on the PATH or platform dependent default environment variables</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="n">executable</span><span class="p">)</span>
+
+        <span class="c"># Search for .jars in the CLASSPATH and /usr/share/java/</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">executable</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&quot;.jar&quot;</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="n">executable</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;/usr/share/java/&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">&quot;CLASSPATH&quot;</span><span class="p">)])</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">&quot;CLASSPATH&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s">&#39;/usr/share/java/&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">subprocess</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">check_output</span><span class="p">([</span><span class="s">&quot;which&quot;</span><span class="p">,</span> <span class="n">executable</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">:</span>
+            <span class="c"># File not found, try something else</span>
+            <span class="k">pass</span>
+
+    <span class="c"># The executable may have been found during a recursive search in a previous call to this method</span>
+    <span class="c"># The cache is checked after the PATH is searched because PATH is considered the canonical source</span>
+    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">paths</span><span class="p">[</span><span class="n">executable</span><span class="p">]</span>
+
+    <span class="c"># FIXME: Prompt the user where / if they would like to recursively search for the executable</span>
+    <span class="c"># to avoid repeating the search for them as well</span>
+    <span class="c"># Recursively search the user&#39;s home directory</span>
+    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirnames</span><span class="p">,</span> <span class="n">filenames</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s">&#39;~&#39;</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">command</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+
+    <span class="n">paths</span><span class="p">[</span><span class="n">executable</span><span class="p">]</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="k">return</span> <span class="n">path</span> <span class="ow">or</span> <span class="s">&quot;&quot;</span>
+</div>
+<div class="viewcode-block" id="UnlistedDependencyError"><a class="viewcode-back" href="../../nasp.html#nasp.dependency.UnlistedDependencyError">[docs]</a><span class="k">class</span> <span class="nc">UnlistedDependencyError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Warning for developers if they forget to add a dependency to the dictionary of paths</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        executable (str): Name of the missing dependency</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">executable</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executable</span> <span class="o">=</span> <span class="n">executable</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Did you forget to add </span><span class="si">%s</span><span class="s"> as a dependency?&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">executable</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
