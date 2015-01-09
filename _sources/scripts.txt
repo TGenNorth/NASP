@@ -1,0 +1,60 @@
+=====================
+Post-Analysis Scripts
+=====================
+
+The Post-Analysis Scripts are a collection of helpers
+
+filter_matrix_by_coord.py
+-------------------------
+Filter matrix based on a list of known SNPs::
+
+    usage: format_fasta [-h] --inputfasta INPUTFASTA --outputfasta OUTPUTFASTA
+
+Options:
+    -h, --help  show this help message and exit
+    --inputfasta file  Path to input fasta.
+    --outputfasta file  Path to output fasta.
+
+Output files:
+
+filter_matrix_by_genome.py
+--------------------------
+
+Filter a raw ISG matrix for a list of genomes.::
+
+    usage: filter_matrix_remove_genomes.py [options]
+
+Options:
+  -h, --help                           show this help message and exit
+  -m IN_MATRIX, --in_matrix=IN_MATRIX  /path/to/file [REQUIRED]
+  -p PREFIX, --out_prefix=PREFIX       /path/to/file [REQUIRED]
+  -g GENOMES, --genomes=GENOMES        /path/to/genomes_file [REQUIRED]
+
+Output files:
+
+matrix_to_fasta.py
+------------------
+::
+
+    usage: matrix_to_fasta.py [options]
+
+Options:
+  -h, --help                              show this help message and exit
+  -m MATRIX_IN, --input_matrix=MATRIX_IN  /path/to/isg_matrix [REQUIRED]
+  -p PREFIX, --output_prefix=PREFIX       prefix for outfiles [REQUIRED]
+
+Output files:
+
+
+report_single_snps_single_isolate.py
+------------------------------------
+::
+
+    usage: report_single_snps_single_isolate.py [options]
+
+Options:
+    -h, --help                                 show this help message and exit
+    -m MATRIX_IN, --input_matrix=MATRIX_IN     /path/to/isg_matrix [REQUIRED]
+    -g GENOME_NAME, --genome_name=GENOME_NAME  genome to look for singleton SNPs [REQUIRED]
+
+Output files:

@@ -60,9 +60,8 @@
             <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="">The Northern Arizona SNP Pipeline (NASP)</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#repeating-analysis">Repeating Analysis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contact">Contact</a></li>
 </ul>
@@ -80,7 +79,13 @@
 <li class="toctree-l2"><a class="reference internal" href="usage.html#format-fasta">format_fasta</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#find-duplicates">find_duplicates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="scripts.html">Post-Analysis Scripts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#filter-matrix-by-genome-py">filter_matrix_by_genome.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#matrix-to-fasta-py">matrix_to_fasta.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scripts.html#report-single-snps-single-isolate-py">report_single_snps_single_isolate.py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a><ul>
@@ -145,30 +150,35 @@ those formats. As NASP is a pipeline, it expects to link a set of
 external tools (usually installed separately) to complete specific
 analysis tasks.</p>
 </div>
-<div class="section" id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>Usage depends upon the installation method used on your system, and the
-user interface you select. For standard installations with the
-command-line interface, you would collect (or symbolically link) all of
-your input files into a folder, and then invoke the command-line
-interface from that folder. Expected usage for the command-line
-interface is:</p>
-<p><cite>nasp.py [output_folder]</cite></p>
+<div class="section" id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li>Run the <cite>nasp</cite> command in a terminal.</li>
+<li>Select the files, folders, job scheduler, and analyzers you want to use by filling in the prompts.</li>
+<li>The jobs will run in the background and the results written to the output folder you specified in the prompts.</li>
+</ol>
 </div>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>See the included &#8220;INSTALL&#8221; document.</p>
+<div class="section" id="repeating-analysis">
+<h2>Repeating Analysis<a class="headerlink" href="#repeating-analysis" title="Permalink to this headline">¶</a></h2>
+<p>Nasp will save file and analysis program paths and options as XML files in the output folder. These files can be used to
+repeat the analysis or modify it without going through the prompts.</p>
+<p>[run-name]-config.xml:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">nasp</span> <span class="o">--</span><span class="n">config</span> <span class="p">[</span><span class="n">run</span><span class="o">-</span><span class="n">name</span><span class="p">]</span><span class="o">-</span><span class="n">config</span><span class="o">.</span><span class="n">xml</span>
+</pre></div>
 </div>
-<div class="section" id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<p>For information about external tools that are required, or can be
-utilized, and those versions that have been tested to work with NASP,
-refer to the included &#8220;INSTALL&#8221; document.</p>
+<p>This file stores input file and external analysis program paths necessary for <cite>nasp</cite> to repeat the analysis tasks such
+as searching for duplicate regions with NUCmer, aligning contigs with BWA, or calling SNPs with GATK.</p>
+<p>matrix_dto.xml:</p>
+<div class="highlight-python"><div class="highlight"><pre>vcf_to_matrix --mode xml --num-threads 12 --dto-file matrix_dto.xml
+</pre></div>
+</div>
+<p>This file stores resulting analysis file paths along with filter options and analysis combinations that created
+the files necessary for <cite>vcf_to_matrix</cite> to recreate the statistics and analysis matrices.</p>
 </div>
 <div class="section" id="license">
 <h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
-<p>Copyright © The Translational Genomics Research Institute See the
-included &#8220;LICENSE&#8221; document.</p>
+<p>Copyright © The Translational Genomics Research Institute.
+See the included &#8220;LICENSE&#8221; document.</p>
 </div>
 <div class="section" id="contact">
 <h2>Contact<a class="headerlink" href="#contact" title="Permalink to this headline">¶</a></h2>
@@ -179,6 +189,7 @@ included &#8220;LICENSE&#8221; document.</p>
 </div>
 <div class="line-block">
 <div class="line">Darrin Lemmer</div>
+<div class="line">Development Lead</div>
 <div class="line"><a class="reference external" href="mailto:dlemmer&#37;&#52;&#48;tgen&#46;org">dlemmer<span>&#64;</span>tgen<span>&#46;</span>org</a></div>
 <div class="line">+1-928-226-6374</div>
 </div>

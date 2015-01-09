@@ -1,0 +1,327 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Post-Analysis Scripts &mdash; Northern Arizona SNP Pipeline 0.9.8 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Northern Arizona SNP Pipeline 0.9.8 documentation" href="index.html"/>
+        <link rel="next" title="Contributing" href="contributing.html"/>
+        <link rel="prev" title="Usage" href="usage.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="fa fa-home"> Northern Arizona SNP Pipeline</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">The Northern Arizona SNP Pipeline (NASP)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#repeating-analysis">Repeating Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#install">Install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#update">Update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#uninstall">Uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#required-dependencies">Required Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#optional-dependencies">Optional Dependencies</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#nasp">nasp</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#format-fasta">format_fasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#find-duplicates">find_duplicates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#vcf-to-matrix">vcf_to_matrix</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Post-Analysis Scripts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#filter-matrix-by-coord-py">filter_matrix_by_coord.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#filter-matrix-by-genome-py">filter_matrix_by_genome.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix-to-fasta-py">matrix_to_fasta.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#report-single-snps-single-isolate-py">report_single_snps_single_isolate.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#types-of-contributions">Types of Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#get-started">Get Started!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="contributing.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="authors.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="authors.html#development-lead">Development Lead</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html#contributors">Contributors</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html#id1">0.9.6 (2014-06-05)</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Northern Arizona SNP Pipeline</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Post-Analysis Scripts</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/scripts.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <div class="section" id="post-analysis-scripts">
+<h1>Post-Analysis Scripts<a class="headerlink" href="#post-analysis-scripts" title="Permalink to this headline">¶</a></h1>
+<p>The Post-Analysis Scripts are a collection of helpers</p>
+<div class="section" id="filter-matrix-by-coord-py">
+<h2>filter_matrix_by_coord.py<a class="headerlink" href="#filter-matrix-by-coord-py" title="Permalink to this headline">¶</a></h2>
+<p>Filter matrix based on a list of known SNPs:</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: format_fasta [-h] --inputfasta INPUTFASTA --outputfasta OUTPUTFASTA
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd><table class="first last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--inputfasta <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to input fasta.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--outputfasta <var>file</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Path to output fasta.</td></tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<p>Output files:</p>
+</div>
+<div class="section" id="filter-matrix-by-genome-py">
+<h2>filter_matrix_by_genome.py<a class="headerlink" href="#filter-matrix-by-genome-py" title="Permalink to this headline">¶</a></h2>
+<p>Filter a raw ISG matrix for a list of genomes.:</p>
+<div class="highlight-python"><div class="highlight"><pre>usage: filter_matrix_remove_genomes.py [options]
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd><table class="first last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-m <var>IN_MATRIX</var></span>, <span class="option">--in_matrix=<var>IN_MATRIX</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>/path/to/file [REQUIRED]</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-p <var>PREFIX</var></span>, <span class="option">--out_prefix=<var>PREFIX</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>/path/to/file [REQUIRED]</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-g <var>GENOMES</var></span>, <span class="option">--genomes=<var>GENOMES</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>/path/to/genomes_file [REQUIRED]</td></tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<p>Output files:</p>
+</div>
+<div class="section" id="matrix-to-fasta-py">
+<h2>matrix_to_fasta.py<a class="headerlink" href="#matrix-to-fasta-py" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>usage: matrix_to_fasta.py [options]
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd><table class="first last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-m <var>MATRIX_IN</var></span>, <span class="option">--input_matrix=<var>MATRIX_IN</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>/path/to/isg_matrix [REQUIRED]</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-p <var>PREFIX</var></span>, <span class="option">--output_prefix=<var>PREFIX</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>prefix for outfiles [REQUIRED]</td></tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<p>Output files:</p>
+</div>
+<div class="section" id="report-single-snps-single-isolate-py">
+<h2>report_single_snps_single_isolate.py<a class="headerlink" href="#report-single-snps-single-isolate-py" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>usage: report_single_snps_single_isolate.py [options]
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Options:</dt>
+<dd><table class="first last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-m <var>MATRIX_IN</var></span>, <span class="option">--input_matrix=<var>MATRIX_IN</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>/path/to/isg_matrix [REQUIRED]</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">-g <var>GENOME_NAME</var></span>, <span class="option">--genome_name=<var>GENOME_NAME</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>genome to look for singleton SNPs [REQUIRED]</td></tr>
+</tbody>
+</table>
+</dd>
+</dl>
+<p>Output files:</p>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing"/>Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="usage.html" class="btn btn-neutral" title="Usage"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Darrin Lemmer.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.9.8',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
