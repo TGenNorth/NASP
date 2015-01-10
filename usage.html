@@ -12,6 +12,8 @@
 
   
   
+    <link rel="shortcut icon" href="_static/TGenLogo.ico"/>
+  
 
   
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
@@ -143,7 +145,11 @@ primarily internal functions of the nasp pipeline.</p>
 <div class="section" id="nasp">
 <span id="id1"></span><h2>nasp<a class="headerlink" href="#nasp" title="Permalink to this headline">¶</a></h2>
 <p>The first time you run <cite>nasp</cite> will typically be without arguments where it will ask you where your files are located and
-what kinds of analyses you want to run. These details will be saved to a [run-name]-config.xml file in the output folder.
+what kinds of analyses you want to run.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">nasp</span>
+</pre></div>
+</div>
+<p>These details will be saved to a [run-name]-config.xml file in the output folder.
 After the first run, you can use this configuration to repeat or modify the analysis without going through the
 prompts.:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">nasp</span> <span class="o">--</span><span class="n">config</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="p">[</span><span class="n">run</span><span class="o">-</span><span class="n">name</span><span class="p">]</span><span class="o">-</span><span class="n">config</span><span class="o">.</span><span class="n">xml</span>
@@ -288,8 +294,8 @@ What is the minimum acceptable proportion [0.9]?
 </pre></div>
 </div>
 <p>In addition to the statistics, bestsnp, missing data, and master matrices, vcf_to_matrix, will create withallrefpos
-matrices in the output <cite>matrices/</cite> folder. See <a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> for output details.:</p>
-<div class="highlight-python"><div class="highlight"><pre>Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]?
+matrices in the output <cite>matrices/</cite> folder. See <a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> for output details.</p>
+<div class="highlight-python" id="create-withallrefpos-matrix-prompt"><div class="highlight"><pre>Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]?
 </pre></div>
 </div>
 </div>
@@ -399,20 +405,33 @@ INPUT_FILES is a list of file paths</td></tr>
 </table>
 <div class="section" id="matrices">
 <h3>Matrices<a class="headerlink" href="#matrices" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> will write the following matrices to the output matrices/ folder in tsv, snpfasta, and vcf formats:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="24%" />
+<col width="76%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Matrix</th>
+<th class="head">Meaning</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Master Matrix</td>
+<td>All positions</td>
+</tr>
+<tr class="row-odd"><td>Withallrefpos</td>
+<td>Positions that passed the <a class="reference internal" href="#general-stats">General Stats</a> quality_breadth filter <a href="#id16"><span class="problematic" id="id17"><span id="id3"></span>[3]_</span></a></td>
+</tr>
+<tr class="row-even"><td>Best SNP</td>
+<td>SNPs that passed the <a class="reference internal" href="#general-stats">General Stats</a> quality_breadth filter</td>
+</tr>
+<tr class="row-odd"><td>Missing Data</td>
+<td>Positions that passed the <a class="reference internal" href="#general-stats">General Stats</a> quality_breadth filter</td>
+</tr>
+</tbody>
+</table>
 <a class="reference internal image-reference" href="_images/MatricesVennDiagram.png"><img alt="vcf_to_matrix output matrices venn diagram" class="align-right" src="_images/MatricesVennDiagram.png" style="width: 50%;" /></a>
-<p><a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> will create the following matrices in the output matrices/ folder:</p>
-<ul class="simple">
-<li>master_matrix.tsv</li>
-<li>bestsnp_matrix.tsv</li>
-<li>bestsnp_matrix.snpfasta</li>
-<li>bestsnp_matrix.vcf</li>
-<li>missingdata_matrix.tsv</li>
-<li>missingdata_matrix.snpfasta</li>
-<li>missingdata_matrix.vcf</li>
-<li>withallrefpos_matrix.tsv</li>
-<li>withallrefpos_matrix.snpfasta</li>
-<li>withallrefpos_matrix.vcf</li>
-</ul>
 <dl class="docutils">
 <dt>The conventions used for what data is stored are as follows:</dt>
 <dd><dl class="first last docutils">
@@ -434,19 +453,11 @@ INPUT_FILES is a list of file paths</td></tr>
 </ul>
 </dd>
 <dt>Filters:</dt>
-<dd><ul class="first last">
-<li><p class="first">Y:  This position passed its filter.</p>
-</li>
-<li><p class="first">N:  This position failed its filter.</p>
-</li>
-<li><p class="first">?:  The filter could not be checked, and so the position is assumed to have failed.</p>
-</li>
-<li><dl class="first docutils">
-<dt>-:  The filter was not applicable, or skipped, or could not be checked for a known reason,</dt>
-<dd><p class="first last">and so is assumed to have passed.</p>
-</dd>
-</dl>
-</li>
+<dd><ul class="first last simple">
+<li>Y:  This position passed its filter.</li>
+<li>N:  This position failed its filter.</li>
+<li>?:  The filter could not be checked, and so the position is assumed to have failed.</li>
+<li><cite>-</cite>:  The filter was not applicable, or skipped, or could not be checked for a known reason, and so is assumed to have passed.</li>
 </ul>
 </dd>
 </dl>
@@ -458,7 +469,7 @@ INPUT_FILES is a list of file paths</td></tr>
 <p><a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> collects sample analysis statistics and stores them as TSV files in the output statistics/ folder.
 The tables below list and describe their columns.</p>
 <p>General Stats include statistics gathered for all samples relative to the reference genome.</p>
-<table border="1" class="docutils">
+<table border="1" class="docutils" id="general-stats">
 <colgroup>
 <col width="27%" />
 <col width="73%" />
@@ -470,13 +481,13 @@ The tables below list and describe their columns.</p>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>Contig</td>
-<td>The contig name.</td>
+<td>The contig name defined by its source file.</td>
 </tr>
 <tr class="row-odd"><td>reference_length</td>
-<td>Total number of positions found in the the reference contig.</td>
+<td>Total number of positions found in the the reference genome.</td>
 </tr>
 <tr class="row-even"><td>reference_clean</td>
-<td>Number of positions called A/C/G/T in the reference contig.</td>
+<td>Number of positions called A/C/G/T in the reference genome.</td>
 </tr>
 <tr class="row-odd"><td>reference_clean (%)</td>
 <td>Percentage of above.</td>
@@ -494,16 +505,16 @@ The tables below list and describe their columns.</p>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>all_passed_coverage</td>
-<td>Maximum number of positions that passed the coverage filter in all samples. <a class="footnote-reference" href="#id10" id="id3">[1]</a></td>
+<td>Number of positions that passed the coverage filter in all samples. <a class="footnote-reference" href="#id11" id="id5">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>all_passed_coverage (%)</td>
-<td>Maximum percent of positions that passed the coverage filter in all samples. <a class="footnote-reference" href="#id10" id="id4">[1]</a></td>
+<td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>all_passed_proportion</td>
-<td>Maximum number of positions that passed the proportion filter in all samples. <a class="footnote-reference" href="#id10" id="id5">[1]</a></td>
+<td>Maximum number of positions that passed the proportion filter in all samples. <a class="footnote-reference" href="#id11" id="id6">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>all_passed_proportion (%)</td>
-<td>Maximum percent of positions that passed the proportion filter in all samples. <a class="footnote-reference" href="#id10" id="id6">[1]</a></td>
+<td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>all_passed_consensus</td>
 <td>Number of positions where all analyses agreed for all samples.</td>
@@ -531,7 +542,7 @@ The tables below list and describe their columns.</p>
 </tr>
 </tbody>
 </table>
-<p>Sample Stats include analysis statistics for each sample.</p>
+<p>Sample Stats include statistics for each sample/analysis combination.</p>
 <table border="1" class="docutils">
 <colgroup>
 <col width="27%" />
@@ -544,7 +555,7 @@ The tables below list and describe their columns.</p>
 </thead>
 <tbody valign="top">
 <tr class="row-even"><td>Sample</td>
-<td>Sample name based on the source filename.</td>
+<td>Sample name based on the filename.</td>
 </tr>
 <tr class="row-odd"><td>Sample::Analysis</td>
 <td>Sample/Aligner/SNP Caller combination.</td>
@@ -556,19 +567,19 @@ The tables below list and describe their columns.</p>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>passed_coverage_filter</td>
-<td>Number of positions that passed the coverage filter. <a class="footnote-reference" href="#id10" id="id7">[1]</a></td>
+<td>Number of positions that passed the coverage filter. <a class="footnote-reference" href="#id11" id="id7">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>passed_coverage_filter (%)</td>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>passed_proportion_filter</td>
-<td>Number of positions that passed the proportion filter. <a class="footnote-reference" href="#id10" id="id8">[1]</a></td>
+<td>Number of positions that passed the proportion filter. <a class="footnote-reference" href="#id11" id="id8">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>passed_proportion_filter (%)</td>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>quality_breadth</td>
-<td>Number of positions called A/C/G/T and passed all filters. <a class="footnote-reference" href="#id10" id="id9">[1]</a></td>
+<td>Number of positions called A/C/G/T and passed all filters. <a class="footnote-reference" href="#id11" id="id9">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>quality_breadth (%)</td>
 <td>Percentage of above.</td>
@@ -586,22 +597,34 @@ The tables below list and describe their columns.</p>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>called_dgen</td>
-<td>Number of positions not called A/C/G/T. Includes degeneracies, unknown, and uncalled</td>
+<td>Number of positions not called A/C/G/T. <a class="footnote-reference" href="#id12" id="id10">[2]</a></td>
 </tr>
 <tr class="row-odd"><td>called_dgen (%)</td>
 <td>Percentage of above.</td>
 </tr>
 </tbody>
 </table>
-<table class="docutils footnote" frame="void" id="id10" rules="none">
+<table class="docutils footnote" frame="void" id="id11" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id3">1</a>, <a class="fn-backref" href="#id4">2</a>, <a class="fn-backref" href="#id5">3</a>, <a class="fn-backref" href="#id6">4</a>, <a class="fn-backref" href="#id7">5</a>, <a class="fn-backref" href="#id8">6</a>, <a class="fn-backref" href="#id9">7</a>)</em> If the filter could not be checked for a known reason, such as with a FASTA file, it is assumed to have passed.</td></tr>
+<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id5">1</a>, <a class="fn-backref" href="#id6">2</a>, <a class="fn-backref" href="#id7">3</a>, <a class="fn-backref" href="#id8">4</a>, <a class="fn-backref" href="#id9">5</a>)</em> If the filter could not be checked for a known reason, such as with a FASTA file, it is assumed to have passed.</td></tr>
 </tbody>
 </table>
-<p>The tables below show a sample of the out put based on the example data.</p>
-<table border="1" class="docutils" id="id11">
-<caption><span class="caption-text">general_stats.tsv</span><a class="headerlink" href="#id11" title="Permalink to this table">¶</a></caption>
+<table class="docutils footnote" frame="void" id="id12" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id10">[2]</a></td><td>Includes degeneracies, unknown, and uncalled</td></tr>
+</tbody>
+</table>
+<p>The pseudo-flowcharts below reflect relationships between the statistics where each terminal node is a statistics column.
+Click the image to view it in detail.</p>
+<a class="reference internal image-reference" href="_images/StatisticsFlowchart.png"><img alt="Relationship flowchart between the statistics" src="_images/StatisticsFlowchart.png" style="width: 99%;" /></a>
+<a class="reference internal image-reference" href="_images/StatisticsFlowchartFilters.png"><img alt="Relationship flowchart between the statistics filters" src="_images/StatisticsFlowchartFilters.png" style="width: 99%;" /></a>
+</div>
+<div class="section" id="example-statistics">
+<h3>Example Statistics<a class="headerlink" href="#example-statistics" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils" id="id13">
+<caption><span class="caption-text">general_stats.tsv</span><a class="headerlink" href="#id13" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="5%" />
 <col width="5%" />
@@ -692,8 +715,11 @@ The tables below list and describe their columns.</p>
 </tr>
 </tbody>
 </table>
-<table border="1" class="docutils" id="id12">
-<caption><span class="caption-text">sample_stats.tsv</span><a class="headerlink" href="#id12" title="Permalink to this table">¶</a></caption>
+<p>The [any] and [all] rows track statistics collected for any and all analysis combinations on each sample. The first two
+[any] and [all] rows are special because they track statistics collected for any and all analysis combinations for all
+samples.</p>
+<table border="1" class="docutils" id="id14">
+<caption><span class="caption-text">sample_stats.tsv</span><a class="headerlink" href="#id14" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="6%" />
 <col width="6%" />

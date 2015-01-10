@@ -12,7 +12,11 @@ nasp
 ----
 
 The first time you run `nasp` will typically be without arguments where it will ask you where your files are located and
-what kinds of analyses you want to run. These details will be saved to a [run-name]-config.xml file in the output folder.
+what kinds of analyses you want to run.::
+
+    nasp
+
+These details will be saved to a [run-name]-config.xml file in the output folder.
 After the first run, you can use this configuration to repeat or modify the analysis without going through the
 prompts.::
 
@@ -147,7 +151,11 @@ See vcf_to_matrix_ for commandline arguments you can pass to the MatrixGenerator
     Would you like to set advanced MatrixGenerator settings [N]?
 
 In addition to the statistics, bestsnp, missing data, and master matrices, vcf_to_matrix, will create withallrefpos
-matrices in the output `matrices/` folder. See vcf_to_matrix_ for output details.::
+matrices in the output `matrices/` folder. See vcf_to_matrix_ for output details.
+
+.. _create_withallrefpos_matrix_prompt:
+
+::
 
     Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]?
 
@@ -204,27 +212,34 @@ Options:
 --dto-file file  Path to a matrix_dto XML file that defines all the parameters.
 
 Matrices
-========
+~~~~~~~~
 
-.. TODO: Describe the relationship between the matrices.
+vcf_to_matrix_ will write the following matrices to the output matrices/ folder in tsv, snpfasta, and vcf formats:
+
++-----------------------+-------------------------------------------------------------------------+
+| Matrix                | Meaning                                                                 |
++=======================+=========================================================================+
+| Master Matrix         | All positions                                                           |
++-----------------------+-------------------------------------------------------------------------+
+| Withallrefpos         | Positions that passed the `General Stats`_ quality_breadth filter [3]_  |
++-----------------------+-------------------------------------------------------------------------+
+| Best SNP              | SNPs that passed the `General Stats`_ quality_breadth filter            |
++-----------------------+-------------------------------------------------------------------------+
+| Missing Data          | Positions that passed the `General Stats`_ quality_breadth filter       |
++-----------------------+-------------------------------------------------------------------------+
+
+.. NOTE: The double underscore is an anonymous link to the _create_withallrefpos_matrix_prompt anchor. This trick was
+    used so the anchor could be verbose, but not the displayed link. The anonymous reference should be kept close to its
+    target because it is order sensitive.
+
+.. __: _create_withallrefpos_matrix_prompt
+
+.. [3]: Created only if requested in the prompts__.
 
 .. image:: MatricesVennDiagram.png
    :alt: vcf_to_matrix output matrices venn diagram
-   :align: right
    :width: 50 %
-
-vcf_to_matrix_ will create the following matrices in the output matrices/ folder:
-
-- master_matrix.tsv
-- bestsnp_matrix.tsv
-- bestsnp_matrix.snpfasta
-- bestsnp_matrix.vcf
-- missingdata_matrix.tsv
-- missingdata_matrix.snpfasta
-- missingdata_matrix.vcf
-- withallrefpos_matrix.tsv
-- withallrefpos_matrix.snpfasta
-- withallrefpos_matrix.vcf
+   :align: right
 
 The conventions used for what data is stored are as follows:
     Genomes:
@@ -244,25 +259,28 @@ The conventions used for what data is stored are as follows:
         - Y:  This position passed its filter.
         - N:  This position failed its filter.
         - ?:  The filter could not be checked, and so the position is assumed to have failed.
-        - \-:  The filter was not applicable, or skipped, or could not be checked for a known reason,
-              and so is assumed to have passed.
+        - `-`:  The filter was not applicable, or skipped, or could not be checked for a known reason, and so is assumed to have passed.
 
 Statistics
-===========
+~~~~~~~~~~
 
 vcf_to_matrix_ collects sample analysis statistics and stores them as TSV files in the output statistics/ folder.
 The tables below list and describe their columns.
 
 General Stats include statistics gathered for all samples relative to the reference genome.
 
+.. Internal hyperlink target
+
+.. _General Stats:
+
 +--------------------------------+-------------------------------------------------------------------------------------+
 | general_stats.tsv              | Descriptions                                                                        |
 +================================+=====================================================================================+
-| Contig                         | The contig name.                                                                    |
+| Contig                         | The contig name defined by its source file.                                         |
 +--------------------------------+-------------------------------------------------------------------------------------+
-| reference_length               | Total number of positions found in the the reference contig.                        |
+| reference_length               | Total number of positions found in the the reference genome.                        |
 +--------------------------------+-------------------------------------------------------------------------------------+
-| reference_clean                | Number of positions called A/C/G/T in the reference contig.                         |
+| reference_clean                | Number of positions called A/C/G/T in the reference genome.                         |
 +--------------------------------+-------------------------------------------------------------------------------------+
 | reference_clean (%)            | Percentage of above.                                                                |
 +--------------------------------+-------------------------------------------------------------------------------------+
@@ -274,13 +292,13 @@ General Stats include statistics gathered for all samples relative to the refere
 +--------------------------------+-------------------------------------------------------------------------------------+
 | all_called (%)                 | Percentage of above.                                                                |
 +--------------------------------+-------------------------------------------------------------------------------------+
-| all_passed_coverage            | Maximum number of positions that passed the coverage filter in all samples. [1]_    |
+| all_passed_coverage            | Number of positions that passed the coverage filter in all samples. [1]_            |
 +--------------------------------+-------------------------------------------------------------------------------------+
-| all_passed_coverage (%)        | Maximum percent of positions that passed the coverage filter in all samples. [1]_   |
+| all_passed_coverage (%)        | Percentage of above.                                                                |
 +--------------------------------+-------------------------------------------------------------------------------------+
 | all_passed_proportion          | Maximum number of positions that passed the proportion filter in all samples. [1]_  |
 +--------------------------------+-------------------------------------------------------------------------------------+
-| all_passed_proportion (%)      | Maximum percent of positions that passed the proportion filter in all samples. [1]_ |
+| all_passed_proportion (%)      | Percentage of above.                                                                |
 +--------------------------------+-------------------------------------------------------------------------------------+
 | all_passed_consensus           | Number of positions where all analyses agreed for all samples.                      |
 +--------------------------------+-------------------------------------------------------------------------------------+
@@ -299,14 +317,14 @@ General Stats include statistics gathered for all samples relative to the refere
 | best_snps (%)                  | Percentage of above.                                                                |
 +--------------------------------+-------------------------------------------------------------------------------------+
 
-Sample Stats include analysis statistics for each sample.
+Sample Stats include statistics for each sample/analysis combination.
 
 .. TODO: explain the rows: [any], [all], and analysis
 
 +--------------------------------+-------------------------------------------------------------------------------------+
 | sample_stats.tsv               | Column Descriptions                                                                 |
 +================================+=====================================================================================+
-| Sample                         | Sample name based on the source filename.                                           |
+| Sample                         | Sample name based on the filename.                                                  |
 +--------------------------------+-------------------------------------------------------------------------------------+
 | Sample::Analysis               | Sample/Aligner/SNP Caller combination.                                              |
 +--------------------------------+-------------------------------------------------------------------------------------+
@@ -334,20 +352,40 @@ Sample Stats include analysis statistics for each sample.
 +--------------------------------+-------------------------------------------------------------------------------------+
 | called_snp (%)                 | Percentage of above.                                                                |
 +--------------------------------+-------------------------------------------------------------------------------------+
-| called_dgen                    | Number of positions not called A/C/G/T. Includes degeneracies, unknown, and uncalled|
+| called_dgen                    | Number of positions not called A/C/G/T. [2]_                                        |
 +--------------------------------+-------------------------------------------------------------------------------------+
 | called_dgen (%)                | Percentage of above.                                                                |
 +--------------------------------+-------------------------------------------------------------------------------------+
 
 .. [1] If the filter could not be checked for a known reason, such as with a FASTA file, it is assumed to have passed.
+.. [2] Includes degeneracies, unknown, and uncalled
 
-The tables below show a sample of the out put based on the example data.
+The pseudo-flowcharts below reflect relationships between the statistics where each terminal node is a statistics column.
+Click the image to view it in detail.
+
+.. NOTE: By setting the width to 99% the image will be as large as possible, yet still wrapped by link tags when rendered
+    as an HTML page so the user can click the image to view it in detail.
+
+.. image:: StatisticsFlowchart.png
+   :alt: Relationship flowchart between the statistics
+   :width: 99 %
+
+.. image:: StatisticsFlowchartFilters.png
+   :alt: Relationship flowchart between the statistics filters
+   :width: 99 %
+
+Example Statistics
+~~~~~~~~~~~~~~~~~~
 
 .. csv-table:: general_stats.tsv
    :header: "Contig", "reference_length", "reference_clean", "reference_clean (%)", "reference_duplicated", "reference_duplicated (%)", "all_called", "all_called (%)", "all_passed_coverage", "all_passed_coverage (%)", "all_passed_proportion", "all_passed_proportion (%)", "all_passed_consensus", "all_passed_consensus (%)", "quality_breadth", "quality_breadth (%)", "any_snps", "any_snps (%)", "best_snps", "best_snps (%)"
 
     "Whole Genome", "3977", "3977", "100.00%", "0", "0.00%", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3973", "99.90%", "5", "0.13%", "5", "0.13%"
     "500WT1_test", "3977", "3977", "100.00%", "0", "0.00%", "3974", "99.92%", "3974", "99.92%", "3973", "99.90%", "3973", "99.90%", "3973", "99.90%", "5", "0.13%", "5", "0.13%"
+
+The [any] and [all] rows track statistics collected for any and all analysis combinations on each sample. The first two
+[any] and [all] rows are special because they track statistics collected for any and all analysis combinations for all
+samples.
 
 .. csv-table:: sample_stats.tsv
    :header: "Sample", "Sample::Analysis", "was_called", "was_called (%)", "passed_coverage_filter", "passed_coverage_filter (%)", "passed_proportion_filter", "passed_proportion_filter (%)", "quality_breadth", "quality_breadth (%)", "called_reference", "called_reference (%)", "called_snp", "called_snp (%)", "called_degen", "called_degen (%)"
