@@ -48,7 +48,7 @@ def _parse_input_config(commandline_args):
 
     (matrix_parms, input_files) = matrix_DTO.parse_dto(commandline_args.dto_file)
     commandline_args.reference_fasta = matrix_parms['reference-fasta']
-    commandline_args.reference_dups = matrix_parms['reference-dups']
+    commandline_args.reference_dups = matrix_parms.get('reference-dups')
     commandline_args.matrix_folder = matrix_parms['matrix-folder']
     commandline_args.stats_folder = matrix_parms['stats-folder']
     commandline_args.minimum_coverage = int(

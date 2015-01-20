@@ -619,7 +619,7 @@ def begin(configuration):
     job_ids = []
     vcf_files = []
     franken_fastas = []
-    if configuration["find_dups"]:
+    if configuration["find_dups"] != "False":
         (job_id, dups_file) = _find_dups(configuration, index_job_id, reference)
         if job_id:
             job_ids.append(job_id)
