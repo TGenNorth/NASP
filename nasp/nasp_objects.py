@@ -827,7 +827,7 @@ class GenomeCollection(CollectionStatistics):
             matrix_format['linetowrite'] = "{0}\t{1}\t.\t".format(current_contig, str(current_pos))
         reference_call = self._reference.get_call(current_pos, None, current_contig)
         simplified_refcall = Genome.simple_call(reference_call)
-        fasta_pending_data['(Reference)'] = simplified_refcall
+        fasta_pending_data['Reference'] = simplified_refcall
         if simplified_refcall == 'N':
             current_pattern += 'N'
         else:
