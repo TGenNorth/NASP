@@ -1,14 +1,158 @@
 __author__ = 'jtravis'
 
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple
+from collections import namedtuple, OrderedDict, Counter
 import csv
+from struct import Struct
 
+
+def analyze_position(reference_position, dups_position, samples):
+    """
+    Args:
+        reference_position (SampleInfo):
+        dups_position (SampleInfo):
+        samples (list of SampleInfo):
+
+    Returns:
+        PositionInfo:
+    """
+    # TODO: Remove debugging print and threshold variables.
+    # print(reference_position.call, samples)
+    coverage_threshold = 10
+    proportion_threshold = .9
+    # call_data = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0,
+    # 'callstring': '', 'covstring': '', 'propstring': '', 'called': 0, 'passcov': 0, 'passprop': 0}
+    count = Counter({
+        # 'A': 0,
+        # 'C': 0,
+        # 'G': 0,
+        # 'T': 0,
+        # 'N': 0,
+        # 'indel': 0,
+        # 'snpcall': 0,
+        # 'indelcall': 0,
+        # 'refcall': 0,
+        'CallWasMade': '',
+        'PassedDepthFilter': '',
+        'PassedProportionFilter': '',
+        'Pattern': ''
+    })
+    # Assume true until proven otherwise.
+    # General Stats
+    is_reference_clean = reference_position.simple_call != 'N'
+    is_reference_duplicated = dups_position.call == '1'
+    is_all_called = True
+    is_all_passed_coverage = True
+    is_all_passed_proportion = True
+    is_consensus = True
+    is_quality_breadth = True
+    is_any_snps = True
+    is_best_snp = True
+    prev_sample_call = None
+
+    call_str = bytearray(reference_position.call, encoding='utf-8')
+
+
+
+    for sample in samples:
+        call_str.append(ord(sample.call))
+
+        if sample.call in ['X', 'N']:
+            count['CallWasMade'] += 'Y'
+        else:
+            count['CallWasMade'] += 'N'
+            is_all_called = False
+
+        # FIXME: sample.coverage/proportion is None check is wrong
+        if not sample.coverage is None and sample.coverage >= coverage_threshold:
+            count['PassedDepthFilter'] += 'Y'
+        else:
+            count['PassedDepthFilter'] += 'N'
+            is_all_passed_coverage = False
+
+        if not sample.proportion is None and sample.proportion >= proportion_threshold:
+            count['PassedProportionFilter'] += 'Y'
+        else:
+            count['PassedProportionFilter'] += 'N'
+            is_all_passed_proportion = False
+
+        # Samples have consensus if they all have the same call at the current position.
+        if prev_sample_call is None:
+            prev_sample_call = sample.simple_call
+        elif prev_sample_call != sample.simple_call:
+            # FIXME: all samples must also pass called, coverage, and proportion filters
+            is_consensus = False
+
+        count[sample.simple_call] += 1
+
+        # FIXME: sample.coverage/proportion check is wrong.
+        # TODO: Remove continue and use positive logic
+        # NOTE: The remaining sample analysis may be skipped.
+        if sample.simple_call in ['X', 'N'] or (sample.coverage and sample.coverage < coverage_threshold) or\
+                (sample.proportion and sample.proportion < proportion_threshold) or reference_position.simple_call == 'N'\
+                or dups_position.call == '1':
+            continue
+
+        if sample.call != reference_position.call:
+            count['any_snps'] += 1
+        else:
+            count['called_reference'] += 1
+            is_all_snps = False
+
+    return PositionInfo(
+        call_str=call_str,
+        is_all_called=is_all_called,
+        is_reference_duplicated=dups_position.call == '1',
+        is_consensus=is_consensus,
+        is_best_snp='',
+        called_reference=count['called_reference'],
+        num_A=count['A'],
+        num_C=count['C'],
+        num_G=count['G'],
+        num_T=count['T'],
+        num_N=count['N'],
+        any_snps=count['any_snps'],
+        CallWasMade=bytearray(count['CallWasMade'], encoding='utf-8'),
+        PassedDepthFilter=bytearray(count['PassedDepthFilter'], encoding='utf-8'),
+        PassedProportionFilter=bytearray(count['PassedProportionFilter'], encoding='utf-8'),
+        Pattern=bytearray(count['Pattern'], encoding='utf-8')
+    )
+
+
+def analyze_contig(reference_contig, dups_contig, sample_analyses, offset):
+    """
+    Args:
+        reference_contig (FastaContig):
+        dups_contig (FastaContig):
+        sample_analyses (tuple of SampleAnalysis):
+    """
+    # stats = Counter()
+    contigs = (sample_analysis.get_contig(reference_contig.name).positions for sample_analysis in sample_analyses)
+    # TODO: Remove debugging num_positions.
+    num_positions = 0
+    # Reference + N*SampleAnalysis calls + called_reference/A/C/G/T/N/any_snps + InDupRegion/SampleConsensus + N*SampleAnalyses*4 str patterns
+
+    string_pattern = str(len(sample_analyses)) + 's'
+    s = Struct('HHHHHHH??' + string_pattern*5)
+
+    # NOTE: The file must already exist.
+    # Open the file without truncating
+    with open('partial.nasp', 'r+b') as handle:
+        handle.seek(offset)
+        for position in map(analyze_position, reference_contig.positions, dups_contig.positions, zip(*contigs)):
+            print(position)
+            num_positions += 1
+            handle.write(s.pack(position.called_reference, position.num_A, position.num_C, position.num_G,
+                                position.num_T, position.num_N, position.any_snps, position.is_reference_duplicated,
+                                position.is_consensus, position.call_str, position.CallWasMade,
+                                position.PassedDepthFilter, position.PassedProportionFilter, position.Pattern))
+    return num_positions
+
+
+# PositionInfo is all the data collected for a single position across all the SampleAnalyses.
 PositionInfo = namedtuple('PositionInfo', [
-    # List of SampleInfo
-    'samples',
     #
-    'reference',
+    'call_str',
     # True if all samples called A/C/G/T
     'is_all_called',
     # True if reference call is in a duplicated region.
@@ -19,6 +163,7 @@ PositionInfo = namedtuple('PositionInfo', [
     'any_snps',
     # True if all sample calls differ from the reference and passed all the filters (coverage, proportion, consensus).
     'is_best_snp',
+    # Count of sample calls that match the reference.
     'called_reference',
     'num_A',
     'num_C',
@@ -44,6 +189,8 @@ PositionInfo = namedtuple('PositionInfo', [
 # ])
 class SampleInfo(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'proportion'])):
     """
+    SampleInfo is all the data collected for a single Sample position.
+
     Attributes:
         call (str): Nucleotide call at the current position
         is_called (bool): True if call != X (no call) or N (any call)
@@ -91,8 +238,18 @@ class SampleInfo(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'p
         return simple_base
 
 
-class Sample(metaclass=ABCMeta):
+class SampleAnalysis(metaclass=ABCMeta):
     def __init__(self, filepath, name, aligner, snpcaller):
+        """
+        A SampleAnalysis represents a file composed of DNA Contigs.
+
+        Args:
+            filepath (str): Path to the SampleAnalysis file.
+            name (str): Name of the Sample.
+            aligner (str): Name of the aligner program used to create this analysis.
+            snpcaller (str): Name of the snpcaller program used to create this analysis.
+        """
+        # TODO: Replace aligner and snpcaller with *args.
         self._filepath = filepath
         self._name = name
         self._aligner = aligner
@@ -107,51 +264,107 @@ class Sample(metaclass=ABCMeta):
         """
         return "{0}::{1},{2}".format(self._name, self._aligner, self._snpcaller)
 
-    @abstractmethod
-    def get_contig(self, contig_name):
-        """
-        Returns:
-            generator: Yields SampleInfo at every position.
-        """
-        pass
+    # @property
+    # @abstractmethod
+    # def contigs(self):
+    #     """
+    #     The contigs property is used to iterate over the reference contigs. It is not needed for any other SampleAnalysis.
+    #
+    #     Return:
+    #         Contig generator: All the contigs in the SampleAnalysis
+    #     """
+    #     pass
 
     @abstractmethod
-    def _index_contigs(self):
-        pass
-
-
-class Vcf(Sample):
-    def __init__(self, filepath, name, aligner, snpcaller):
-        super(Vcf, self).__init__(filepath, name, aligner, snpcaller)
-
     def get_contig(self, contig_name):
         """
         Return a Contig instance for a contig with the given name.
 
         Args:
-            contig_name (str): Name of contig to retrieve.
+            name (str): Name of contig to retrieve.
+
+        Returns:
+            Contig or EmptyContig: Contig if the contig exists, otherwise an EmptyContig.
+        """
+        pass
+
+    @abstractmethod
+    def _index_contigs(self):
+        """
+        Build an index of all the contigs in the SampleAnalysis.
+        """
+        pass
+
+    def __repr__(self):
+        return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self._filepath, self._name, self._aligner, self._snpcaller)
+
+
+class Vcf(SampleAnalysis):
+
+    def __init__(self, filepath, name, aligner, snpcaller):
+        """
+        A Vcf represents a Variant Call Format file.
+
+        TODO: is name and _sample_name the same thing?
+
+        Args:
+            filepath (str): Path to Vcf file.
+            name (str): Name of the sample.
+            aligner (str): Name of the aligner used to create this file.
+            snpcaller (str): Name of the snpcaller used to create this file.
+
+        Attributes:
+            _sample_name: Name of the sample as read from the header following the FORMAT column.
+        """
+        # _sample_name is declared before super because it is initialized when super calls _index_contigs.
+        # It is declared here to avoid a hidden attribute.
+        self._sample_name = None
+        super(Vcf, self).__init__(filepath, name, aligner, snpcaller)
+
+    # @property
+    # def contigs(self):
+    #     """
+    #     Return:
+    #         Contig generator: All the contigs in the SampleAnalysis
+    #     """
+    #     return (VcfContig(contig_name, self._sample_name, self._filepath, file_position) for contig_name, file_position in self._index.items())
+
+    def get_contig(self, name):
+        """
+        Return a Contig instance for a contig with the given name.
+
+        Args:
+            name (str): Name of contig to retrieve.
 
         Returns:
             VcfContig or EmptyContig: VcfContig if the contig exists, otherwise an EmptyContig.
         """
-        file_position = self._index.get(contig_name)
-        return VcfContig(contig_name, self._filepath, file_position) if file_position is not None else EmptyContig(contig_name)
+        file_position = self._index[name]
+        return VcfContig(name, self._sample_name, self._filepath, file_position) if file_position is not None else EmptyContig(name)
 
     def _index_contigs(self):
         """
+        Note:
+            If the file contains multiple contigs with the same name, all but the first will be ignored.
+            A multiple contigs error is not detected.
+
         Return:
             dict: A dictionary of contig names and their starting file position.
         """
-        index = {}
+        # An OrderedDict is not required, it is used here to be consistent with the Fasta class.
+        index = OrderedDict()
         file_position = 0
         with open(self._filepath) as handle:
             # Skip metadata and header
             for line in handle:
                 if line.startswith('#CHROM'):
+                    # FIXME: Add support for multiple samples
+                    # The sample columns follow the FORMAT column. Here is is assumed there is only one sample.
+                    self._sample_name = line.rstrip()[line.index('FORMAT')+len('FORMAT\t'):].split('\t', 1)[0]
                     break
             else:
                 # FIXME: use appropriate error
-                raise Exception('Mandatory header not found in ' + self._filepath)
+                raise Exception('Mandatory header not found in Vcf file:' + self._filepath)
             for line in handle:
                 contig_name = line[:line.index('\t')]
                 if contig_name not in index:
@@ -160,14 +373,29 @@ class Vcf(Sample):
         return index
 
 
-class Fasta(Sample):
+ContigIndex = namedtuple('ContigIndex', ['length', 'file_position'])
+
+
+class Fasta(SampleAnalysis):
 
     def __init__(self, filepath, name, aligner):
+        """
+        A Fasta represents a Fasta file.
+
+        Args:
+            filepath (str): Path to Vcf file.
+            name (str): Name of the sample.
+            aligner (str): Name of the aligner used to create this file.
+        """
         super(Fasta, self).__init__(filepath, name, aligner, None)
+
+    @property
+    def contigs(self):
+        return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath) for name, contig_index in self._index.items())
 
     def get_contig(self, contig_name):
         """
-        Return a Contig instance for a contig with the given name.
+        Return a Contig instance that can iterate over the positions for a contig with the given name.
 
         Args:
             contig_name (str): Name of contig to retrieve.
@@ -175,28 +403,70 @@ class Fasta(Sample):
         Returns:
             VcfContig or EmptyContig: VcfContig if the contig exists, otherwise an EmptyContig.
         """
-        file_position = self._index.get(contig_name)
-        return FastaContig(contig_name, file_position) if file_position else EmptyContig(contig_name)
+        contig_index = self._index.get(contig_name)
+        if contig_index is None:
+            return EmptyContig(contig_name)
+        return FastaContig(contig_name, contig_index.length, contig_index.file_position, self._filepath)
 
     def _index_contigs(self):
         """
+        It is assumed the fasta has the following format:
+
+            >contig_name [description]\n
+            GATC...
+            >contig_name [description]\n
+            GATC...
+
+        There may be blank lines between contigs and a contig sequence may only be broken by newline characters.
+
+        Note:
+            If the file contains multiple contigs with the same name, all but the last will be ignored.
+            A multiple contigs error is not detected.
+            TODO: Raise DuplicateContigNameError
+
         Return:
             dict: A dictionary of contig names and their starting file position.
         """
         with open(self._filepath) as handle:
-            index = {}
+            # OrderedDict is used so that the reference can iterate over its Contigs in the encountered file order.
+            index = OrderedDict()
+
+            # The entire contig block must be scanned in order to get both the file position and length.
+            # A contig name of None indicates this is the first contig block. There is no previous block to index.
+            contig_name = None
+            contig_len = 0
+            # contig_file_position marks the first base of the contig_name.
+            contig_file_position = 0
+            # file_position is a running counter for the file pointer since ftell() is disabled by the file iterator.
             file_position = 0
+
             for line in handle:
-                if line.startswith('>'):
-                    # It is assumed the fasta has the following format:
-                    # >contig_name [description]
-                    # GATC...
-                    # >contig_name [description]
-                    # GATC...
-                    contig_name = line.partition(' ')[0][1:]
-                    if contig_name not in index:
-                        index[contig_name] = file_position
                 file_position += len(line)
+                if line.startswith('>'):
+                    # TODO: Raise exception. There should never be two contigs with the same name.
+                    # if contig_name in index:
+                    #     raise Exception()
+
+                    # Starting a new Contig block. If there was a previous block we should be able to index it having
+                    # both the file position and length.
+                    if contig_name is not None:
+                        index[contig_name] = ContigIndex(length=contig_len, file_position=contig_file_position)
+
+                    # contig_name is everything between the '>' and the first whitespace character.
+                    # As a result it excludes the optional description.
+                    contig_name = line.partition(' ')[0][1:].rstrip()
+                    contig_file_position = file_position
+                    contig_len = 0
+                else:
+                    contig_len += len(line.rstrip())
+
+            # The end of the last contig block is marked by EOF instead of a new contig block so it is added to
+            # the index explicitly.
+            # TODO: Raise exception. There should never be two contigs with the same name.
+            # if contig_name in index:
+            #     raise Exception()
+            if contig_name is not None:
+                index[contig_name] = ContigIndex(length=contig_len, file_position=contig_file_position)
             return index
 
 
@@ -219,6 +489,9 @@ class Contig(metaclass=ABCMeta):
         """
         pass
 
+    def __repr__(self):
+        return "{0}({1!r})".format(self.__class__.__name__, self.name)
+
 
 class EmptyContig(Contig):
     """
@@ -240,25 +513,35 @@ class EmptyContig(Contig):
                 proportion=None,
             )
 
+    def __repr__(self):
+        return "{0}({1!r})".format(self.__class__.__name__, self.name)
+
 
 class FastaContig(Contig):
-    """
-    TODO: Add support for the .fai index format:
-    http://manpages.ubuntu.com/manpages/trusty/man5/faidx.5.html
 
-    FastaContig can be used to read frankenfastas, duplicates.txt, and the reference fasta.
-    """
-
-    def __init__(self, name, file_path, file_position=0):
+    def __init__(self, name, length, file_position, file_path):
         """
+        TODO: Add support for the .fai index format:
+        http://manpages.ubuntu.com/manpages/trusty/man5/faidx.5.html
+
+        FastaContig can be used to read frankenfastas, duplicates.txt, and the reference fasta.
+
         Attributes:
+            _name (str): The contig name defined in the fasta file.
+            _length (int): Length of the contig sequence. It is used to
             _file_path (str): Path to fasta file.
             _file_position (str): File position of the contig description as distinguished by a line starting with '>'
-            _name (str): The contig name defined in the fasta file.
         """
-        self._file_path = file_path
         self._name = name
+        self._length = length
+        self._file_path = file_path
         self._file_position = file_position
+
+    def __repr__(self):
+        return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self.name, self._length, self._file_position, self._file_path)
+
+    def __len__(self):
+        return self._length
 
     @property
     def name(self):
@@ -291,8 +574,8 @@ class FastaContig(Contig):
         with open(self._file_path) as handle:
             # Seek to the contig file position, read the name, and move to the first contig position.
             handle.seek(self._file_position)
-            # TODO: Strip description following the first whitespace?
-            self.contig_name = handle.readline().rstrip()[1:]
+            # # TODO: Strip description following the first whitespace?
+            # self.contig_name = handle.readline().rstrip()[1:]
             for line in handle:
                 # Discard newline character
                 line = line.rstrip()
@@ -313,18 +596,23 @@ class VcfContig(Contig):
     See http://samtools.github.io/hts-specs/VCFv4.2.pdf
     """
 
-    def __init__(self, name, num_samples, file_path, file_position=0):
+    def __init__(self, contig_name, sample_name, filepath, file_position):
         """
         Args:
-            file_path (str): Path to the VCF file.
-            file_positions (int): Seek offset from the beginning of the file to the first position of this contig.
-            sample_names (tuple):
-            index (int):
+            contig_name (str): Contig name from the #CHROM column
+            sample_name (str): Sample name header for the sample this contig represents.
+            filepath (str): Path to the VCF file.
+            file_position (int): Seek offset from the beginning of the file to the first position of this contig.
         """
-        self._name = name
-        self._num_samples = num_samples
-        self._file_path = file_path
+        self._name = contig_name
+        self._sample_name = sample_name
+        # FIXME: Support for multiple samples in a vcf is disabled. _num_samples should be the number of samples in the VCF.
+        self._num_samples = 1
+        self._filepath = filepath
         self._file_position = file_position
+
+    def __repr__(self):
+        return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self._name, self._sample_name, self._filepath, self._file_position)
 
     def _get_coverage(self, record):
         """
@@ -335,15 +623,15 @@ class VcfContig(Contig):
             int or 'PASS' or None:
         """
         sample_coverage = None
-        if record[self._name].get('DP') and record[self._name]['DP'].isdigit():
-            sample_coverage = int(record[self._name]['DP'])
+        if record[self._sample_name].get('DP') and record[self._sample_name]['DP'].isdigit():
+            sample_coverage = int(record[self._sample_name]['DP'])
         elif record['INFO'].get('DP') and record['INFO']['DP'].isdigit():
             sample_coverage = int(record['INFO']['DP']) / self._num_samples
         elif record['INFO'].get('ADP') and record['INFO']['ADP'].isdigit():
             sample_coverage = int(record['INFO']['ADP']) / self._num_samples
         # NASP output
-        elif 'FT' in record[self._name]:
-            failed_filters = record[self._name]['FT'].split(',')
+        elif 'FT' in record[self._sample_name]:
+            failed_filters = record[self._sample_name]['FT'].split(',')
             if 'CovFail' in failed_filters:
                 sample_coverage = -1
             elif 'PASS' in failed_filters or 'PropFail' in failed_filters:
@@ -362,19 +650,19 @@ class VcfContig(Contig):
             int or float or 'PASS' or None:
         """
         sample_proportion = None
-        if 'AD' in record[self._name]:
-            call_depths = record[self._name]['AD'].split(',')
+        if 'AD' in record[self._sample_name]:
+            call_depths = record[self._sample_name]['AD'].split(',')
             # gatk, reliable and documented
             if len(call_depths) > 1:
                 # The genotype (GT) may be phased (|), unphased (/).
-                alt_number = record[self._name]['GT'].split('|', 1)[0].split('/', 1)[0]
+                alt_number = record[self._sample_name]['GT'].split('|', 1)[0].split('/', 1)[0]
                 if alt_number.isdigit():
                     sample_proportion = int(call_depths[int(alt_number)]) / sample_coverage
                     # varscan, reliable and documented
             elif is_snp:
                 sample_proportion = int(call_depths[0]) / sample_coverage
-            elif not is_snp and 'RD' in record[self._name]:
-                sample_proportion = int(record[self._name]['RD']) / sample_coverage
+            elif not is_snp and 'RD' in record[self._sample_name]:
+                sample_proportion = int(record[self._sample_name]['RD']) / sample_coverage
         # solsnp, undocumented, no multi-sample support
         elif 'AR' in record['INFO']:
             sample_proportion = float(record['INFO']['AR'])
@@ -390,8 +678,8 @@ class VcfContig(Contig):
                 sample_proportion = ( int(call_depths[0]) + int(call_depths[1]) ) / (
                     sample_coverage * self._num_samples )
         # NASP output
-        elif 'FT' in record[self._name]:
-            failed_filters = record[self._name]['FT'].split(',')
+        elif 'FT' in record[self._sample_name]:
+            failed_filters = record[self._sample_name]['FT'].split(',')
             if 'PropFail' in failed_filters:
                 sample_proportion = -1
             elif 'PASS' in failed_filters:
@@ -439,7 +727,7 @@ class VcfContig(Contig):
                 "500WT1_test","320",".","G",".","714059",".","AN=1;DP=18490;MQ=59.72;MQ0=10","GT:DP:MLPSAC:MLPSAF","0:18423"
                 "500WT1_test","320",".","GTT","G","900848.97",".","AC=1;AF=1.00;AN=1;BaseQRankSum=1.732;DP=18490;FS=0.000;MLEAC=1;MLEAF=1.00;MQ=59.72;MQ0=0;MQRankSum=0.013;QD=24.36;ReadPosRankSum=0.538","GT:AD:DP:GQ:MLPSAC:MLPSAF:PL","1:1,16410:18355:99:1:1.00:900888,0"
         """
-        with open(self._file_path, 'r') as handle:
+        with open(self._filepath, 'r') as handle:
             position = 1
             fieldnames = []
             # Skip past the metadata to the header
@@ -449,6 +737,9 @@ class VcfContig(Contig):
                     # passed them.
                     fieldnames = line.strip().split('\t')
                     break
+            else:
+                # TODO: Raise an appropriate exception for a missing header.
+                raise Exception('VCF missing required header.')
 
             for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
                 # Stop iterating if a new contig has started.
@@ -498,11 +789,11 @@ class VcfContig(Contig):
                 #
                 # The row key 'NA00001' would have the following value:
                 # { 'GT': 0|0, 'GQ': 48, 'DP': 1, 'HQ': 51,51 }
-                row[self._name] = dict(zip(row['FORMAT'].split(':'), row[self._name].split(':')))
+                row[self._sample_name] = dict(zip(row['FORMAT'].split(':'), row[self._sample_name].split(':')))
 
                 # TODO: Handle '.' and VarScan special case. See VCFRecord._get_sample_call()
                 # Use the GT index to lookup the ALT allele for the sample. Strip all but the first character.
-                call = row['ALT'][int(row[self._name]['GT'].split('/', 1)[0].split('|', 1)[0])][:1]
+                call = row['ALT'][int(row[self._sample_name]['GT'].split('/', 1)[0].split('|', 1)[0])][:1]
                 coverage = self._get_coverage(row)
                 proportion = self._get_proportion(row, coverage, call != row['REF'])
 
@@ -517,6 +808,12 @@ class VcfContig(Contig):
 
                 # TODO: Is there a situation where the sample contig would be shorter than the reference?
                 # The generator could use a while loop to yield empty rows after the file is exhausted.
+                # while True:
+                #     yield SampleInfo(
+                #     call='X',
+                #     coverage=-1,
+                #     proportion=-1,
+                # )
 
 
 class MalformedInputFile(Exception):
@@ -537,54 +834,6 @@ class MalformedInputFile(Exception):
         return_value += "!"
         return return_value
 
-
-        # ReferenceCalls = namedtuple("ReferenceCalls", ['reference_call', 'duplicate_call'])
-        # {
-        #     contig_name: (file_position, length)
-        # }
-
-
-        # class Sample(metaclass=ABCMeta):
-        #     @property
-        #     @abstractmethod
-        #     def records(self):
-        #         """
-        #         Returns:
-        #             generator: Yields contig position information.
-        #         """
-        #         pass
-
-        # def index_fasta(filepath):
-        #     """
-        #     Indexes the file positions of all the contigs in the fasta file and returns a Fasta initialized with the indices.
-        #
-        #     Args:
-        #         filepath (str):
-        #
-        #     Returns:
-        #         Fasta:
-        #     """
-        #     with open(filepath, 'r') as handle:
-        #         index = {}
-        #         file_position = 0
-        #         for line in handle:
-        #             file_position += len(line)
-        #             if line.startswith('>'):
-        #                 index[line[1:].rstrip()] = file_position
-        #
-        #     print(index)
-        #
-        #     return Fasta(filepath, index)
-        #
-        # filepaths = ['/Users/jtravis/results/Washington_CQ3.fasta']
-        #
-        # cache_size = 80
-        #
-        # with ProcessPoolExecutor() as executor:
-        #     fastas = [fasta for fasta in executor.map(index_fasta, filepaths)]
-        #
-        #     for record in fastas[0].records:
-        #         print(record)
 
         # class ReferenceContig(FastaContig):
         #
