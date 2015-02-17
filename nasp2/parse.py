@@ -1,180 +1,8 @@
 __author__ = 'jtravis'
 
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple, OrderedDict, Counter
+from collections import namedtuple, OrderedDict
 import csv
-from struct import Struct
-
-
-def analyze_position(reference_position, dups_position, samples):
-    """
-    Args:
-        reference_position (SampleInfo):
-        dups_position (SampleInfo):
-        samples (list of SampleInfo):
-
-    Returns:
-        PositionInfo:
-    """
-    # TODO: Remove debugging print and threshold variables.
-    # print(reference_position.call, samples)
-    coverage_threshold = 10
-    proportion_threshold = .9
-    # call_data = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0,
-    # 'callstring': '', 'covstring': '', 'propstring': '', 'called': 0, 'passcov': 0, 'passprop': 0}
-    count = Counter({
-        # 'A': 0,
-        # 'C': 0,
-        # 'G': 0,
-        # 'T': 0,
-        # 'N': 0,
-        # 'indel': 0,
-        # 'snpcall': 0,
-        # 'indelcall': 0,
-        # 'refcall': 0,
-        'CallWasMade': '',
-        'PassedDepthFilter': '',
-        'PassedProportionFilter': '',
-        'Pattern': ''
-    })
-    # Assume true until proven otherwise.
-    # General Stats
-    is_reference_clean = reference_position.simple_call != 'N'
-    is_reference_duplicated = dups_position.call == '1'
-    is_all_called = True
-    is_all_passed_coverage = True
-    is_all_passed_proportion = True
-    is_consensus = True
-    is_quality_breadth = True
-    is_any_snps = True
-    is_best_snp = True
-    prev_sample_call = None
-
-    call_str = bytearray(reference_position.call, encoding='utf-8')
-
-
-
-    for sample in samples:
-        call_str.append(ord(sample.call))
-
-        if sample.call in ['X', 'N']:
-            count['CallWasMade'] += 'Y'
-        else:
-            count['CallWasMade'] += 'N'
-            is_all_called = False
-
-        # FIXME: sample.coverage/proportion is None check is wrong
-        if not sample.coverage is None and sample.coverage >= coverage_threshold:
-            count['PassedDepthFilter'] += 'Y'
-        else:
-            count['PassedDepthFilter'] += 'N'
-            is_all_passed_coverage = False
-
-        if not sample.proportion is None and sample.proportion >= proportion_threshold:
-            count['PassedProportionFilter'] += 'Y'
-        else:
-            count['PassedProportionFilter'] += 'N'
-            is_all_passed_proportion = False
-
-        # Samples have consensus if they all have the same call at the current position.
-        if prev_sample_call is None:
-            prev_sample_call = sample.simple_call
-        elif prev_sample_call != sample.simple_call:
-            # FIXME: all samples must also pass called, coverage, and proportion filters
-            is_consensus = False
-
-        count[sample.simple_call] += 1
-
-        # FIXME: sample.coverage/proportion check is wrong.
-        # TODO: Remove continue and use positive logic
-        # NOTE: The remaining sample analysis may be skipped.
-        if sample.simple_call in ['X', 'N'] or (sample.coverage and sample.coverage < coverage_threshold) or\
-                (sample.proportion and sample.proportion < proportion_threshold) or reference_position.simple_call == 'N'\
-                or dups_position.call == '1':
-            continue
-
-        if sample.call != reference_position.call:
-            count['any_snps'] += 1
-        else:
-            count['called_reference'] += 1
-            is_all_snps = False
-
-    return PositionInfo(
-        call_str=call_str,
-        is_all_called=is_all_called,
-        is_reference_duplicated=dups_position.call == '1',
-        is_consensus=is_consensus,
-        is_best_snp='',
-        called_reference=count['called_reference'],
-        num_A=count['A'],
-        num_C=count['C'],
-        num_G=count['G'],
-        num_T=count['T'],
-        num_N=count['N'],
-        any_snps=count['any_snps'],
-        CallWasMade=bytearray(count['CallWasMade'], encoding='utf-8'),
-        PassedDepthFilter=bytearray(count['PassedDepthFilter'], encoding='utf-8'),
-        PassedProportionFilter=bytearray(count['PassedProportionFilter'], encoding='utf-8'),
-        Pattern=bytearray(count['Pattern'], encoding='utf-8')
-    )
-
-
-def analyze_contig(reference_contig, dups_contig, sample_analyses, offset):
-    """
-    Args:
-        reference_contig (FastaContig):
-        dups_contig (FastaContig):
-        sample_analyses (tuple of SampleAnalysis):
-    """
-    # stats = Counter()
-    contigs = (sample_analysis.get_contig(reference_contig.name).positions for sample_analysis in sample_analyses)
-    # TODO: Remove debugging num_positions.
-    num_positions = 0
-    # Reference + N*SampleAnalysis calls + called_reference/A/C/G/T/N/any_snps + InDupRegion/SampleConsensus + N*SampleAnalyses*4 str patterns
-
-    string_pattern = str(len(sample_analyses)) + 's'
-    s = Struct('HHHHHHH??' + string_pattern*5)
-
-    # NOTE: The file must already exist.
-    # Open the file without truncating
-    with open('partial.nasp', 'r+b') as handle:
-        handle.seek(offset)
-        for position in map(analyze_position, reference_contig.positions, dups_contig.positions, zip(*contigs)):
-            print(position)
-            num_positions += 1
-            handle.write(s.pack(position.called_reference, position.num_A, position.num_C, position.num_G,
-                                position.num_T, position.num_N, position.any_snps, position.is_reference_duplicated,
-                                position.is_consensus, position.call_str, position.CallWasMade,
-                                position.PassedDepthFilter, position.PassedProportionFilter, position.Pattern))
-    return num_positions
-
-
-# PositionInfo is all the data collected for a single position across all the SampleAnalyses.
-PositionInfo = namedtuple('PositionInfo', [
-    #
-    'call_str',
-    # True if all samples called A/C/G/T
-    'is_all_called',
-    # True if reference call is in a duplicated region.
-    'is_reference_duplicated',
-    # True if all sample calls match.
-    'is_consensus',
-    # Count of sample calls that differ from the reference.
-    'any_snps',
-    # True if all sample calls differ from the reference and passed all the filters (coverage, proportion, consensus).
-    'is_best_snp',
-    # Count of sample calls that match the reference.
-    'called_reference',
-    'num_A',
-    'num_C',
-    'num_G',
-    'num_T',
-    'num_N',
-    'CallWasMade',
-    'PassedDepthFilter',
-    'PassedProportionFilter',
-    'Pattern'
-])
 
 
 # SampleInfo = namedtuple('SampleInfo', [
@@ -206,6 +34,7 @@ class SampleInfo(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'p
         """
         return super().__new__(cls, call=call, simple_call=cls.simple_call(call), **sample_info)
 
+    # TODO: Remove allow_x and allow_del parameters
     # NOTE: There are a lot of samples, does attaching this method add a lot of accumulative weight?
     @staticmethod
     def simple_call(dna_string, allow_x=False, allow_del=False):
@@ -245,20 +74,34 @@ class SampleAnalysis(metaclass=ABCMeta):
 
         Args:
             filepath (str): Path to the SampleAnalysis file.
-            name (str): Name of the Sample.
+            name (str): Name of the sample.
             aligner (str): Name of the aligner program used to create this analysis.
             snpcaller (str): Name of the snpcaller program used to create this analysis.
         """
-        # TODO: Replace aligner and snpcaller with *args.
         self._filepath = filepath
-        self._name = name
+        # TODO: Remove rsplit if the name property in the matrix_dto.xml no longer includes the suffix.
+        # Strip the '-aligner-snpcaller' suffix if it exists.
+        self._name = name.rsplit('-', 2)[0]
         self._aligner = aligner
         self._snpcaller = snpcaller
         self._index = self._index_contigs()
 
     @property
+    def name(self):
+        """
+        Return
+            str: The sample name which may be shared by many SampleAnalyses.
+        """
+        return self._name
+
+    @property
     def identifier(self):
         """
+        A label for the user to identify a SampleAnalysis amidst others for the same sample.
+
+        Note:
+            While it should not happen, there are no guards against two SampleAnalyses having the same identifier.
+
         Returns:
             str: sample_name::aligner,snpcaller
         """
@@ -268,7 +111,8 @@ class SampleAnalysis(metaclass=ABCMeta):
     # @abstractmethod
     # def contigs(self):
     #     """
-    #     The contigs property is used to iterate over the reference contigs. It is not needed for any other SampleAnalysis.
+    #     The contigs property is used to iterate over the reference contigs.
+    #     It is not needed for any other SampleAnalysis.
     #
     #     Return:
     #         Contig generator: All the contigs in the SampleAnalysis
@@ -291,7 +135,8 @@ class SampleAnalysis(metaclass=ABCMeta):
     @abstractmethod
     def _index_contigs(self):
         """
-        Build an index of all the contigs in the SampleAnalysis.
+        Build an index of file positions for all the contigs in the SampleAnalysis. The file is scanned once so that the
+        Contigs returned by `get_contig` can seek straight to the file position of their base.
         """
         pass
 
@@ -508,7 +353,7 @@ class EmptyContig(Contig):
     def positions(self):
         while True:
             yield SampleInfo(
-                call='X',
+                call='?',
                 coverage=None,
                 proportion=None,
             )
@@ -589,6 +434,8 @@ class FastaContig(Contig):
                         proportion='-',
                     )
 
+            # TODO: Yield empty positions when the contig is exhausted.
+
 
 # FIXME: Support for multiple samples in a vcf is disabled.
 class VcfContig(Contig):
@@ -613,6 +460,43 @@ class VcfContig(Contig):
 
     def __repr__(self):
         return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self._name, self._sample_name, self._filepath, self._file_position)
+
+    def _get_sample_call(self, record):
+        """
+        Args:
+            record (dict):
+
+        Note:
+            Has the side effect of modifying the `record` ALT key.
+        """
+
+        # REF is concatenated with ALT because the genotype (GT) allele values are indices for which ALT belongs
+        # to which sample with REF at index 0.
+        if record['ALT'] == '.':
+            record['ALT'] = [record['REF']]
+        else:
+            record['ALT'] = [record['REF']] + record['ALT'].split(',')
+
+        # FIXME indels
+        return_value = None
+        if len(record['ALT']) == 1:
+            return_value = record['ALT'][0]
+        # elif 'FORMAT' in self._current_record['global']:
+        if 'GT' in record[self._sample_name]:
+            alt_number = record[self._sample_name]['GT'].split('/', 1)[0].split('|', 1)[0]
+            if alt_number.isdigit():
+                return_value = record['ALT'][int(alt_number)]
+                # OMG varscan
+                if len(record['REF']) > 1 and (
+                            len(record['REF']) - 1 ) == len(return_value) and \
+                                record['REF'][:len(return_value)] != return_value and \
+                                record['REF'][-len(return_value):] == return_value:
+                    return_value = record['ALT'][0]
+
+        if return_value is not None:
+            return return_value[:1]
+
+        return return_value
 
     def _get_coverage(self, record):
         """
@@ -672,11 +556,9 @@ class VcfContig(Contig):
         elif 'DP4' in record['INFO']:
             call_depths = record['INFO']['DP4'].split(',')
             if is_snp:
-                sample_proportion = ( int(call_depths[2]) + int(call_depths[3]) ) / (
-                    sample_coverage * self._num_samples)
+                sample_proportion = (int(call_depths[2]) + int(call_depths[3])) / (sample_coverage * self._num_samples)
             else:
-                sample_proportion = ( int(call_depths[0]) + int(call_depths[1]) ) / (
-                    sample_coverage * self._num_samples )
+                sample_proportion = (int(call_depths[0]) + int(call_depths[1])) / (sample_coverage * self._num_samples)
         # NASP output
         elif 'FT' in record[self._sample_name]:
             failed_filters = record[self._sample_name]['FT'].split(',')
@@ -715,8 +597,8 @@ class VcfContig(Contig):
 
             >>> SampleInfo(
             >>>    call='X',
-            >>>    coverage=None,
-            >>>    proportion=None,
+            >>>    coverage='?',
+            >>>    proportion='?',
             >>> )
 
             If there are duplicate positions from indels, the generators skips past them.
@@ -759,16 +641,9 @@ class VcfContig(Contig):
                     position += 1
                     yield SampleInfo(
                         call='X',
-                        coverage=None,
-                        proportion=None,
+                        coverage='?',
+                        proportion='?',
                     )
-
-                # REF is concatenated with ALT because the genotype (GT) allele values are indices for which ALT belongs
-                # to which sample with REF at index 0.
-                if row['ALT'] == '.':
-                    row['ALT'] = [row['REF']]
-                else:
-                    row['ALT'] = [row['REF']] + row['ALT'].split(',')
 
                 # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
                 # { 'NS': '3', 'DP': '4', 'AF': '0.5', 'DB': None, 'H2': None }
@@ -793,9 +668,12 @@ class VcfContig(Contig):
 
                 # TODO: Handle '.' and VarScan special case. See VCFRecord._get_sample_call()
                 # Use the GT index to lookup the ALT allele for the sample. Strip all but the first character.
-                call = row['ALT'][int(row[self._sample_name]['GT'].split('/', 1)[0].split('|', 1)[0])][:1]
+                # call = row['ALT'][int(row[self._sample_name]['GT'].split('/', 1)[0].split('|', 1)[0])][:1]
+                call = self._get_sample_call(row)
                 coverage = self._get_coverage(row)
                 proportion = self._get_proportion(row, coverage, call != row['REF'])
+
+                print(row)
 
                 # Yield the position.
                 position += 1
@@ -806,14 +684,14 @@ class VcfContig(Contig):
                     proportion=proportion,
                 )
 
-                # TODO: Is there a situation where the sample contig would be shorter than the reference?
-                # The generator could use a while loop to yield empty rows after the file is exhausted.
-                # while True:
-                #     yield SampleInfo(
-                #     call='X',
-                #     coverage=-1,
-                #     proportion=-1,
-                # )
+            # TODO: Is there a situation where the sample contig would be shorter than the reference?
+            # The generator could use a while loop to yield empty rows after the file is exhausted.
+            while True:
+                yield SampleInfo(
+                    call='?',
+                    coverage=None,
+                    proportion=None,
+                )
 
 
 class MalformedInputFile(Exception):
