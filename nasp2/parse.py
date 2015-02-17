@@ -417,10 +417,8 @@ class FastaContig(Contig):
             generator: Yields SampleInfo.
         """
         with open(self._file_path) as handle:
-            # Seek to the contig file position, read the name, and move to the first contig position.
+            # Seek to the file position of the first base of this contig.
             handle.seek(self._file_position)
-            # # TODO: Strip description following the first whitespace?
-            # self.contig_name = handle.readline().rstrip()[1:]
             for line in handle:
                 # Discard newline character
                 line = line.rstrip()
@@ -430,11 +428,18 @@ class FastaContig(Contig):
                 for call in line:
                     yield SampleInfo(
                         call=call,
-                        coverage='-',
-                        proportion='-',
+                        coverage=float('Infinity'),
+                        proportion=float('Infinity'),
                     )
 
-            # TODO: Yield empty positions when the contig is exhausted.
+        # FIXME: If the FastaContig is the reference, this while loop creates an infinite loop.
+        # Yield empty positions when the contig is exhausted.
+        # while True:
+        #     yield SampleInfo(
+        #         call='X',
+        #         coverage='?',
+        #         proportion='?',
+        #     )
 
 
 # FIXME: Support for multiple samples in a vcf is disabled.
@@ -481,17 +486,14 @@ class VcfContig(Contig):
         return_value = None
         if len(record['ALT']) == 1:
             return_value = record['ALT'][0]
-        # elif 'FORMAT' in self._current_record['global']:
-        if 'GT' in record[self._sample_name]:
-            alt_number = record[self._sample_name]['GT'].split('/', 1)[0].split('|', 1)[0]
-            if alt_number.isdigit():
-                return_value = record['ALT'][int(alt_number)]
-                # OMG varscan
-                if len(record['REF']) > 1 and (
-                            len(record['REF']) - 1 ) == len(return_value) and \
-                                record['REF'][:len(return_value)] != return_value and \
-                                record['REF'][-len(return_value):] == return_value:
-                    return_value = record['ALT'][0]
+        if 'GT' in record[self._sample_name] and record[self._sample_name]['GT'] != '.':
+            return_value = record['ALT'][int(record[self._sample_name]['GT'])]
+            # OMG varscan
+            # GTT TT
+            if len(record['REF']) > 1 and (len(record['REF']) - 1 ) == len(return_value) and \
+                            record['REF'][:len(return_value)] != return_value and \
+                            record['REF'][-len(return_value):] == return_value:
+                return_value = record['ALT'][0]
 
         if return_value is not None:
             return return_value[:1]
@@ -506,13 +508,16 @@ class VcfContig(Contig):
         Returns:
             int or 'PASS' or None:
         """
-        sample_coverage = None
+        sample_coverage = '-'
         if record[self._sample_name].get('DP') and record[self._sample_name]['DP'].isdigit():
             sample_coverage = int(record[self._sample_name]['DP'])
         elif record['INFO'].get('DP') and record['INFO']['DP'].isdigit():
             sample_coverage = int(record['INFO']['DP']) / self._num_samples
         elif record['INFO'].get('ADP') and record['INFO']['ADP'].isdigit():
             sample_coverage = int(record['INFO']['ADP']) / self._num_samples
+        # TODO: Deprecated? The coverage and proportion number was not included in the VCF's produced by NASP because it
+        # was thrown away after the file was read. The information is still available with the new parser so the actual
+        # value may be used instead.
         # NASP output
         elif 'FT' in record[self._sample_name]:
             failed_filters = record[self._sample_name]['FT'].split(',')
@@ -531,18 +536,15 @@ class VcfContig(Contig):
             is_snp (bool):
 
         Returns:
-            int or float or 'PASS' or None:
+            float or 'PASS' or None:
         """
-        sample_proportion = None
+        sample_proportion = '-'
         if 'AD' in record[self._sample_name]:
             call_depths = record[self._sample_name]['AD'].split(',')
             # gatk, reliable and documented
-            if len(call_depths) > 1:
-                # The genotype (GT) may be phased (|), unphased (/).
-                alt_number = record[self._sample_name]['GT'].split('|', 1)[0].split('/', 1)[0]
-                if alt_number.isdigit():
-                    sample_proportion = int(call_depths[int(alt_number)]) / sample_coverage
-                    # varscan, reliable and documented
+            if len(call_depths) > 1 and record[self._sample_name]['GT'] != '.':
+                sample_proportion = int(call_depths[int(record[self._sample_name]['GT'])]) / sample_coverage
+                # varscan, reliable and documented
             elif is_snp:
                 sample_proportion = int(call_depths[0]) / sample_coverage
             elif not is_snp and 'RD' in record[self._sample_name]:
@@ -559,6 +561,9 @@ class VcfContig(Contig):
                 sample_proportion = (int(call_depths[2]) + int(call_depths[3])) / (sample_coverage * self._num_samples)
             else:
                 sample_proportion = (int(call_depths[0]) + int(call_depths[1])) / (sample_coverage * self._num_samples)
+        # TODO: Deprecated? The coverage and proportion number was not included in the VCF's produced by NASP because it
+        # was thrown away after the file was read. The information is still available with the new parser so the actual
+        # value may be used instead.
         # NASP output
         elif 'FT' in record[self._sample_name]:
             failed_filters = record[self._sample_name]['FT'].split(',')
@@ -666,19 +671,19 @@ class VcfContig(Contig):
                 # { 'GT': 0|0, 'GQ': 48, 'DP': 1, 'HQ': 51,51 }
                 row[self._sample_name] = dict(zip(row['FORMAT'].split(':'), row[self._sample_name].split(':')))
 
-                # TODO: Handle '.' and VarScan special case. See VCFRecord._get_sample_call()
-                # Use the GT index to lookup the ALT allele for the sample. Strip all but the first character.
-                # call = row['ALT'][int(row[self._sample_name]['GT'].split('/', 1)[0].split('|', 1)[0])][:1]
+                # The genotype (GT) is an index to lookup the ALT allele for the sample.
+                # It may be phased (|), unphased (/), or neither. If the value is unavailable it is a '.'
+                if 'GT' in row[self._sample_name]:
+                    row[self._sample_name]['GT'] = row[self._sample_name]['GT'].split('|', 1)[0].split('/', 1)[0]
+
                 call = self._get_sample_call(row)
                 coverage = self._get_coverage(row)
-                proportion = self._get_proportion(row, coverage, call != row['REF'])
-
-                print(row)
+                # call != ref checks if the sample is a SNP. The ref may have more than one position if it's an indel.
+                proportion = self._get_proportion(row, coverage, call != row['REF'][:1])
 
                 # Yield the position.
                 position += 1
                 yield SampleInfo(
-                    # FIXME: call is a raw value from the ALT column
                     call=call,
                     coverage=coverage,
                     proportion=proportion,
@@ -688,9 +693,9 @@ class VcfContig(Contig):
             # The generator could use a while loop to yield empty rows after the file is exhausted.
             while True:
                 yield SampleInfo(
-                    call='?',
-                    coverage=None,
-                    proportion=None,
+                    call='X',
+                    coverage='?',
+                    proportion='?',
                 )
 
 

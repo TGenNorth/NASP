@@ -48,13 +48,7 @@ def analyze_position(reference_position, dups_position, samples):
     Returns:
         PositionInfo:
     """
-    # TODO: Remove debugging print and threshold variables.
-    print(reference_position.call, samples)
-    # print(reference_position.call, end=' ')
-    # for s in samples:
-    #     print(s.call, end='')
-    # print()
-
+    # TODO: Remove debugging threshold variables.
     coverage_threshold = 10.0
     proportion_threshold = .9
     # call_data = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0, 'indel': 0, 'snpcall': 0, 'indelcall': 0, 'refcall': 0,
@@ -101,16 +95,17 @@ def analyze_position(reference_position, dups_position, samples):
         else:
             count['CallWasMade'] += 'Y'
 
-        if sample.coverage is None:
-            count['PassedDepthFilter'] += '?'
-            is_pass_coverage = False
-            is_all_passed_coverage = False
-        elif sample.coverage == '?':
-            count['PassedDepthFilter'] += '?'
-            is_pass_coverage = False
-            is_all_passed_coverage = False
-        elif sample.coverage == '-':
+        # FIXME: coverage/proportion may be "PASS" if the value was not deprecated in the VCF contig parser.
+        # get_proportion/get_coverage
+
+        if sample.coverage is '-':
+            # Cannot determine proportion due to missing data.
             count['PassedDepthFilter'] += '-'
+        elif sample.coverage == '?':
+            # Missing VCF position.
+            count['PassedDepthFilter'] += '?'
+            is_pass_coverage = False
+            is_all_passed_coverage = False
         elif sample.coverage >= coverage_threshold:
             count['PassedDepthFilter'] += 'Y'
         else:
@@ -119,18 +114,13 @@ def analyze_position(reference_position, dups_position, samples):
             is_all_passed_coverage = False
 
         # Cannot determine proportion due to missing data.
-        if sample.proportion is None:
+        if sample.proportion is '-':
             count['PassedProportionFilter'] += '-'
-            # is_pass_proportion = False
-            # is_all_passed_proportion = False
         # Missing VCF position.
         elif sample.proportion == '?':
             count['PassedProportionFilter'] += '?'
             is_pass_proportion = False
             is_all_passed_proportion = False
-        # Cannot determine proportion from Fasta.
-        elif sample.proportion == '-':
-            count['PassedProportionFilter'] += 'Y'
         elif sample.proportion >= proportion_threshold:
             count['PassedProportionFilter'] += 'Y'
         else:
