@@ -489,7 +489,13 @@ class VcfContig(Contig):
         if 'GT' in record[self._sample_name] and record[self._sample_name]['GT'] != '.':
             return_value = record['ALT'][int(record[self._sample_name]['GT'])]
             # OMG varscan
-            # GTT TT
+            # Handles a scenerio such as this:
+            # +-----+-----+
+            # | REF | ALT |
+            # +-----+-----+
+            # | GTT | TT  |
+            # +-----+-----+
+            # TODO: clarify what the if statement is doing.
             if len(record['REF']) > 1 and (len(record['REF']) - 1 ) == len(return_value) and \
                             record['REF'][:len(return_value)] != return_value and \
                             record['REF'][-len(return_value):] == return_value:
