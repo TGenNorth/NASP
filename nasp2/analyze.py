@@ -1,6 +1,5 @@
 __author__ = 'jtravis'
 
-from concurrent.futures import ProcessPoolExecutor
 from collections import namedtuple, Counter
 from struct import Struct
 import itertools
@@ -38,6 +37,10 @@ PositionInfo = namedtuple('PositionInfo', [
 ])
 
 
+def analyze_sample():
+    pass
+
+
 def analyze_position(reference_position, dups_position, samples):
     """
     Args:
@@ -46,7 +49,7 @@ def analyze_position(reference_position, dups_position, samples):
         samples (list of SampleInfo): A single position from all the samples.
 
     Returns:
-        PositionInfo:
+        PositionInfo: All the information gathered
     """
     # TODO: Remove debugging threshold variables.
     coverage_threshold = 10.0
@@ -82,6 +85,8 @@ def analyze_position(reference_position, dups_position, samples):
     prev_sample_call = None
 
     call_str = bytearray(reference_position.call, encoding='utf-8')
+
+    return samples
 
     for sample in samples:
         is_pass_coverage = True
@@ -137,8 +142,8 @@ def analyze_position(reference_position, dups_position, samples):
 
         count[sample.simple_call] += 1
 
-        if sample.simple_call not in ['X', 'N'] and is_pass_coverage and is_pass_proportion and\
-                    reference_position.simple_call != 'N' and dups_position.call != '1':
+        if sample.simple_call not in ['X', 'N'] and is_pass_coverage and is_pass_proportion and \
+                        reference_position.simple_call != 'N' and dups_position.call != '1':
             if sample.call == reference_position.call:
                 count['called_reference'] += 1
             else:
@@ -173,7 +178,7 @@ def analyze_position(reference_position, dups_position, samples):
     )
 
 
-def analyze_contig(reference_contig, dups_contig, sample_analyses, offset):
+def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
     """
     analyze_contig expects reference_contig, dups_contig, and sample_analyses to represent the same contig.
     It reads all of their positions and writes their analysis to the outfile.
@@ -183,21 +188,57 @@ def analyze_contig(reference_contig, dups_contig, sample_analyses, offset):
         offset (int): File position to start writing analysis data.
         reference_contig (FastaContig):
         dups_contig (FastaContig):
-        sample_analyses (tuple of SampleAnalysis):
+        sample_groups (tuple of SampleAnalysis tuples): SampleAnalyses grouped by sample name.
 
     Returns:
         (str, collections.Counter): The contig name and statistics gathered across all the contig positions.
-    """
-    contigs = (sample_analysis.get_contig(reference_contig.name).positions for sample_analysis in sample_analyses)
 
-    string_pattern = str(len(sample_analyses)) + 's'
-    s = Struct('HHHHHHH?' + string_pattern*5)
+    Example:
+
+        sample_groups is the SampleAnalyses grouped by the name of the sample they are analyzing.
+
+        +----------------------------------------------------------------------------+
+        |            Sample Group              |           Sample Group              |
+        +======================================+=====================================+
+        |  Sample Analysis | Sample Analysis   |  Sample Analysis | Sample Analysis  |
+        +--------------------------------------+-------------------------------------+
+
+        contig_groups is a mirror of sample_groups with each SampleAnalysis replaced
+        with a contig position generator corresponding to the reference contig.
+
+        +----------------------------------------------------------------------------+
+        |            Sample Group              |            Sample Group             |
+        +======================================+=====================================+
+        | contig_positions | contig_positions  | contig_positions | contig_positions |
+        +--------------------------------------+-------------------------------------+
+    """
+    # sample_groups is converted to contig_groups by calling get_contig() on each SampleAnalysis.
+    contig_groups = tuple(
+        tuple(map(lambda sample_analysis: sample_analysis.get_contig(reference_contig.name).positions, sample_group))\
+        for sample_group in sample_groups
+    )
+
+    for contig_group in contig_groups:
+        map(analyze_sample, contig_group)
+        for contig in contig_group:
+            print(next(contig))
+    exit(1)
+
+    for x in map(analyze_position, reference_contig.positions, dups_contig.positions, zip(*contig_groups)):
+        print([z for z in [y for y in x]])
+    exit(1)
+
+    # TODO: Update len(sample_analyses) to be the number of SampleAnalyses in sample_groups
+    # string_pattern = str(len(sample_analyses)) + 's'
+    # s = Struct('HHHHHHH?' + string_pattern*5)
 
     # Open the file without truncating. The file must already exist.
     with open('partial.nasp', 'r+b') as handle:
         handle.seek(offset)
         contig_stats = Counter()
-        for position in map(analyze_position, reference_contig.positions, dups_contig.positions, zip(*contigs)):
+        for position in map(analyze_position, reference_contig.positions, dups_contig.positions, contigs):
+            # TODO: remove continue
+            continue
             contig_stats['reference_length'] += 1
             contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
             contig_stats['reference_duplicated'] += 1 if position.is_reference_duplicated else 0
@@ -212,46 +253,53 @@ def analyze_contig(reference_contig, dups_contig, sample_analyses, offset):
             # # TODO: Remove print
             # print(contig_stats['reference_length'], position)
             # if contig_stats['reference_length'] == 392:
-            #     exit(1)
+            # exit(1)
             #
             # foo=position.PassedProportionFilter
             # foo.append(ord('\n'))
             # handle.write(foo)
 
             # handle.write(s.pack(position.called_reference, position.num_A, position.num_C, position.num_G,
-            #                     position.num_T, position.num_N, position.any_snps, position.is_reference_duplicated,
+            # position.num_T, position.num_N, position.any_snps, position.is_reference_duplicated,
             #                     position.call_str, position.CallWasMade,
             #                     position.PassedDepthFilter, position.PassedProportionFilter, position.Pattern))
     return reference_contig.name, contig_stats
 
 
 def analyze_samples(reference_fasta, reference_dups, sample_analyses):
+    """
+    Args:
+        reference_fasta (Fasta):
+        reference_dups (Fasta):
+        sample_analyses (list of SampleAnalysis): The sample analysis are grouped by Sample.
+    """
     string_pattern = str(len(sample_analyses)) + 's'
-    s = Struct('HHHHHH?' + string_pattern*5)
+    s = Struct('HHHHHH?' + string_pattern * 5)
 
-    # for k, v in itertools.groupby(sample_analyses, lambda x: x.name):
-    #     print(k, v)
-    # exit(1)
+    # Group the analyses by sample name in order to collect sample-level statistics.
+    sample_groups = tuple(tuple(v) for _, v in itertools.groupby(sorted(sample_analyses, key=lambda x: x.name), lambda x: x.name))
 
     with open('partial.nasp', 'w') as handle:
         # handle.write('\t'.join((sample_analysis.identifier for sample_analysis in sample_analyses)) + '\n')
         # handle.write('\t'.join((contig.name for contig in matrix_parameters.reference_fasta.contigs)) + '\n')
         header_offset = handle.tell()
 
-    partial_file_positions = itertools.chain((header_offset,), (len(contig)*s.size for contig in reference_fasta.contigs))
+    partial_file_positions = itertools.chain((header_offset,),
+                                             (len(contig) * s.size for contig in reference_fasta.contigs))
 
 
 
     # with ProcessPoolExecutor() as executor:
-    #     for result in executor.map(analyze_contig, matrix_parameters.reference_fasta.contigs, matrix_parameters.reference_dups.contigs, itertools.repeat(sample_analyses), partial_file_positions):
-    #         print(result)
-    for result in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs, itertools.repeat(sample_analyses), partial_file_positions):
+    # for result in executor.map(analyze_contig, matrix_parameters.reference_fasta.contigs, matrix_parameters.reference_dups.contigs, itertools.repeat(sample_analyses), partial_file_positions):
+    # print(result)
+    for result in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs, itertools.repeat(sample_groups),
+                      partial_file_positions):
         print(result)
 
-    # with open('partial.nasp', 'br') as handle:
-    #     sample_analyses = str(handle.readline(), encoding='utf-8').rstrip().split('\t')
-    #     contigs = str(handle.readline(), encoding='utf-8').rstrip().split('\t')
-    #     print(sample_analyses)
-    #     print(contigs)
-    #     for chunk in iter(lambda: handle.read(s.size), b''):
-    #         print(s.unpack(chunk))
+        # with open('partial.nasp', 'br') as handle:
+        #     sample_analyses = str(handle.readline(), encoding='utf-8').rstrip().split('\t')
+        #     contigs = str(handle.readline(), encoding='utf-8').rstrip().split('\t')
+        #     print(sample_analyses)
+        #     print(contigs)
+        #     for chunk in iter(lambda: handle.read(s.size), b''):
+        #         print(s.unpack(chunk))
