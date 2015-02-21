@@ -29,9 +29,12 @@ setup(
     url='https://github.com/TGenNorth/nasp',
     packages=[
         'nasp',
+        'nasp2',
     ],
-    package_dir={'nasp':
-                 'nasp'},
+    package_dir={
+        'nasp': 'nasp',
+        'nasp2': 'nasp2'
+    },
     include_package_data=True,
     install_requires=requirements,
     license="Academic and Research License",
@@ -53,7 +56,8 @@ setup(
             'format_fasta = nasp.format_fasta:main',
             'find_duplicates = nasp.find_duplicates:main',
             'convert_external_genome = nasp.convert_external_genome:main',
-            'vcf_to_matrix = nasp.vcf_to_matrix:main'
+            'vcf_to_matrix = nasp.vcf_to_matrix:main',
+            'vtm = nasp2.vtm:main'
         ]
     },
     scripts = [

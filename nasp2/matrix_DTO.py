@@ -9,11 +9,12 @@ Created on April 3, 2014
 
 @author: dlemmer
 '''
-import logging
 from xml.etree import ElementTree
 from concurrent.futures import ProcessPoolExecutor
 from collections import namedtuple
+
 from nasp2.parse import Vcf, Fasta
+
 
 MatrixParameters = namedtuple('MatrixParameters', ['reference_fasta', 'reference_dups', 'minimum_coverage', 'minimum_proportion', 'matrix_folder', 'stats_folder', 'parameters', 'filter_matrix_format'])
 MatrixParameters.__new__.__defaults__ = ("", "", "", "", "", "", "")
