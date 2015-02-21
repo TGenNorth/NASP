@@ -1,3 +1,17 @@
+"""
+The parse module reads Fasta and Vcf files created using combinations of aligners and snpcallers.
+
+To minimize memory usage the files are read line by line.
+
+To compare the files, the formats are abstracted with an interface that creates the illusion that all files have all
+have corresponding contigs, positions, and data formats.
+
+The key to the interface is that the iterators yield information for each position even when there is no data and all
+the positions have the same format.
+
+
+"""
+
 __author__ = 'jtravis'
 
 from abc import ABCMeta, abstractmethod
@@ -68,9 +82,11 @@ class SampleInfo(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'p
 
 
 class SampleAnalysis(metaclass=ABCMeta):
+
     def __init__(self, filepath, name, aligner, snpcaller):
         """
-        A SampleAnalysis represents a file composed of DNA Contigs.
+        A SampleAnalysis represents a file composed of DNA Contigs for a specific aligner and snpcaller combination.
+        Multiple SampleAnalyses may be run on the same sample.
 
         Args:
             filepath (str): Path to the SampleAnalysis file.
@@ -85,6 +101,18 @@ class SampleAnalysis(metaclass=ABCMeta):
         self._aligner = aligner
         self._snpcaller = snpcaller
         self._index = self._index_contigs()
+
+    def __lt__(self, other):
+        """
+        __lt__ is used to sort SampleAnalyses before grouping by sample name.
+
+        Args:
+            other (SampleAnalysis):
+
+        Return
+            bool: True if the name of the sample this analysis represents is alphanumerically less than the `other`.
+        """
+        return self._name < other.name
 
     @property
     def name(self):
@@ -184,7 +212,7 @@ class Vcf(SampleAnalysis):
         Returns:
             VcfContig or EmptyContig: VcfContig if the contig exists, otherwise an EmptyContig.
         """
-        file_position = self._index[name]
+        file_position = self._index.get(name)
         return VcfContig(name, self._sample_name, self._filepath, file_position) if file_position is not None else EmptyContig(name)
 
     def _index_contigs(self):
@@ -339,10 +367,13 @@ class Contig(metaclass=ABCMeta):
 
 
 class EmptyContig(Contig):
-    """
-    EmptyContig is a placeholder that yields empty positions for a contig that does not exist in a Sample.
-    """
     def __init__(self, name):
+        """
+        EmptyContig is a placeholder that yields empty positions for a contig that does not exist in a SampleAnalysis.
+
+        Args:
+            name (str): Name of the contig.
+        """
         self._name = name
 
     @property
@@ -353,9 +384,9 @@ class EmptyContig(Contig):
     def positions(self):
         while True:
             yield SampleInfo(
-                call='?',
-                coverage=None,
-                proportion=None,
+                call='X',
+                coverage='?',
+                proportion='?',
             )
 
     def __repr__(self):
@@ -366,9 +397,6 @@ class FastaContig(Contig):
 
     def __init__(self, name, length, file_position, file_path):
         """
-        TODO: Add support for the .fai index format:
-        http://manpages.ubuntu.com/manpages/trusty/man5/faidx.5.html
-
         FastaContig can be used to read frankenfastas, duplicates.txt, and the reference fasta.
 
         Attributes:
@@ -390,16 +418,6 @@ class FastaContig(Contig):
 
     @property
     def name(self):
-        # """
-        # Returns:
-        #     str: The contig name.
-        # """
-        # if self._name is None:
-        #     # If undefined, read the contig name from the file.
-        #     with open(self._file_path) as handle:
-        #         handle.seek(self._file_position)
-        #         # TODO: Strip the description after the first whitespace character.
-        #         self._name = handle.readline().rstrip()[1:]
         return self._name
 
     @property
@@ -414,7 +432,8 @@ class FastaContig(Contig):
             GATC...
 
         Returns:
-            generator: Yields SampleInfo.
+            generator: Yields SampleInfo. Since a Fasta file has no coverage or proportion information it is assumed
+             all positions pass coverage and proportion.
         """
         with open(self._file_path) as handle:
             # Seek to the file position of the first base of this contig.
@@ -426,6 +445,7 @@ class FastaContig(Contig):
                 if line == "" or line.startswith('>'):
                     return
                 for call in line:
+                    # FIXME: Will having "infinite" values create problems later on?
                     yield SampleInfo(
                         call=call,
                         coverage=float('Infinity'),
@@ -495,7 +515,7 @@ class VcfContig(Contig):
             # +-----+-----+
             # | GTT | TT  |
             # +-----+-----+
-            # TODO: clarify what the if statement is doing.
+            # TODO: clarify what the if statement is doing for parsing varscan output.
             if len(record['REF']) > 1 and (len(record['REF']) - 1 ) == len(return_value) and \
                             record['REF'][:len(return_value)] != return_value and \
                             record['REF'][-len(return_value):] == return_value:
@@ -583,7 +603,7 @@ class VcfContig(Contig):
     def name(self):
         """
         Returns:
-            str: Contig name read from the header column this instance represents.
+            str: Contig name read from the #CHROM column.
         """
         return self._name
 
