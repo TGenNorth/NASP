@@ -29,7 +29,7 @@ import csv
 #     'proportion',
 #     # TODO: add quality_breadth
 # ])
-class SampleInfo(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'proportion'])):
+class Position(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'proportion'])):
     """
     SampleInfo is all the data collected for a single Sample position.
 
@@ -44,7 +44,7 @@ class SampleInfo(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'p
 
     def __new__(cls, call='X', simple_call='X', **sample_info):
         """
-        Set is_called based on the value of call
+        Set simple_call based on the value of call
         """
         return super().__new__(cls, call=call, simple_call=cls.simple_call(call), **sample_info)
 
@@ -344,6 +344,10 @@ class Fasta(SampleAnalysis):
 
 
 class Contig(metaclass=ABCMeta):
+    # An empty position represents gaps between positions or the sample contig is shorter than the
+    # reference contig.
+    EMPTY_POSITION = Position(call='X', coverage='?', proportion='?')
+
     @property
     @abstractmethod
     def name(self):
@@ -383,11 +387,7 @@ class EmptyContig(Contig):
     @property
     def positions(self):
         while True:
-            yield SampleInfo(
-                call='X',
-                coverage='?',
-                proportion='?',
-            )
+            yield self.EMPTY_POSITION
 
     def __repr__(self):
         return "{0}({1!r})".format(self.__class__.__name__, self.name)
@@ -446,7 +446,7 @@ class FastaContig(Contig):
                     return
                 for call in line:
                     # FIXME: Will having "infinite" values create problems later on?
-                    yield SampleInfo(
+                    yield Position(
                         call=call,
                         coverage=float('Infinity'),
                         proportion=float('Infinity'),
@@ -455,11 +455,7 @@ class FastaContig(Contig):
         # FIXME: If the FastaContig is the reference, this while loop creates an infinite loop.
         # Yield empty positions when the contig is exhausted.
         # while True:
-        #     yield SampleInfo(
-        #         call='X',
-        #         coverage='?',
-        #         proportion='?',
-        #     )
+        #     yield self.EMPTY_POSITION
 
 
 # FIXME: Support for multiple samples in a vcf is disabled.
@@ -618,7 +614,8 @@ class VcfContig(Contig):
             generator: Yields SampleInfo.
 
         Examples:
-            If there are gaps between positions, the generator returns a result equivalent to an empty/uncalled position.
+            If there are gaps between positions or the sample contig is shorter than the reference contig, the generator
+            yields values representing empty positions.
 
             .. csv-table:: Position Gaps
                 :header: #CHROM,POS,ID,REF,ALT,QUAL,FILTER,INFO,FORMAT,example_1_L001
@@ -626,7 +623,7 @@ class VcfContig(Contig):
                 "500WT1_test","320",".","GTT","G","900848.97",".","AC=1;AF=1.00;AN=1;BaseQRankSum=1.732;DP=18490;FS=0.000;MLEAC=1;MLEAF=1.00;MQ=59.72;MQ0=0;MQRankSum=0.013;QD=24.36;ReadPosRankSum=0.538","GT:AD:DP:GQ:MLPSAC:MLPSAF:PL","1:1,16410:18355:99:1:1.00:900888,0"
                 "500WT1_test","323",".","G",".","676339",".","AN=1;DP=18212;MQ=59.72;MQ0=9","GT:DP:MLPSAC:MLPSAF","0:18182"
 
-            >>> SampleInfo(
+            >>> Position(
             >>>    call='X',
             >>>    coverage='?',
             >>>    proportion='?',
@@ -670,11 +667,7 @@ class VcfContig(Contig):
                 # Yield empty rows to bridge position gaps.
                 while row['POS'] > position:
                     position += 1
-                    yield SampleInfo(
-                        call='X',
-                        coverage='?',
-                        proportion='?',
-                    )
+                    yield self.EMPTY_POSITION
 
                 # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
                 # { 'NS': '3', 'DP': '4', 'AF': '0.5', 'DB': None, 'H2': None }
@@ -709,20 +702,15 @@ class VcfContig(Contig):
 
                 # Yield the position.
                 position += 1
-                yield SampleInfo(
+                yield Position(
                     call=call,
                     coverage=coverage,
                     proportion=proportion,
                 )
 
-            # TODO: Is there a situation where the sample contig would be shorter than the reference?
-            # The generator could use a while loop to yield empty rows after the file is exhausted.
+            # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
             while True:
-                yield SampleInfo(
-                    call='X',
-                    coverage='?',
-                    proportion='?',
-                )
+                yield self.EMPTY_POSITION
 
 
 class MalformedInputFile(Exception):
