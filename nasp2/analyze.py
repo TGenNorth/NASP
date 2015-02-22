@@ -150,30 +150,32 @@ def analyze_position(reference_position, dups_position, samples):
     # - All analyses called and passed all filters.
     # - All samples have consensus within their aligner/snpcaller combinations.
     is_all_quality_breadth = True
-    # is_any_snps = True
     # General Stats quality breadth filter passes and all analyses are SNPs.
     is_best_snp = True
 
-    count = Counter({
-        # 'A': 0,
-        # 'C': 0,
-        # 'G': 0,
-        # 'T': 0,
-        # 'N': 0,
-        # 'indel': 0,
-        # 'snpcall': 0,
-        # 'indelcall': 0,
-        # 'refcall': 0,
+    # position_stats is a counter across all SampleAnalyses at the current position.
+    position_stats = Counter({
+        # TODO: verify 'N' represents NoCall, AnyCall, Deletion, etc.
+        # Tally of A/C/G/T calls where everything else is called N representing
+        # 'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0,
+
+        # The character at each position of the following strings indicates whether a corresponding SampleAnalysis
+        # passed the filter:
         'CallWasMade': '',
         'PassedDepthFilter': '',
         'PassedProportionFilter': '',
         'Pattern': ''
     })
+
+    # call_str
     call_str = bytearray(reference_position.call, encoding='utf-8')
 
+    # all_sample_stats is a list of sample_stats. It represents all the SampleAnalysis stats grouped by sample name.
     all_sample_stats = []
     for sample in samples:
-        # The first value is sample consensus. All following values are analysis stats dictionaries
+        # Except for the first entry, sample_stats is composed of analysis_stats dictionaries for each aligner/snpcaller
+        # combination used on the sample. The first entry is a special consensus boolean that is true if all the
+        # analyses had the same DNA base call at this position.
         # [is_consensus, analysis_stats, analysis_stats, analysis_stats, ...]
         sample_stats = [True]
         is_sample_consensus = True
@@ -196,55 +198,53 @@ def analyze_position(reference_position, dups_position, samples):
                 prev_analysis_call = analysis.simple_call
             elif prev_analysis_call != analysis.simple_call:
                 is_sample_consensus = False
+                is_all_passed_consensus = False
                 is_all_quality_breadth = False
 
             # X means no value, N means any value.
             if analysis.call in ['X', 'N']:
-                count['CallWasMade'] += 'N'
+                position_stats['CallWasMade'] += 'N'
                 analysis_stats['was_called'] = False
                 is_all_called = False
                 is_all_quality_breadth = False
             else:
-                count['CallWasMade'] += 'Y'
+                position_stats['CallWasMade'] += 'Y'
 
             # FIXME: coverage/proportion may be "PASS" if the value was not deprecated in the VCF contig parser.
             # get_proportion/get_coverage
 
-            try:
-                # Cannot determine proportion due to missing data.
-                if analysis.coverage is '-':
-                    count['PassedDepthFilter'] += '-'
-                # Missing VCF position.
-                elif analysis.coverage == '?':
-                    count['PassedDepthFilter'] += '?'
-                    analysis_stats['passed_coverage_filter'] = False
-                    is_all_passed_coverage = False
-                elif analysis.coverage >= coverage_threshold:
-                    count['PassedDepthFilter'] += 'Y'
-                else:
-                    count['PassedDepthFilter'] += 'N'
-                    analysis_stats['passed_proportion_filter'] = False
-                    is_all_passed_coverage = False
-            except:
-                a = 'a'
+            # Cannot determine proportion due to missing data.
+            if analysis.coverage is '-':
+                position_stats['PassedDepthFilter'] += '-'
+            # Missing VCF position.
+            elif analysis.coverage == '?':
+                position_stats['PassedDepthFilter'] += '?'
+                analysis_stats['passed_coverage_filter'] = False
+                is_all_passed_coverage = False
+            elif analysis.coverage >= coverage_threshold:
+                position_stats['PassedDepthFilter'] += 'Y'
+            else:
+                position_stats['PassedDepthFilter'] += 'N'
+                analysis_stats['passed_proportion_filter'] = False
+                is_all_passed_coverage = False
 
             # Cannot determine proportion due to missing data.
             if analysis.proportion is '-':
-                count['PassedProportionFilter'] += '-'
+                position_stats['PassedProportionFilter'] += '-'
             # Missing VCF position.
             elif analysis.proportion == '?':
-                count['PassedProportionFilter'] += '?'
+                position_stats['PassedProportionFilter'] += '?'
                 analysis_stats['passed_proportion_filter'] = False
                 is_all_passed_proportion = False
             elif analysis.proportion >= proportion_threshold:
-                count['PassedProportionFilter'] += 'Y'
+                position_stats['PassedProportionFilter'] += 'Y'
             else:
-                count['PassedProportionFilter'] += 'N'
+                position_stats['PassedProportionFilter'] += 'N'
                 analysis_stats['passed_proportion_filter'] = False
                 is_all_passed_proportion = False
 
-            # Count the number of A/C/G/T calls. Any other call is an N.
-            count[analysis.simple_call] += 1
+            # Count the number of A/C/G/T calls. Any other value is N. # See SampleInfo.simple_call()
+            position_stats[analysis.simple_call] += 1
 
             # TODO: Clarify the purpose of this if statement.
             # Only count significant measurements.
@@ -254,21 +254,22 @@ def analyze_position(reference_position, dups_position, samples):
                 analysis_stats['quality_breadth'] = True
 
                 if analysis.call in ['X', 'N']:
-                    count['called_degen'] += 1
+                    position_stats['called_degen'] += 1
                     analysis_stats['called_degen'] = True
+                elif analysis.call == reference_position.call:
+                    position_stats['called_reference'] += 1
+                    analysis_stats['called_reference'] = True
                 else:
-                    if analysis.call == reference_position.call:
-                        count['called_reference'] += 1
-                        analysis_stats['called_reference'] = True
-                    else:
-                        count['called_snp'] += 1
-                        analysis_stats['called_reference'] = True
+                    position_stats['called_snp'] += 1
+                    analysis_stats['called_snp'] = True
             else:
                 is_all_quality_breadth = False
 
             sample_stats.append(analysis_stats)
         # Consensus for the last sample is available after checking all its analyses.
-        sample_stats.append(is_sample_consensus)
+        sample_stats[0] = is_sample_consensus
+
+        all_sample_stats.append(sample_stats)
 
     # FIXME: all_passed_proportion, all_passed_consensus, is_quality_breadth, is_best_snp
 
@@ -281,21 +282,25 @@ def analyze_position(reference_position, dups_position, samples):
         is_all_passed_proportion=is_all_passed_proportion,
         is_all_passed_consensus=is_all_passed_consensus,
         is_all_quality_breadth=is_all_quality_breadth,
-        is_any_snp=count['called_snp'] > 0,
+        is_any_snp=position_stats['called_snp'] > 0,
         is_best_snp='',
+        # TODO: return all_sample_stats
         # NASP Master Matrix
         call_str=call_str,
-        called_reference=count['called_reference'],
-        num_A=count['A'],
-        num_C=count['C'],
-        num_G=count['G'],
-        num_T=count['T'],
-        num_N=count['N'],
-        any_snps=count['any_snps'],
-        CallWasMade=bytearray(count['CallWasMade'], encoding='utf-8'),
-        PassedDepthFilter=bytearray(count['PassedDepthFilter'], encoding='utf-8'),
-        PassedProportionFilter=bytearray(count['PassedProportionFilter'], encoding='utf-8'),
-        Pattern=bytearray(count['Pattern'], encoding='utf-8')
+        called_reference=position_stats['called_reference'],
+        num_A=position_stats['A'],
+        num_C=position_stats['C'],
+        num_G=position_stats['G'],
+        num_T=position_stats['T'],
+        num_N=position_stats['N'],
+        # TODO: Remove any_snp if unused in any output file.
+        # is_any_snp is a similar looking stat in General Stats. If this stat is required, add documentation explaining
+        # the difference.
+        any_snps=position_stats['any_snps'],
+        CallWasMade=bytearray(position_stats['CallWasMade'], encoding='utf-8'),
+        PassedDepthFilter=bytearray(position_stats['PassedDepthFilter'], encoding='utf-8'),
+        PassedProportionFilter=bytearray(position_stats['PassedProportionFilter'], encoding='utf-8'),
+        Pattern=bytearray(position_stats['Pattern'], encoding='utf-8')
     )
 
 
@@ -315,7 +320,6 @@ def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
     Returns:
         (str, collections.Counter): The contig name and statistics gathered across all the contig positions.
     """
-
     # TODO: Update len(sample_analyses) to be the number of SampleAnalyses in sample_groups
     # string_pattern = str(len(sample_analyses)) + 's'
     # s = Struct('HHHHHHH?' + string_pattern*5)
@@ -381,13 +385,13 @@ def analyze_samples(reference_fasta, reference_dups, sample_analyses):
     # with ProcessPoolExecutor() as executor:
     # for result in executor.map(analyze_contig, matrix_parameters.reference_fasta.contigs, matrix_parameters.reference_dups.contigs, itertools.repeat(sample_analyses), partial_file_positions):
     # print(result)
-    foo = Counter()
+    whole_genome_stats = Counter()
     cols = ['reference_length', 'reference_clean', 'reference_duplicated', 'all_called', 'all_passed_coverage', 'all_passed_proportion', 'all_passed_consensus', 'quality_breadth', 'any_snps', 'best_snps']
     for contig in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs, itertools.repeat(sample_groups),
                       partial_file_positions):
-        print([(x, contig[1][x]) for x in cols])
-        foo += contig[1]
-    print(foo)
+        print(contig[0], [(x, contig[1][x]) for x in cols])
+        whole_genome_stats += contig[1]
+    print(whole_genome_stats)
 
         # with open('partial.nasp', 'br') as handle:
         #     sample_analyses = str(handle.readline(), encoding='utf-8').rstrip().split('\t')
