@@ -17,6 +17,8 @@ __author__ = 'jtravis'
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
 import csv
+import logging
+logging.basicConfig(filename='parse.log', level=logging.DEBUG)
 
 
 # SampleInfo = namedtuple('SampleInfo', [
@@ -46,12 +48,12 @@ class Position(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'pro
         """
         Set simple_call based on the value of call
         """
-        return super().__new__(cls, call=call, simple_call=cls.simple_call(call), **sample_info)
+        return super().__new__(cls, call=call, simple_call=cls._simple_call(call), **sample_info)
 
     # TODO: Remove allow_x and allow_del parameters
     # NOTE: There are a lot of samples, does attaching this method add a lot of accumulative weight?
     @staticmethod
-    def simple_call(dna_string, allow_x=False, allow_del=False):
+    def _simple_call(dna_string, allow_x=False, allow_del=False):
         """
         Standardizes the DNA call assumed to be the base at position one.
         Discards insertion data, changes 'U' to 'T', and changes degeneracies to 'N'.
@@ -101,6 +103,7 @@ class SampleAnalysis(metaclass=ABCMeta):
         self._aligner = aligner
         self._snpcaller = snpcaller
         self._index = self._index_contigs()
+        logging.debug("{0}._index => {1!r}".format(self.__repr__(), self._index))
 
     def __lt__(self, other):
         """
@@ -194,26 +197,30 @@ class Vcf(SampleAnalysis):
         self._sample_name = None
         super(Vcf, self).__init__(filepath, name, aligner, snpcaller)
 
-    # @property
-    # def contigs(self):
-    #     """
-    #     Return:
-    #         Contig generator: All the contigs in the SampleAnalysis
-    #     """
-    #     return (VcfContig(contig_name, self._sample_name, self._filepath, file_position) for contig_name, file_position in self._index.items())
+    # TODO: Disable/remove?
+    @property
+    def contigs(self):
+        """
+        Return:
+            Contig generator: All the contigs in the SampleAnalysis
+        """
+        return (VcfContig(contig_name, self._sample_name, self._filepath, file_position) for contig_name, file_position in self._index.items())
 
-    def get_contig(self, name):
+    def get_contig(self, contig_name):
         """
         Return a Contig instance for a contig with the given name.
 
         Args:
-            name (str): Name of contig to retrieve.
+            contig_name (str): Name of contig to retrieve.
 
         Returns:
             VcfContig or EmptyContig: VcfContig if the contig exists, otherwise an EmptyContig.
         """
-        file_position = self._index.get(name)
-        return VcfContig(name, self._sample_name, self._filepath, file_position) if file_position is not None else EmptyContig(name)
+        file_position = self._index.get(contig_name)
+        if file_position is None:
+            logging.info("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
+            return EmptyContig(contig_name)
+        return VcfContig(contig_name, self._sample_name, self._filepath, file_position)
 
     def _index_contigs(self):
         """
@@ -230,6 +237,7 @@ class Vcf(SampleAnalysis):
         with open(self._filepath) as handle:
             # Skip metadata and header
             for line in handle:
+                file_position += len(line)
                 if line.startswith('#CHROM'):
                     # FIXME: Add support for multiple samples
                     # The sample columns follow the FORMAT column. Here is is assumed there is only one sample.
@@ -239,6 +247,7 @@ class Vcf(SampleAnalysis):
                 # FIXME: use appropriate error
                 raise Exception('Mandatory header not found in Vcf file:' + self._filepath)
             for line in handle:
+                # The first column, #CHROM, is the contig name.
                 contig_name = line[:line.index('\t')]
                 if contig_name not in index:
                     index[contig_name] = file_position
@@ -274,10 +283,11 @@ class Fasta(SampleAnalysis):
             contig_name (str): Name of contig to retrieve.
 
         Returns:
-            VcfContig or EmptyContig: VcfContig if the contig exists, otherwise an EmptyContig.
+            FastaContig or EmptyContig: FastaContig if the contig exists, otherwise an EmptyContig.
         """
         contig_index = self._index.get(contig_name)
         if contig_index is None:
+            logging.info("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
             return EmptyContig(contig_name)
         return FastaContig(contig_name, contig_index.length, contig_index.file_position, self._filepath)
 
@@ -638,7 +648,7 @@ class VcfContig(Contig):
                 "500WT1_test","320",".","GTT","G","900848.97",".","AC=1;AF=1.00;AN=1;BaseQRankSum=1.732;DP=18490;FS=0.000;MLEAC=1;MLEAF=1.00;MQ=59.72;MQ0=0;MQRankSum=0.013;QD=24.36;ReadPosRankSum=0.538","GT:AD:DP:GQ:MLPSAC:MLPSAF:PL","1:1,16410:18355:99:1:1.00:900888,0"
         """
         with open(self._filepath, 'r') as handle:
-            position = 1
+            position = 0
             fieldnames = []
             # Skip past the metadata to the header
             for line in handle:
@@ -651,22 +661,28 @@ class VcfContig(Contig):
                 # TODO: Raise an appropriate exception for a missing header.
                 raise Exception('VCF missing required header.')
 
+            handle.seek(self._file_position)
+
             for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
+
                 # Stop iterating if a new contig has started.
                 if row['#CHROM'] != self._name:
-                    return
+                    # print('\t', position, row['POS'], 'NEWCONTIG', self._filepath, row)
+                    break
 
                 row['POS'] = int(row['POS'])
 
                 # TODO: Collect indel statistics instead of skipping them.
                 # Skip past duplicate positions from indels.
                 if row['POS'] < position:
+                    # print('\t', position, row['POS'], 'INDEL', self._filepath, row)
                     continue
 
-                # TODO: what should the value of coverage and proportion be? Should it be a question mark? A negative number?
                 # Yield empty rows to bridge position gaps.
                 while row['POS'] > position:
                     position += 1
+                    # TODO: Remove
+                    # print('\t', position, row['POS'], 'GAP', self._filepath, row)
                     yield self.EMPTY_POSITION
 
                 # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
@@ -700,16 +716,21 @@ class VcfContig(Contig):
                 # call != ref checks if the sample is a SNP. The ref may have more than one position if it's an indel.
                 proportion = self._get_proportion(row, coverage, call != row['REF'][:1])
 
-                # Yield the position.
+
                 position += 1
+                # print('\t', position, row['POS'], 'NORMAL', self._filepath, row)
+                # Yield the position.
                 yield Position(
                     call=call,
                     coverage=coverage,
                     proportion=proportion,
                 )
 
+
+            # print('\t', position, row['POS'], 'EXHAUSTED', self._filepath, row)
             # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
             while True:
+                position += 1
                 yield self.EMPTY_POSITION
 
 
