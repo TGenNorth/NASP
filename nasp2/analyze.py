@@ -101,24 +101,6 @@ def sample_positions(contig_name, sample_groups):
         yield tuple(tuple(map(next, contig_group)) for contig_group in contig_groups)
 
 
-# def analyze_sample_position(sample):
-#     """
-#     analyze_sample_position is a helper for analyze_position that focuses on a single
-#
-#     Args:
-#         sample (tuple of SampleInfo):
-#     """
-#     is_consensus = True
-#     prev_analysis_call = None
-#
-#     for analysis in sample:
-#         # A sample has position consensus if all the SampleAnalysis combinations have the same call.
-#         if prev_analysis_call is None:
-#             prev_analysis_call = analysis.simple_call
-#         elif prev_analysis_call != analysis.simple_call:
-#             # FIXME: all samples must also pass called, coverage, and proportion filters
-#             is_consensus = False
-
 # @profile
 def analyze_position(reference_position, dups_position, samples):
     """
@@ -153,6 +135,9 @@ def analyze_position(reference_position, dups_position, samples):
     # General Stats quality breadth filter passes and all analyses are SNPs.
     is_best_snp = True
 
+    # TODO: consolidate is_all_sample_consensus vs is_all_passed_consensus
+    is_all_sample_consensus = True
+
     # position_stats is a counter across all SampleAnalyses at the current position.
     position_stats = Counter({
         # TODO: verify 'N' represents NoCall, AnyCall, Deletion, etc.
@@ -167,7 +152,7 @@ def analyze_position(reference_position, dups_position, samples):
         'Pattern': ''
     })
 
-    # call_str
+    # call_str is the base call for each SampleAnalysis starting with the reference.
     call_str = bytearray(reference_position.call, encoding='utf-8')
 
     # all_sample_stats is a list of sample_stats. It represents all the SampleAnalysis stats grouped by sample name.
@@ -175,7 +160,7 @@ def analyze_position(reference_position, dups_position, samples):
     for sample in samples:
         # Except for the first entry, sample_stats is composed of analysis_stats dictionaries for each aligner/snpcaller
         # combination used on the sample. The first entry is a special consensus boolean that is true if all the
-        # analyses had the same DNA base call at this position.
+        # analyses have the same DNA base call at this position.
         # [is_consensus, analysis_stats, analysis_stats, analysis_stats, ...]
         sample_stats = [True]
         is_sample_consensus = True
@@ -193,6 +178,7 @@ def analyze_position(reference_position, dups_position, samples):
 
             call_str.append(ord(analysis.call))
 
+            # TODO: Must also be called (not X/N) and pass coverage/proportion filters
             # A sample has position consensus if all of its SampleAnalysis combinations have the same call.
             if prev_analysis_call is None:
                 prev_analysis_call = analysis.simple_call
@@ -243,7 +229,7 @@ def analyze_position(reference_position, dups_position, samples):
                 analysis_stats['passed_proportion_filter'] = False
                 is_all_passed_proportion = False
 
-            # Count the number of A/C/G/T calls. Any other value is N. # See SampleInfo.simple_call()
+            # Count the number of A/C/G/T calls. Any other value is N. See SampleInfo.simple_call()
             position_stats[analysis.simple_call] += 1
 
             # TODO: Clarify the purpose of this if statement.
@@ -266,6 +252,7 @@ def analyze_position(reference_position, dups_position, samples):
                 is_all_quality_breadth = False
 
             sample_stats.append(analysis_stats)
+
         # Consensus for the last sample is available after checking all its analyses.
         sample_stats[0] = is_sample_consensus
 
@@ -324,10 +311,19 @@ def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
     # string_pattern = str(len(sample_analyses)) + 's'
     # s = Struct('HHHHHHH?' + string_pattern*5)
 
+    # FIXME: Must the identifiers be recalculated for every contig?
+    identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
+
+    from nasp2.write_matrix import write_master_matrix
+    outfile = write_master_matrix(reference_contig.name + '.tsv', reference_contig.name, identifiers)
+
+    outfile.send(None)
+
     # Open the file without truncating. The file must already exist.
     with open('partial.nasp', 'r+b') as handle:
         handle.seek(offset)
         contig_stats = Counter()
+
         for position in map(analyze_position, reference_contig.positions, dups_contig.positions, sample_positions(reference_contig.name, sample_groups)):
             contig_stats['reference_length'] += 1
             contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
@@ -340,10 +336,8 @@ def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
             contig_stats['any_snps'] += 1 if position.is_any_snp else 0
             contig_stats['best_snps'] += 1 if position.is_best_snp else 0
 
-            # # TODO: Remove print
-            # print(contig_stats['reference_length'], position)
-            # if contig_stats['reference_length'] == 392:
-            # exit(1)
+            outfile.send(position)
+
             #
             # foo=position.PassedProportionFilter
             # foo.append(ord('\n'))

@@ -84,6 +84,7 @@ def parse_dto(xml_file):
         # Return when the indexing processes complete.
         matrix_params['reference_fasta'] = matrix_params['reference_fasta'].result()
         matrix_params['reference_dups'] = matrix_params['reference_dups'].result()
+        # TODO: try/catch futures exception to return a failed genome object and write the error to the parse log.
         return MatrixParameters(**matrix_params), tuple(future.result() for future in futures)
 
 
