@@ -36,6 +36,8 @@ PositionInfo = namedtuple('PositionInfo', [
     'call_str',
     # Count of sample calls that match the reference.
     'called_reference',
+    'passed_coverage_filter',
+    'passed_proportion_filter',
     'num_A',
     'num_C',
     'num_G',
@@ -142,7 +144,7 @@ def analyze_position(reference_position, dups_position, samples):
     # TODO: consolidate is_all_sample_consensus vs is_all_passed_consensus
     is_all_sample_consensus = True
 
-    # position_stats is a counter across all SampleAnalyses at the current position.
+    # position_stats is a counter across all SampleAnalyses at the current position. It is used in the Matrix files.
     position_stats = Counter({
         # TODO: verify 'N' represents NoCall, AnyCall, Deletion, etc.
         # Tally of A/C/G/T calls where everything else is called N representing
@@ -170,6 +172,7 @@ def analyze_position(reference_position, dups_position, samples):
         is_sample_consensus = True
         prev_analysis_call = None
         for analysis in sample:
+            # analysis_stats are unique to each SampleAnalysis. It is used in the Sample Statistics file.
             analysis_stats = {
                 'was_called': True,
                 'passed_coverage_filter': True,
@@ -198,6 +201,7 @@ def analyze_position(reference_position, dups_position, samples):
                 is_all_called = False
                 is_all_quality_breadth = False
             else:
+                position_stats['was_called'] += 1
                 position_stats['CallWasMade'] += 'Y'
 
             # FIXME: coverage/proportion may be "PASS" if the value was not deprecated in the VCF contig parser.
@@ -206,6 +210,7 @@ def analyze_position(reference_position, dups_position, samples):
             # Cannot determine proportion due to missing data.
             if analysis.coverage is '-':
                 position_stats['PassedDepthFilter'] += '-'
+                position_stats['passed_coverage_filter'] += 1
             # Missing VCF position.
             elif analysis.coverage == '?':
                 position_stats['PassedDepthFilter'] += '?'
@@ -213,6 +218,7 @@ def analyze_position(reference_position, dups_position, samples):
                 is_all_passed_coverage = False
             elif analysis.coverage >= coverage_threshold:
                 position_stats['PassedDepthFilter'] += 'Y'
+                position_stats['passed_coverage_filter'] += 1
             else:
                 position_stats['PassedDepthFilter'] += 'N'
                 analysis_stats['passed_proportion_filter'] = False
@@ -221,6 +227,7 @@ def analyze_position(reference_position, dups_position, samples):
             # Cannot determine proportion due to missing data.
             if analysis.proportion is '-':
                 position_stats['PassedProportionFilter'] += '-'
+                position_stats['passed_proportion_filter'] += 1
             # Missing VCF position.
             elif analysis.proportion == '?':
                 position_stats['PassedProportionFilter'] += '?'
@@ -228,6 +235,7 @@ def analyze_position(reference_position, dups_position, samples):
                 is_all_passed_proportion = False
             elif analysis.proportion >= proportion_threshold:
                 position_stats['PassedProportionFilter'] += 'Y'
+                position_stats['passed_proportion_filter'] += 1
             else:
                 position_stats['PassedProportionFilter'] += 'N'
                 analysis_stats['passed_proportion_filter'] = False
@@ -279,6 +287,8 @@ def analyze_position(reference_position, dups_position, samples):
         # NASP Master Matrix
         call_str=call_str,
         called_reference=position_stats['called_reference'],
+        passed_coverage_filter=position_stats['passed_coverage_filter'],
+        passed_proportion_filter=position_stats['passed_proportion_filter'],
         num_A=position_stats['A'],
         num_C=position_stats['C'],
         num_G=position_stats['G'],
