@@ -119,7 +119,7 @@ def write_master_matrix(filepath, contig_name, identifiers):
                 'LocusID': "{0}::{1}".format(contig_name, position),
                 'Reference': call_str[0],
                 '#SNPcall': row.any_snps,
-                '#Indelcall': call_str,
+                '#Indelcall': 'n/a',
                 '#Refcall': row.called_reference,
                 '#CallWasMade': "{0:d}/{1:d}".format(num_samples - call_was_made.count('N'), num_samples),
                 '#PassedDepthFilter': "{0:d}/{1:d}".format(num_samples - passed_depth_filter.count('N'), num_samples),
@@ -137,7 +137,7 @@ def write_master_matrix(filepath, contig_name, identifiers):
                 'CallWasMade': call_was_made,
                 'PassedDepthFilter': passed_depth_filter,
                 'PassedProportionFilter': passed_proportion_filter,
-                'Pattern': row.Pattern
+                'Pattern': 'TODO'
             }
             # Match each base call with its sample analysis column.
             line.update({k: v for k, v in zip(identifiers, call_str[1:])})

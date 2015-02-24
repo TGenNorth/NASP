@@ -5,10 +5,13 @@ The analyze module takes a collection of SampleAnalyses
 __author__ = 'jtravis'
 
 from collections import namedtuple, Counter
-from struct import Struct
+from concurrent.futures import ProcessPoolExecutor
 import itertools
 
+from nasp2.write_matrix import write_master_matrix
 
+
+# TODO: Remove profile. It is a dummy wrapper to leave @profile decorators in place when not profiling.
 def profile(fn):
     return fn
 
@@ -49,7 +52,8 @@ PositionInfo = namedtuple('PositionInfo', [
 def sample_positions(contig_name, sample_groups):
     """
     sample_positions is a generator that yields positions across all the SampleAnalyses
-    for the given contig grouped by sample name.
+    for the given contig grouped by sample name. This is the magic sauce that allows all
+    the files to be read in unison as if they were a single file. The element
 
     TODO: Add See Also section referencing SampleAnalysis.
 
@@ -58,7 +62,7 @@ def sample_positions(contig_name, sample_groups):
         sample_groups (tuple of SampleAnalysis tuples):
 
     Return:
-        tuple of SampleInfo tuples generator: Yields tuples of SampleInfo grouped by sample name.
+        tuple of Position tuples generator: Yields tuples of Position grouped by sample name.
 
     Example:
 
@@ -85,7 +89,7 @@ def sample_positions(contig_name, sample_groups):
         +------------------------------------------------------------------------------------+
         |              Sample Group                |              Sample Group               |
         +==========================================+=========================================+
-        | SampleInfo         | SampleInfo          | SampleInfo         | SampleInfo         |
+        | Position           | Position            | Position           | Position           |
         +------------------------------------------+-----------------------------------------+
     """
     # sample_groups is converted to contig_groups by calling get_contig() on each SampleAnalysis.
@@ -292,7 +296,7 @@ def analyze_position(reference_position, dups_position, samples):
 
 
 # @profile
-def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
+def analyze_contig(reference_contig, dups_contig, sample_groups):
     """
     analyze_contig expects reference_contig, dups_contig, and sample_analyses to represent the same contig from
     different sources. It reads all of their positions and writes an analysis to the outfile.
@@ -307,36 +311,27 @@ def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
     Returns:
         (str, collections.Counter): The contig name and statistics gathered across all the contig positions.
     """
-    # TODO: Update len(sample_analyses) to be the number of SampleAnalyses in sample_groups
-    # string_pattern = str(len(sample_analyses)) + 's'
-    # s = Struct('HHHHHHH?' + string_pattern*5)
-
+    contig_stats = Counter()
     # FIXME: Must the identifiers be recalculated for every contig?
     identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
-    from nasp2.write_matrix import write_master_matrix
+    # Initialize outfile coroutine.
     outfile = write_master_matrix(reference_contig.name + '.tsv', reference_contig.name, identifiers)
-
     outfile.send(None)
 
-    # Open the file without truncating. The file must already exist.
-    with open('partial.nasp', 'r+b') as handle:
-        handle.seek(offset)
-        contig_stats = Counter()
+    for position in map(analyze_position, reference_contig.positions, dups_contig.positions, sample_positions(reference_contig.name, sample_groups)):
+        contig_stats['reference_length'] += 1
+        contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
+        contig_stats['reference_duplicated'] += 1 if position.is_reference_duplicated else 0
+        contig_stats['all_called'] += 1 if position.is_all_called else 0
+        contig_stats['all_passed_coverage'] += 1 if position.is_all_passed_coverage else 0
+        contig_stats['all_passed_proportion'] += 1 if position.is_all_passed_proportion else 0
+        contig_stats['all_passed_consensus'] += 1 if position.is_all_passed_consensus else 0
+        contig_stats['quality_breadth'] += 1 if position.is_all_quality_breadth else 0
+        contig_stats['any_snps'] += 1 if position.is_any_snp else 0
+        contig_stats['best_snps'] += 1 if position.is_best_snp else 0
 
-        for position in map(analyze_position, reference_contig.positions, dups_contig.positions, sample_positions(reference_contig.name, sample_groups)):
-            contig_stats['reference_length'] += 1
-            contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
-            contig_stats['reference_duplicated'] += 1 if position.is_reference_duplicated else 0
-            contig_stats['all_called'] += 1 if position.is_all_called else 0
-            contig_stats['all_passed_coverage'] += 1 if position.is_all_passed_coverage else 0
-            contig_stats['all_passed_proportion'] += 1 if position.is_all_passed_proportion else 0
-            contig_stats['all_passed_consensus'] += 1 if position.is_all_passed_consensus else 0
-            contig_stats['quality_breadth'] += 1 if position.is_all_quality_breadth else 0
-            contig_stats['any_snps'] += 1 if position.is_any_snp else 0
-            contig_stats['best_snps'] += 1 if position.is_best_snp else 0
-
-            outfile.send(position)
+        outfile.send(position)
 
             #
             # foo=position.PassedProportionFilter
@@ -358,34 +353,20 @@ def analyze_samples(reference_fasta, reference_dups, sample_analyses):
         reference_dups (Fasta):
         sample_analyses (list of SampleAnalysis): The sample analysis are grouped by Sample.
     """
-    string_pattern = str(len(sample_analyses)) + 's'
-    # 5 is the number of string pattern columns in the master matrix such as CallWasMade and PassedDepthFilter.
-    s = Struct('HHHHHH?' + string_pattern * 5)
-
     # Group the analyses by sample name in order to collect sample-level statistics.
     # The SampleAnalyses are sorted before grouping because groups are determined by when the key changes.
     sample_groups = tuple(tuple(v) for _, v in itertools.groupby(sorted(sample_analyses), lambda x: x.name))
-
-    with open('partial.nasp', 'w') as handle:
-        # handle.write('\t'.join((sample_analysis.identifier for sample_analysis in sample_analyses)) + '\n')
-        # handle.write('\t'.join((contig.name for contig in matrix_parameters.reference_fasta.contigs)) + '\n')
-        header_offset = handle.tell()
-
-    partial_file_positions = itertools.chain((header_offset,),
-                                             (len(contig) * s.size for contig in reference_fasta.contigs))
-
-
-
-    # with ProcessPoolExecutor() as executor:
-    # for result in executor.map(analyze_contig, matrix_parameters.reference_fasta.contigs, matrix_parameters.reference_dups.contigs, itertools.repeat(sample_analyses), partial_file_positions):
-    # print(result)
-    whole_genome_stats = Counter()
-    cols = ['reference_length', 'reference_clean', 'reference_duplicated', 'all_called', 'all_passed_coverage', 'all_passed_proportion', 'all_passed_consensus', 'quality_breadth', 'any_snps', 'best_snps']
-    for contig in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs, itertools.repeat(sample_groups),
-                      partial_file_positions):
-        print(contig[0], [(x, contig[1][x]) for x in cols])
-        whole_genome_stats += contig[1]
-    print(whole_genome_stats)
+    with ProcessPoolExecutor() as executor:
+        # for result in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs, itertools.repeat(sample_analyses), partial_file_positions):
+        for result in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs, itertools.repeat(sample_groups)):
+            print(result)
+    # whole_genome_stats = Counter()
+    # cols = ['reference_length', 'reference_clean', 'reference_duplicated', 'all_called', 'all_passed_coverage', 'all_passed_proportion', 'all_passed_consensus', 'quality_breadth', 'any_snps', 'best_snps']
+    # for contig in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs, itertools.repeat(sample_groups),
+    #                   partial_file_positions):
+    #     print(contig[0], [(x, contig[1][x]) for x in cols])
+    #     whole_genome_stats += contig[1]
+    # print(whole_genome_stats)
 
         # with open('partial.nasp', 'br') as handle:
         #     sample_analyses = str(handle.readline(), encoding='utf-8').rstrip().split('\t')
