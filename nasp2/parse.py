@@ -648,7 +648,7 @@ class VcfContig(Contig):
                 "500WT1_test","320",".","GTT","G","900848.97",".","AC=1;AF=1.00;AN=1;BaseQRankSum=1.732;DP=18490;FS=0.000;MLEAC=1;MLEAF=1.00;MQ=59.72;MQ0=0;MQRankSum=0.013;QD=24.36;ReadPosRankSum=0.538","GT:AD:DP:GQ:MLPSAC:MLPSAF:PL","1:1,16410:18355:99:1:1.00:900888,0"
         """
         with open(self._filepath, 'r') as handle:
-            position = 0
+            position = 1
             fieldnames = []
             # Skip past the metadata to the header
             for line in handle:
