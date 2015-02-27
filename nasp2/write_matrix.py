@@ -1,9 +1,8 @@
 __author__ = 'jtravis'
 
 import csv
-
-class Coroutine(object):
-    pass
+import functools
+from collections import Counter
 
 
 def get_vcf_metadata(nasp_version, identifiers, contigs):
@@ -60,37 +59,87 @@ def get_header(type, identifiers):
     matrix_header += ('Pattern', 'Pattern#')
 
     return matrix_header
-"""
-return PositionInfo(
-        # General Stats
-        is_all_called=is_all_called,
-        is_reference_clean=is_reference_clean,
-        is_reference_duplicated=is_reference_duplicated,
-        is_all_passed_coverage=is_all_passed_coverage,
-        is_all_passed_proportion=is_all_passed_proportion,
-        is_all_passed_consensus=is_all_passed_consensus,
-        is_all_quality_breadth=is_all_quality_breadth,
-        is_any_snp=position_stats['called_snp'] > 0,
-        is_best_snp='',
-        # TODO: return all_sample_stats
-        # NASP Master Matrix
-        call_str=call_str,
-        called_reference=position_stats['called_reference'],
-        num_A=position_stats['A'],
-        num_C=position_stats['C'],
-        num_G=position_stats['G'],
-        num_T=position_stats['T'],
-        num_N=position_stats['N'],
-        # TODO: Remove any_snp if unused in any output file.
-        # is_any_snp is a similar looking stat in General Stats. If this stat is required, add documentation explaining
-        # the difference.
-        any_snps=position_stats['any_snps'],
-        CallWasMade=bytearray(position_stats['CallWasMade'], encoding='utf-8'),
-        PassedDepthFilter=bytearray(position_stats['PassedDepthFilter'], encoding='utf-8'),
-        PassedProportionFilter=bytearray(position_stats['PassedProportionFilter'], encoding='utf-8'),
-        Pattern=bytearray(position_stats['Pattern'], encoding='utf-8')
-    )
-"""
+
+
+# def write_sample_stats(filepath):
+#     sample_stats = None
+#
+#     try:
+#         while True:
+#             all_sample_stats = yield
+#
+#             if sample_stats is None:
+#                 sample_stats = all_sample_stats
+#             for i, sample in enumerate(all_sample_stats):
+#                 for j, analysis in enumerate(sample):
+#                     sample_stats[i][j].update(analysis)
+#
+#     finally:
+#         print(sample_stats)
+#         pass
+
+
+def write_sample_stats(filepath, sample_stats, sample_groups):
+    """
+    Args:
+        filepath (str):
+        sample_stats (list of lists of Counters):
+        sample_groups (tuple of tuples of SampleAnalysis):
+    """
+    any = Counter({'Sample': '[any]'})
+    all = Counter({'Sample': '[all]'})
+
+    for sample_stat, sample in zip(sample_stats, sample_groups):
+        any.update(sample_stat[0])
+        all.update(sample_stat[1])
+        sample_stat[0]['Sample'] = sample[0].name
+        sample_stat[0]['Sample::Analysis'] = '[any]'
+        sample_stat[1]['Sample'] = sample[0].name
+        sample_stat[1]['Sample::Analysis'] = '[all]'
+
+
+    with open('sample_stats.tsv', 'w') as handle:
+        fieldnames = ('Sample', 'Sample::Analysis', 'was_called', 'passed_coverage_filter', 'passed_proportion_filter',
+                      'quality_breadth', 'called_reference', 'called_snp', 'called_degen')
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        # Write the any and all summaries genome.
+        writer.writerow(any)
+        writer.writerow(all)
+
+        # Join sample names and analysis identifiers with the analysis stats before writing them to file.
+        for sample_stat, sample in zip(sample_stats, sample_groups):
+            writer.writerow(sample_stat[0])
+            writer.writerow(sample_stat[1])
+            for analysis_stats, identifier in zip(sample_stat[2:], sample):
+                analysis_stats['Sample'] = identifier.name
+                analysis_stats['Sample::Analysis'] = identifier.identifier
+                writer.writerow(analysis_stats)
+
+
+
+def _sum_contig_stats(summation, contig_stat):
+    summation.update(contig_stat)
+    return summation
+
+
+def write_general_stats(filepath, contig_stats):
+    """
+    Args:
+        filepath (str):
+        contig_stats (tuple of Counter):
+    """
+    whole_genome_stats = functools.reduce(_sum_contig_stats, contig_stats, Counter({'Contig': ''}))
+    whole_genome_stats['Contig'] = 'Whole Genome'
+
+    with open(filepath, 'w') as handle:
+        fieldnames = ('Contig', 'reference_length', 'reference_clean', 'reference_duplicated', 'all_called',
+                      'all_passed_coverage', 'all_passed_proportion', 'all_passed_consensus', 'quality_breadth',
+                      'any_snps', 'best_snps')
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t')
+        writer.writeheader()
+        writer.writerow(whole_genome_stats)
+        writer.writerows(contig_stats)
 
 
 def write_master_matrix(filepath, contig_name, identifiers):
@@ -119,7 +168,8 @@ def write_master_matrix(filepath, contig_name, identifiers):
                 'LocusID': "{0}::{1}".format(contig_name, position),
                 'Reference': call_str[0],
                 '#SNPcall': row.any_snps,
-                '#Indelcall': 'n/a',
+                # TODO: replace with n/a
+                '#Indelcall': '0',
                 '#Refcall': row.called_reference,
                 # '#CallWasMade': "{0:d}/{1:d}".format(num_samples - call_was_made.count('N'), num_samples),
                 # '#PassedDepthFilter': "{0:d}/{1:d}".format(num_samples - passed_depth_filter.count('N'), num_samples),
@@ -131,7 +181,8 @@ def write_master_matrix(filepath, contig_name, identifiers):
                 '#C': row.num_C,
                 '#G': row.num_G,
                 '#T': row.num_T,
-                '#Indel': 'n/a',
+                # TODO: replace with n/a
+                '#Indel': '0',
                 '#NXdegen': row.num_N,
                 'Contig': contig_name,
                 'Position': position,
@@ -180,6 +231,7 @@ def write_missingdata_matrix(filepath, identifiers):
                 'Pattern': row.Pattern
             })
 
+
 def write_missingdata_vcf(filepath, identifiers, contigs, version):
     with open(filepath, 'w') as handle:
         handle.write(get_vcf_metadata(version, identifiers, contigs))
@@ -200,6 +252,7 @@ def write_missingdata_vcf(filepath, identifiers, contigs, version):
                 'INFO': '',
                 'FORMAT': ''
             })
+
 
 def write_bestsnp_matrix(filepath, identifiers):
     with open(filepath, 'w') as handle:
@@ -247,23 +300,23 @@ def write_fasta(filepath, contig_name):
                 handle.write('\n')
                 num_chars = 0
 
-    # for matrix_format in all_vcfs:
-    #         if len(encountered_calls) > 0:
-    #             matrix_format['linetowrite'] += ",".join(encountered_calls)
-    #         else:
-    #             matrix_format['linetowrite'] += "."
-    #         matrix_format['linetowrite'] += "\t.\tPASS\tAN={0};NS={1}\tGT:FT".format(len(encountered_calls)+1, str(call_data['snpcall']+call_data['indelcall']+call_data['refcall']))
-    #         for vcf_current_data in vcf_pending_data:
-    #             matrix_format['linetowrite'] += "\t{0}:".format(str(vcf_current_data['GT']))
-    #             if not vcf_current_data['was_called']:
-    #                 matrix_format['linetowrite'] += "NoCall"
-    #             elif not vcf_current_data['passed_coverage']:
-    #                 matrix_format['linetowrite'] += "CovFail"
-    #             elif not vcf_current_data['passed_proportion']:
-    #                 matrix_format['linetowrite'] += "PropFail"
-    #             else:
-    #                 matrix_format['linetowrite'] += "PASS"
-    #         matrix_format['linetowrite'] += "\n"
+                # for matrix_format in all_vcfs:
+                # if len(encountered_calls) > 0:
+                #             matrix_format['linetowrite'] += ",".join(encountered_calls)
+                #         else:
+                #             matrix_format['linetowrite'] += "."
+                #         matrix_format['linetowrite'] += "\t.\tPASS\tAN={0};NS={1}\tGT:FT".format(len(encountered_calls)+1, str(call_data['snpcall']+call_data['indelcall']+call_data['refcall']))
+                #         for vcf_current_data in vcf_pending_data:
+                #             matrix_format['linetowrite'] += "\t{0}:".format(str(vcf_current_data['GT']))
+                #             if not vcf_current_data['was_called']:
+                #                 matrix_format['linetowrite'] += "NoCall"
+                #             elif not vcf_current_data['passed_coverage']:
+                #                 matrix_format['linetowrite'] += "CovFail"
+                #             elif not vcf_current_data['passed_proportion']:
+                #                 matrix_format['linetowrite'] += "PropFail"
+                #             else:
+                #                 matrix_format['linetowrite'] += "PASS"
+                #         matrix_format['linetowrite'] += "\n"
 
 
 def send_to_matrix_handles(self, matrix_formats):
