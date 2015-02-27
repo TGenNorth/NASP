@@ -115,7 +115,8 @@ class SampleAnalysis(metaclass=ABCMeta):
         Return
             bool: True if the name of the sample this analysis represents is alphanumerically less than the `other`.
         """
-        return self._name < other.name
+        # return self._name < other.name
+        return self.identifier < other.identifier
 
     @property
     def name(self):
