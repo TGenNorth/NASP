@@ -1,5 +1,5 @@
 """
-The analyze module takes a collection of SampleAnalyses
+The analyze module takes a collection of SampleAnalyses.
 """
 
 __author__ = 'jtravis'
@@ -7,16 +7,17 @@ __author__ = 'jtravis'
 from collections import namedtuple, Counter
 from concurrent.futures import ProcessPoolExecutor
 import itertools
+import os
 
 from nasp2.write_matrix import write_master_matrix, write_general_stats, write_sample_stats
 
 
-
+OUTPUT_DIR = './'
 
 
 # TODO: Remove profile. It is a dummy wrapper to leave @profile decorators in place when not profiling.
-def profile(fn):
-    return fn
+# def profile(fn):
+# return fn
 
 # PositionInfo is all the data collected for a single position across all the SampleAnalyses.
 PositionInfo = namedtuple('PositionInfo', [
@@ -120,9 +121,9 @@ def analyze_position(reference_position, dups_position, samples):
     analyze_position compares all the SampleAnalyses at a single position.
 
     Args:
-        reference_position (SampleInfo): A single position from the reference genome.
-        dups_position (SampleInfo): A single position from the duplicates file which indicates if the reference is in a duplicate region.
-        samples (tuple of SampleInfo tuples): A single position across all SampleAnalyses grouped by sample name.
+        reference_position (Position): A single position from the reference genome.
+        dups_position (Position): A single position from the duplicates file which indicates if the reference is in a duplicate region.
+        samples (tuple of tuples of Position): A single position across all SampleAnalyses grouped by sample name.
 
     Returns:
         PositionInfo: All the information gathered
@@ -146,7 +147,7 @@ def analyze_position(reference_position, dups_position, samples):
     # - All samples have consensus within their aligner/snpcaller combinations.
     is_all_quality_breadth = True
     # General Stats quality breadth filter passes and all analyses are SNPs.
-    is_best_snp = True
+    # is_best_snp = True
 
     # position_stats is a counter across all SampleAnalyses at the current position. It is used in the Matrix files.
     position_stats = Counter({
@@ -167,8 +168,18 @@ def analyze_position(reference_position, dups_position, samples):
     call_str = bytearray(reference_position.call, encoding='utf-8')
 
     # all_sample_stats is a list of sample_stats. It represents all the SampleAnalysis stats grouped by sample name.
-    all_sample_stats = []
-    for sample in samples:
+    # Preallocate a tuple of tuples of Counters where each Counter maps one-to-one with an analysis from samples.
+    # all_sample_stats = []
+    all_sample_stats = tuple(tuple(Counter({
+        'was_called': 0,
+        'passed_coverage_filter': 0,
+        'passed_proportion_filter': 0,
+        'quality_breadth': 0,
+        'called_reference': 0,
+        'called_snp': 0,
+        'called_degen': 0
+    }) for __ in range(len(samples[0]) + 2)) for _ in range(len(samples)))
+    for sample_idx, sample in enumerate(samples):
         # TODO: Removing the is_consensus bool from sample_stats because I'm not sure it is needed.
         # Except for the first entry, sample_stats is composed of analysis_stats dictionaries for each aligner/snpcaller
         # combination used on the sample. The first entry is a special consensus boolean that is true if all the
@@ -179,40 +190,52 @@ def analyze_position(reference_position, dups_position, samples):
         # sample_stats is composed of analysis_stats dictionaries for each aligner/snpcaller used on the sample.
         # The first two entries are special in that they summarize the analysis_stats. They are using a tripwire approach
         # where the flag will toggle if the assumption fails.
-        sample_stats = [
-            # any - True if true in any of the analysis_stats.
-            Counter({
-                'was_called': 0,
-                'passed_coverage_filter': 0,
-                'passed_proportion_filter': 0,
-                'quality_breadth': 0,
-                'called_reference': 0,
-                'called_snp': 0,
-                'called_degen': 0
-            }),
-            # all - True if true in all of the analysis_stats.
-            Counter({
-                'was_called': 1,
-                'passed_coverage_filter': 1,
-                'passed_proportion_filter': 1,
-                'quality_breadth': 1,
-                'called_reference': 1,
-                'called_snp': 1,
-                'called_degen': 1
-            })
-        ]
+        # sample_stats = [
+        #     # any - True if true in any of the analysis_stats.
+        #     Counter({
+        #         'was_called': 0,
+        #         'passed_coverage_filter': 0,
+        #         'passed_proportion_filter': 0,
+        #         'quality_breadth': 0,
+        #         'called_reference': 0,
+        #         'called_snp': 0,
+        #         'called_degen': 0
+        #     }),
+        #     # all - True if true in all of the analysis_stats.
+        #     Counter({
+        #         'was_called': 1,
+        #         'passed_coverage_filter': 1,
+        #         'passed_proportion_filter': 1,
+        #         'quality_breadth': 1,
+        #         'called_reference': 1,
+        #         'called_snp': 1,
+        #         'called_degen': 1
+        #     })
+        # ]
+
+        # TODO: Is there a performance difference in dereferencing
+        sample_stats = all_sample_stats[sample_idx]
+
+        # Initialize the 'all' summary with the assumption that all stats passed for all the aligner/snpcaller analysis
+        # combinations of the sample.
+        for stat in sample_stats[1]:
+            sample_stats[1][stat] = 1
+
         prev_analysis_call = None
-        for analysis in sample:
+        for analysis_idx, analysis in enumerate(sample):
             # analysis_stats are unique to each SampleAnalysis. It is used in the Sample Statistics file.
-            analysis_stats = Counter({
-                'was_called': 0,
-                'passed_coverage_filter': 0,
-                'passed_proportion_filter': 0,
-                'quality_breadth': 0,
-                'called_reference': 0,
-                'called_snp': 0,
-                'called_degen': 0
-            })
+            # analysis_stats = Counter({
+            #     'was_called': 0,
+            #     'passed_coverage_filter': 0,
+            #     'passed_proportion_filter': 0,
+            #     'quality_breadth': 0,
+            #     'called_reference': 0,
+            #     'called_snp': 0,
+            #     'called_degen': 0
+            # })
+
+            # The first two indices of sample_stats are the 'any' and 'all' analysis summaries.
+            analysis_stats = sample_stats[analysis_idx + 2]
 
             call_str.append(ord(analysis.call))
 
@@ -294,7 +317,7 @@ def analyze_position(reference_position, dups_position, samples):
             else:
                 is_all_quality_breadth = False
 
-            sample_stats.append(analysis_stats)
+            # sample_stats.append(analysis_stats)
 
 
         # NOTE: There could be an index error  due to [2:] if there is not at least one sample analysis in sample_stats.
@@ -311,7 +334,7 @@ def analyze_position(reference_position, dups_position, samples):
                     # all - The stat failed in at least one analysis_stat.
                     sample_stats[1][key] = 0
 
-        all_sample_stats.append(sample_stats)
+        # all_sample_stats.append(sample_stats)
 
     # FIXME: all_passed_proportion, all_passed_consensus, is_quality_breadth, is_best_snp
 
@@ -374,7 +397,8 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
     # Initialize outfile coroutines. This will create the file, write the header, and wait for each line of data.
-    master_matrix = write_master_matrix(reference_contig.name + '.tsv', reference_contig.name, identifiers)
+    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '.tsv'), reference_contig.name,
+                                        identifiers)
     master_matrix.send(None)
 
     for position in map(analyze_position, reference_contig.positions, dups_contig.positions,
@@ -424,7 +448,7 @@ def analyze_samples(reference_fasta, reference_dups, sample_analyses):
         sample_stats = None
 
         for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
-                itertools.repeat(sample_groups)):
+                                                     itertools.repeat(sample_groups)):
             # TODO: use the contig name from contig stat to begin reassembling the matrices.
             contig_stats.append(contig_stat)
 
@@ -436,6 +460,6 @@ def analyze_samples(reference_fasta, reference_dups, sample_analyses):
                     for j, analysis in enumerate(sample):
                         sample_stats[i][j].update(analysis)
 
-        write_sample_stats('sample_stats.tsv', sample_stats, sample_groups)
+        write_sample_stats(os.path.join(OUTPUT_DIR, 'sample_stats.tsv'), sample_stats, sample_groups)
 
-        write_general_stats('general_stats.tsv', contig_stats)
+        write_general_stats(os.path.join(OUTPUT_DIR, 'general_stats.tsv'), contig_stats)

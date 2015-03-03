@@ -5,8 +5,9 @@ __author__ = 'jtravis'
 
 def main():
     from nasp2.matrix_DTO import parse_dto
-    matrix_parameters, sample_analyses = parse_dto("/Users/jtravis/NASP/results/matrix_dto.xml")
+    # matrix_parameters, sample_analyses = parse_dto("/Users/jtravis/NASP/results/matrix_dto.xml")
     # matrix_parameters, sample_analyses = parse_dto("/Users/jtravis/test_time/matrix_dto.xml")
+    matrix_parameters, sample_analyses = parse_dto("/scratch/jtravis/VGIII_analysis.xml")
 
     from nasp2.analyze import analyze_samples
 
