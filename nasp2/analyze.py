@@ -9,9 +9,9 @@ from concurrent.futures import ProcessPoolExecutor
 import itertools
 import os
 
-from nasp2.write_matrix import write_master_matrix, write_general_stats, write_sample_stats
+from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, write_general_stats, write_sample_stats
 
-
+# TODO: Remove constant.
 OUTPUT_DIR = './'
 
 
@@ -31,16 +31,16 @@ PositionInfo = namedtuple('PositionInfo', [
     # True if all sample calls match.
     'is_all_passed_consensus',
     'is_all_quality_breadth',
-    'is_any_snp',
-    # Count of sample calls that differ from the reference.
-    'any_snps',
     # True if all sample calls differ from the reference and passed all the filters (coverage, proportion, consensus).
     'is_best_snp',
+
     'all_sample_stats',
-    #
-    'call_str',
+
+    'is_missing_matrix',
+
     # Count of sample calls that match the reference.
     'called_reference',
+    'called_snp',
     'passed_coverage_filter',
     'passed_proportion_filter',
     'num_A',
@@ -48,6 +48,10 @@ PositionInfo = namedtuple('PositionInfo', [
     'num_G',
     'num_T',
     'num_N',
+
+    #
+    'call_str',
+    'masked_call_str',
     'CallWasMade',
     'PassedDepthFilter',
     'PassedProportionFilter',
@@ -115,6 +119,31 @@ def sample_positions(contig_name, sample_groups):
         yield tuple(tuple(map(next, contig_group)) for contig_group in contig_groups)
 
 
+def _is_pass_filter(value, threshold):
+    """
+    _filter determines if a position passed/failed the coverage/proportion filter.
+
+    Args:
+        value (int or str): coverage/proportion value from the file parser.
+        threshold (int): The minimum value that will pass.
+
+    Returns:
+        (bool, str) True if it passed and a character representing the reason it passed/failed.
+    """
+    if value is '-':
+        # Cannot determine due to no value specified. Assume it passed.
+        # Always the case for Fasta files, sometimes the case for VCF.
+        return True, '-'
+    if value is '?':
+        # Missing VCF position.
+        return False, '?'
+    if value >= threshold:
+        # PASS - value is greater than threshold
+        return True, 'Y'
+    # FAIL - value is less than threshold
+    return False, 'N'
+
+
 # @profile
 def analyze_position(reference_position, dups_position, samples):
     """
@@ -132,7 +161,6 @@ def analyze_position(reference_position, dups_position, samples):
     coverage_threshold = 10.0
     proportion_threshold = .9
 
-
     # General Stats
     # Assume true until proven otherwise.
     is_reference_clean = reference_position.simple_call != 'N'
@@ -146,16 +174,26 @@ def analyze_position(reference_position, dups_position, samples):
     # - All analyses called and passed all filters.
     # - All samples have consensus within their aligner/snpcaller combinations.
     is_all_quality_breadth = True
-    # General Stats quality breadth filter passes and all analyses are SNPs.
-    # is_best_snp = True
 
-    # position_stats is a counter across all SampleAnalyses at the current position. It is used in the Matrix files.
+    # A position is included in the missing data matrix if at least one analysis passes quality breadth and is a SNP.
+    is_missing_matrix = False
+
+    # position_stats is a counter across all SampleAnalyses at the current position. It used in the Matrix files.
     position_stats = Counter({
         # TODO: verify 'N' represents NoCall, AnyCall, Deletion, etc.
-        # Tally of A/C/G/T calls where everything else is called N representing
+        # Tally of SampleAnalysis A/C/G/T calls where anything else is called N.
         # 'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0,
-
-        # The character at each position of the following strings indicates whether a corresponding SampleAnalysis
+        #
+        # Tally of SampleAnalyses with any base call. Excludes None (X) and Any (N) calls.
+        # 'was_called': 0,
+        #
+        # Tally of SampleAnalyses with coverage/proportion at least as high as the threshold.
+        # 'passed_coverage_filter': 0, 'passed_proportion_filter': 0
+        #
+        # Tally of SampleAnalyses where the call was a degenerate, matched, or differed from the reference call.
+        # 'called_degen': 0, 'called_reference': 0, 'called_snp': 0
+        #
+        # The character at each position of the following filter strings indicates whether a corresponding SampleAnalysis
         # passed the filter:
         'CallWasMade': '',
         'PassedDepthFilter': '',
@@ -166,78 +204,52 @@ def analyze_position(reference_position, dups_position, samples):
     # TODO: replace bytearray with a list.
     # call_str is the base call for each SampleAnalysis starting with the reference.
     call_str = bytearray(reference_position.call, encoding='utf-8')
+    # masked_call_str is the same as the call string except calls that did not pass the coverage/proportion filter are
+    # masked out with 'N' indicating they did not pass.
+    masked_call_str = [reference_position.call]
 
     # all_sample_stats is a list of sample_stats. It represents all the SampleAnalysis stats grouped by sample name.
-    # Preallocate a tuple of tuples of Counters where each Counter maps one-to-one with an analysis from samples.
-    # all_sample_stats = []
-    all_sample_stats = tuple(tuple(Counter({
-        'was_called': 0,
-        'passed_coverage_filter': 0,
-        'passed_proportion_filter': 0,
-        'quality_breadth': 0,
-        'called_reference': 0,
-        'called_snp': 0,
-        'called_degen': 0
-    }) for __ in range(len(samples[0]) + 2)) for _ in range(len(samples)))
-    for sample_idx, sample in enumerate(samples):
-        # TODO: Removing the is_consensus bool from sample_stats because I'm not sure it is needed.
-        # Except for the first entry, sample_stats is composed of analysis_stats dictionaries for each aligner/snpcaller
-        # combination used on the sample. The first entry is a special consensus boolean that is true if all the
-        # analyses have the same DNA base call at this position.
-        # [is_consensus, analysis_stats, analysis_stats, analysis_stats, ...]
-        # sample_stats = [True]
-
+    all_sample_stats = []
+    for sample in samples:
         # sample_stats is composed of analysis_stats dictionaries for each aligner/snpcaller used on the sample.
         # The first two entries are special in that they summarize the analysis_stats. They are using a tripwire approach
         # where the flag will toggle if the assumption fails.
-        # sample_stats = [
-        #     # any - True if true in any of the analysis_stats.
-        #     Counter({
-        #         'was_called': 0,
-        #         'passed_coverage_filter': 0,
-        #         'passed_proportion_filter': 0,
-        #         'quality_breadth': 0,
-        #         'called_reference': 0,
-        #         'called_snp': 0,
-        #         'called_degen': 0
-        #     }),
-        #     # all - True if true in all of the analysis_stats.
-        #     Counter({
-        #         'was_called': 1,
-        #         'passed_coverage_filter': 1,
-        #         'passed_proportion_filter': 1,
-        #         'quality_breadth': 1,
-        #         'called_reference': 1,
-        #         'called_snp': 1,
-        #         'called_degen': 1
-        #     })
-        # ]
+        sample_stats = [
+            # any - True if true in any of the analysis_stats.
+            Counter({
+                'was_called': 0,
+                'passed_coverage_filter': 0,
+                'passed_proportion_filter': 0,
+                'quality_breadth': 0,
+                'called_reference': 0,
+                'called_snp': 0,
+                'called_degen': 0
+            }),
+            # all - True if true in all of the analysis_stats.
+            Counter({
+                'was_called': 1,
+                'passed_coverage_filter': 1,
+                'passed_proportion_filter': 1,
+                'quality_breadth': 1,
+                'called_reference': 1,
+                'called_snp': 1,
+                'called_degen': 1
+            })
+        ]
 
-        # TODO: Is there a performance difference in dereferencing
-        sample_stats = all_sample_stats[sample_idx]
-
-        # Initialize the 'all' summary with the assumption that all stats passed for all the aligner/snpcaller analysis
-        # combinations of the sample.
-        for stat in sample_stats[1]:
-            sample_stats[1][stat] = 1
-
+        # prev_analysis_call is used to detect sample consensus.
         prev_analysis_call = None
-        for analysis_idx, analysis in enumerate(sample):
+        for analysis in sample:
             # analysis_stats are unique to each SampleAnalysis. It is used in the Sample Statistics file.
-            # analysis_stats = Counter({
-            #     'was_called': 0,
-            #     'passed_coverage_filter': 0,
-            #     'passed_proportion_filter': 0,
-            #     'quality_breadth': 0,
-            #     'called_reference': 0,
-            #     'called_snp': 0,
-            #     'called_degen': 0
-            # })
-
-            # The first two indices of sample_stats are the 'any' and 'all' analysis summaries.
-            analysis_stats = sample_stats[analysis_idx + 2]
-
-            call_str.append(ord(analysis.call))
+            analysis_stats = Counter({
+                'was_called': 0,
+                'passed_coverage_filter': 0,
+                'passed_proportion_filter': 0,
+                'quality_breadth': 0,
+                'called_reference': 0,
+                'called_snp': 0,
+                'called_degen': 0
+            })
 
             # TODO: Must also be called (not X/N) and pass coverage/proportion filters
             # A sample has position consensus if all of its SampleAnalysis combinations have the same call.
@@ -260,39 +272,30 @@ def analyze_position(reference_position, dups_position, samples):
             # FIXME: coverage/proportion may be "PASS" if the value is not deprecated in the VCF contig parser.
             # get_proportion/get_coverage
 
-            # Cannot determine proportion due to missing data.
-            if analysis.coverage is '-':
+
+            is_pass_coverage, pass_str = _is_pass_filter(analysis.coverage, coverage_threshold)
+            position_stats['PassedDepthFilter'] += pass_str
+            if is_pass_coverage:
                 analysis_stats['passed_coverage_filter'] = 1
                 position_stats['passed_coverage_filter'] += 1
-                position_stats['PassedDepthFilter'] += '-'
-            # Missing VCF position.
-            elif analysis.coverage == '?':
-                position_stats['PassedDepthFilter'] += '?'
-                is_all_passed_coverage = False
-            elif analysis.coverage >= coverage_threshold:
-                analysis_stats['passed_coverage_filter'] = 1
-                position_stats['passed_coverage_filter'] += 1
-                position_stats['PassedDepthFilter'] += 'Y'
             else:
-                position_stats['PassedDepthFilter'] += 'N'
                 is_all_passed_coverage = False
 
-            # Cannot determine proportion due to missing data.
-            if analysis.proportion is '-':
+            is_pass_proportion, pass_str = _is_pass_filter(analysis.proportion, proportion_threshold)
+            position_stats['PassedProportionFilter'] += pass_str
+            if is_pass_proportion:
                 analysis_stats['passed_proportion_filter'] = 1
                 position_stats['passed_proportion_filter'] += 1
-                position_stats['PassedProportionFilter'] += '-'
-            # Missing VCF position.
-            elif analysis.proportion == '?':
-                position_stats['PassedProportionFilter'] += '?'
-                is_all_passed_proportion = False
-            elif analysis.proportion >= proportion_threshold:
-                analysis_stats['passed_proportion_filter'] = 1
-                position_stats['passed_proportion_filter'] += 1
-                position_stats['PassedProportionFilter'] += 'Y'
             else:
-                position_stats['PassedProportionFilter'] += 'N'
                 is_all_passed_proportion = False
+
+            call_str.append(ord(analysis.call))
+
+            #
+            if not analysis_stats['was_called'] or is_pass_coverage and is_pass_proportion:
+                masked_call_str.append(analysis.call)
+            else:
+                masked_call_str.append('N')
 
             # Count the number of A/C/G/T calls. Any other value is N. See Position.simple_call().
             position_stats[analysis.simple_call] += 1
@@ -314,13 +317,14 @@ def analyze_position(reference_position, dups_position, samples):
                 else:
                     position_stats['called_snp'] += 1
                     analysis_stats['called_snp'] = 1
+                    is_missing_matrix = True
             else:
                 is_all_quality_breadth = False
 
-            # sample_stats.append(analysis_stats)
+            sample_stats.append(analysis_stats)
 
 
-        # NOTE: There could be an index error  due to [2:] if there is not at least one sample analysis in sample_stats.
+        # NOTE: There could be an index error due to [2:] if there is not at least one sample analysis in sample_stats.
         # Summarize the statistics for each sample where any or all of its SampleAnalysis combinations passed.
         # It is using a tripwire approach where the if statement toggles the flag if the assumption fails.
         # - any assumes all the stats failed
@@ -334,9 +338,7 @@ def analyze_position(reference_position, dups_position, samples):
                     # all - The stat failed in at least one analysis_stat.
                     sample_stats[1][key] = 0
 
-        # all_sample_stats.append(sample_stats)
-
-    # FIXME: all_passed_proportion, all_passed_consensus, is_quality_breadth, is_best_snp
+        all_sample_stats.append(sample_stats)
 
     return PositionInfo(
         # General Stats
@@ -347,13 +349,19 @@ def analyze_position(reference_position, dups_position, samples):
         is_all_passed_proportion=is_all_passed_proportion,
         is_all_passed_consensus=is_all_sample_consensus,
         is_all_quality_breadth=is_all_quality_breadth,
-        is_any_snp=position_stats['called_snp'] > 0,
         is_best_snp=is_all_quality_breadth and position_stats['called_snp'] > 0,
+
+        # NOTE: Would it increase performance if this were a tuple of tuples and we avoided using append?
+        # Sample Stats - A list of list of Counters representing the stats for each analysis file grouped by sample.
         all_sample_stats=all_sample_stats,
-        # TODO: return all_sample_stats
+
+        # Missing Data Matrix condition - at least one SampleAnalysis passes quality_breadth and is a SNP.
+        is_missing_matrix=is_missing_matrix,
+
         # NASP Master Matrix
-        call_str=call_str,
+        # Counters
         called_reference=position_stats['called_reference'],
+        called_snp=position_stats['called_snp'],
         passed_coverage_filter=position_stats['passed_coverage_filter'],
         passed_proportion_filter=position_stats['passed_proportion_filter'],
         num_A=position_stats['A'],
@@ -361,10 +369,9 @@ def analyze_position(reference_position, dups_position, samples):
         num_G=position_stats['G'],
         num_T=position_stats['T'],
         num_N=position_stats['N'],
-        # TODO: Remove any_snp if unused in any output file.
-        # is_any_snp is a similar looking stat in General Stats. If this stat is required, add documentation explaining
-        # the difference.
-        any_snps=position_stats['any_snps'],
+        # Strings
+        call_str=call_str,
+        masked_call_str=masked_call_str,
         CallWasMade=bytearray(position_stats['CallWasMade'], encoding='utf-8'),
         PassedDepthFilter=bytearray(position_stats['PassedDepthFilter'], encoding='utf-8'),
         PassedProportionFilter=bytearray(position_stats['PassedProportionFilter'], encoding='utf-8'),
@@ -397,9 +404,15 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
     # Initialize outfile coroutines. This will create the file, write the header, and wait for each line of data.
-    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '.tsv'), reference_contig.name,
+    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_master.tsv'), reference_contig.name,
+                                        identifiers)
+    bestsnp_matrix = write_bestsnp_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_best.tsv'), reference_contig.name,
+                                        sample_groups)
+    missing_matrix = write_missingdata_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_missing.tsv'), reference_contig.name,
                                         identifiers)
     master_matrix.send(None)
+    bestsnp_matrix.send(None)
+    missing_matrix.send(None)
 
     for position in map(analyze_position, reference_contig.positions, dups_contig.positions,
                         sample_positions(reference_contig.name, sample_groups)):
@@ -411,7 +424,7 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
         contig_stats['all_passed_proportion'] += 1 if position.is_all_passed_proportion else 0
         contig_stats['all_passed_consensus'] += 1 if position.is_all_passed_consensus else 0
         contig_stats['quality_breadth'] += 1 if position.is_all_quality_breadth else 0
-        contig_stats['any_snps'] += 1 if position.is_any_snp else 0
+        contig_stats['any_snps'] += 1 if position.called_snp > 0 else 0
         contig_stats['best_snps'] += 1 if position.is_best_snp else 0
 
         # Sum the SampleAnalysis stats preserving sample_groups order.
@@ -424,6 +437,8 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
 
         # Write position to Contig Master Matrix.
         master_matrix.send(position)
+        bestsnp_matrix.send(position)
+        missing_matrix.send(position)
 
     return sample_stats, contig_stats
 
@@ -447,7 +462,8 @@ def analyze_samples(reference_fasta, reference_dups, sample_analyses):
         # NOTE: if the loop does not run, None will be passed to write_general_stats.
         sample_stats = None
 
-        for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
+        # for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
+        for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
                                                      itertools.repeat(sample_groups)):
             # TODO: use the contig name from contig stat to begin reassembling the matrices.
             contig_stats.append(contig_stat)
