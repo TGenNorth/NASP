@@ -187,7 +187,7 @@ def write_master_matrix(filepath, contig_name, identifiers):
                 'CallWasMade': call_was_made,
                 'PassedDepthFilter': passed_depth_filter,
                 'PassedProportionFilter': passed_proportion_filter,
-                'Pattern': 'TODO'
+                'Pattern': "".join(row.Pattern)
             }
             # Match each base call with its sample analysis column.
             line.update({k: v for k, v in zip(identifiers, call_str[1:])})
@@ -237,7 +237,7 @@ def write_missingdata_matrix(filepath, contig_name, identifiers):
                 'CallWasMade': call_was_made,
                 'PassedDepthFilter': passed_depth_filter,
                 'PassedProportionFilter': passed_proportion_filter,
-                'Pattern': 'TODO'
+                'Pattern': "".join(row.Pattern)
             }
             # Match each base call with its sample analysis column.
             line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
@@ -316,7 +316,7 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
                 'Position': position,
                 'InDupRegion': row.is_reference_duplicated,
                 'SampleConsensus': row.is_all_passed_consensus,
-                'Pattern': 'TODO'
+                'Pattern': "".join(row.Pattern)
             }
             # Match each base call with its sample analysis column.
             line.update({sample_name: call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})

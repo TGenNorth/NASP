@@ -198,12 +198,23 @@ def analyze_position(reference_position, dups_position, samples):
         'CallWasMade': '',
         'PassedDepthFilter': '',
         'PassedProportionFilter': '',
-        'Pattern': ''
+        'Pattern': []
     })
+
+    # TODO: document pattern legend
+    # pattern_legend
+    pattern_legend = {None: 1}
+    if reference_position.simple_call == 'N':
+        position_stats['Pattern'] = ['N']
+    else:
+        position_stats['Pattern'] = ['1']
+        pattern_legend[reference_position.simple_call] = '1'
+
 
     # TODO: replace bytearray with a list.
     # call_str is the base call for each SampleAnalysis starting with the reference.
     call_str = bytearray(reference_position.call, encoding='utf-8')
+
     # masked_call_str is the same as the call string except calls that did not pass the coverage/proportion filter are
     # masked out with 'N' indicating they did not pass.
     masked_call_str = [reference_position.call]
@@ -272,7 +283,6 @@ def analyze_position(reference_position, dups_position, samples):
             # FIXME: coverage/proportion may be "PASS" if the value is not deprecated in the VCF contig parser.
             # get_proportion/get_coverage
 
-
             is_pass_coverage, pass_str = _is_pass_filter(analysis.coverage, coverage_threshold)
             position_stats['PassedDepthFilter'] += pass_str
             if is_pass_coverage:
@@ -291,20 +301,30 @@ def analyze_position(reference_position, dups_position, samples):
 
             call_str.append(ord(analysis.call))
 
-            #
+            # Missing Data Matrix masks calls that did not pass a filter with 'N'
+            # TODO: document that we are checking for was_called because we don't want to mask 'X' calls
             if not analysis_stats['was_called'] or is_pass_coverage and is_pass_proportion:
                 masked_call_str.append(analysis.call)
             else:
                 masked_call_str.append('N')
+
+            # TODO: document meaning/purpose of pattern
+            # Patterns include
+            if analysis.simple_call != 'N' and is_pass_coverage and is_pass_proportion:
+                # Each new base call encountered is assigned a the next higher number
+                if analysis.simple_call not in pattern_legend:
+                    pattern_legend[None] += 1
+                    pattern_legend[analysis.simple_call] = pattern_legend[None]
+                position_stats['Pattern'].append(str(pattern_legend[analysis.simple_call]))
+            else:
+                position_stats['Pattern'].append('N')
 
             # Count the number of A/C/G/T calls. Any other value is N. See Position.simple_call().
             position_stats[analysis.simple_call] += 1
 
             # TODO: Clarify the purpose of this if statement.
             # Only count significant measurements.
-            if analysis_stats['passed_coverage_filter'] and analysis_stats['passed_proportion_filter'] and \
-                            reference_position.simple_call != 'N' and dups_position.call != '1':
-
+            if is_pass_coverage and is_pass_proportion and reference_position.simple_call != 'N' and dups_position.call != '1':
                 analysis_stats['quality_breadth'] = 1
 
                 # TODO: Should the first if be simplecall?
@@ -375,7 +395,7 @@ def analyze_position(reference_position, dups_position, samples):
         CallWasMade=bytearray(position_stats['CallWasMade'], encoding='utf-8'),
         PassedDepthFilter=bytearray(position_stats['PassedDepthFilter'], encoding='utf-8'),
         PassedProportionFilter=bytearray(position_stats['PassedProportionFilter'], encoding='utf-8'),
-        Pattern=bytearray(position_stats['Pattern'], encoding='utf-8')
+        Pattern=position_stats['Pattern']
     )
 
 
