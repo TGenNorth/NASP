@@ -16,6 +16,7 @@ def explain(matrix_parameters, sample_analyses):
 
     while True:
         try:
+            print('\a')
             contig_name, _, position = input("Enter LocusID: ").partition('::')
             index = int(position) - 1
         except ValueError:
@@ -25,6 +26,7 @@ def explain(matrix_parameters, sample_analyses):
         dups_contig = matrix_parameters.reference_dups.get_contig(contig_name)
         for idx, row in enumerate(zip(reference_contig.positions, dups_contig.positions, sample_positions(reference_contig.name, sample_groups))):
             if index == idx:
+                print('\a')
                 print(analyze_position(row[0], row[1], row[2]))
                 break
 

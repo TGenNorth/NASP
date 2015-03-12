@@ -60,14 +60,14 @@ def get_header(type, identifiers):
 
 
 # def write_sample_stats(filepath):
-#     sample_stats = None
+# sample_stats = None
 #
-#     try:
-#         while True:
-#             all_sample_stats = yield
+# try:
+# while True:
+# all_sample_stats = yield
 #
-#             if sample_stats is None:
-#                 sample_stats = all_sample_stats
+# if sample_stats is None:
+# sample_stats = all_sample_stats
 #             for i, sample in enumerate(all_sample_stats):
 #                 for j, analysis in enumerate(sample):
 #                     sample_stats[i][j].update(analysis)
@@ -77,13 +77,19 @@ def get_header(type, identifiers):
 #         pass
 
 
-def write_sample_stats(filepath, sample_stats, sample_groups):
+def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
     """
     Args:
         filepath (str):
         sample_stats (list of lists of Counters):
         sample_groups (tuple of tuples of SampleAnalysis):
+        reference_length (int): Total number of positions in the reference.
     """
+    fieldnames = ('Sample', 'Sample::Analysis', 'was_called', 'was_called (%)', 'passed_coverage_filter',
+                  'passed_coverage_filter (%)', 'passed_proportion_filter', 'passed_proportion_filter (%)',
+                  'quality_breadth', 'quality_breadth (%)', 'called_reference', 'called_reference (%)',
+                  'called_snp', 'called_snp (%)', 'called_degen', 'called_degen (%)')
+
     any = Counter({'Sample': '[any]'})
     all = Counter({'Sample': '[all]'})
 
@@ -95,25 +101,36 @@ def write_sample_stats(filepath, sample_stats, sample_groups):
         sample_stat[1]['Sample'] = sample[0].name
         sample_stat[1]['Sample::Analysis'] = '[all]'
 
+        for stat in fieldnames[2::2]:
+            sample_stat[0][stat + ' (%)'] = "{0:.2f}%".format(sample_stat[0][stat] / reference_length * 100)
+            sample_stat[1][stat + ' (%)'] = "{0:.2f}%".format(sample_stat[1][stat] / reference_length * 100)
+
+    # Calculate overall stat percentages
+    for stat in fieldnames[2::2]:
+        any[stat + ' (%)'] = "{0:.2f}%".format(any[stat] / reference_length * 100)
+        all[stat + ' (%)'] = "{0:.2f}%".format(any[stat] / reference_length * 100)
 
     with open('sample_stats.tsv', 'w') as handle:
-        fieldnames = ('Sample', 'Sample::Analysis', 'was_called', 'passed_coverage_filter', 'passed_proportion_filter',
-                      'quality_breadth', 'called_reference', 'called_snp', 'called_degen')
         writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
+        handle.write('\n')
         # Write the any and all summaries genome.
         writer.writerow(any)
         writer.writerow(all)
 
         # Join sample names and analysis identifiers with the analysis stats before writing them to file.
         for sample_stat, sample in zip(sample_stats, sample_groups):
+            handle.write('\n')
             writer.writerow(sample_stat[0])
             writer.writerow(sample_stat[1])
+            # Join sample identifiers with sample data then write to file.
             for analysis_stats, identifier in zip(sample_stat[2:], sample):
+                # Calculate per-analysis stat percentages
+                for stat in fieldnames[2::2]:
+                    analysis_stats[stat + ' (%)'] = "{0:.2f}%".format(analysis_stats[stat] / reference_length * 100)
                 analysis_stats['Sample'] = identifier.name
                 analysis_stats['Sample::Analysis'] = identifier.identifier
                 writer.writerow(analysis_stats)
-
 
 
 def _sum_contig_stats(summation, contig_stat):
@@ -126,18 +143,35 @@ def write_general_stats(filepath, contig_stats):
     Args:
         filepath (str):
         contig_stats (tuple of Counter):
+
+    Return:
+        int: Total reference length.
     """
     whole_genome_stats = functools.reduce(_sum_contig_stats, contig_stats, Counter({'Contig': ''}))
     whole_genome_stats['Contig'] = 'Whole Genome'
 
+    reference_length = whole_genome_stats['reference_length']
+
     with open(filepath, 'w') as handle:
-        fieldnames = ('Contig', 'reference_length', 'reference_clean', 'reference_duplicated', 'all_called',
-                      'all_passed_coverage', 'all_passed_proportion', 'all_passed_consensus', 'quality_breadth',
-                      'any_snps', 'best_snps')
+        fieldnames = ('Contig', 'reference_length', 'reference_clean', 'reference_clean (%)', 'reference_duplicated',
+                      'reference_duplicated (%)', 'all_called', 'all_called (%)', 'all_passed_coverage',
+                      'all_passed_coverage (%)', 'all_passed_proportion', 'all_passed_proportion (%)',
+                      'all_passed_consensus', 'all_passed_consensus (%)', 'quality_breadth', 'quality_breadth (%)',
+                      'any_snps', 'any_snps (%)', 'best_snps', 'best_snps (%)')
         writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t')
         writer.writeheader()
+        handle.write('\n')
+        # Calculate whole genome stat percentages.
+        for stat in fieldnames[2::2]:
+            whole_genome_stats[stat + ' (%)'] = "{0:.2f}%".format(whole_genome_stats[stat] / reference_length * 100)
         writer.writerow(whole_genome_stats)
-        writer.writerows(contig_stats)
+        for contig_stat in contig_stats:
+            # Calculate contig stat percentages.
+            for stat in fieldnames[2::2]:
+                contig_stat[stat + ' (%)'] = "{0:.2f}%".format(contig_stat[stat] / reference_length * 100)
+            writer.writerow(contig_stat)
+
+    return whole_genome_stats['reference_length']
 
 
 def write_master_matrix(filepath, contig_name, identifiers):
@@ -319,103 +353,104 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
                 'Pattern': "".join(row.Pattern)
             }
             # Match each base call with its sample analysis column.
-            line.update({sample_name: call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})
+            line.update(
+                {sample_name: call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})
 
             writer.writerow(line)
 
 
-# def write_fasta(filepath, contig_name):
-#     with open(filepath, 'w') as handle:
-#         handle.write('>' + contig_name + '\n')
-#         num_chars = 0
-#         while True:
-#             row = yield
-#             handle.write(row)
-#             num_chars += 1
-#             if num_chars == 80:
-#                 handle.write('\n')
-#                 num_chars = 0
+            # def write_fasta(filepath, contig_name):
+            #     with open(filepath, 'w') as handle:
+            #         handle.write('>' + contig_name + '\n')
+            #         num_chars = 0
+            #         while True:
+            #             row = yield
+            #             handle.write(row)
+            #             num_chars += 1
+            #             if num_chars == 80:
+            #                 handle.write('\n')
+            #                 num_chars = 0
 
-                # for matrix_format in all_vcfs:
-                # if len(encountered_calls) > 0:
-                #             matrix_format['linetowrite'] += ",".join(encountered_calls)
-                #         else:
-                #             matrix_format['linetowrite'] += "."
-                #         matrix_format['linetowrite'] += "\t.\tPASS\tAN={0};NS={1}\tGT:FT".format(len(encountered_calls)+1, str(call_data['snpcall']+call_data['indelcall']+call_data['refcall']))
-                #         for vcf_current_data in vcf_pending_data:
-                #             matrix_format['linetowrite'] += "\t{0}:".format(str(vcf_current_data['GT']))
-                #             if not vcf_current_data['was_called']:
-                #                 matrix_format['linetowrite'] += "NoCall"
-                #             elif not vcf_current_data['passed_coverage']:
-                #                 matrix_format['linetowrite'] += "CovFail"
-                #             elif not vcf_current_data['passed_proportion']:
-                #                 matrix_format['linetowrite'] += "PropFail"
-                #             else:
-                #                 matrix_format['linetowrite'] += "PASS"
-                #         matrix_format['linetowrite'] += "\n"
+            # for matrix_format in all_vcfs:
+            # if len(encountered_calls) > 0:
+            #             matrix_format['linetowrite'] += ",".join(encountered_calls)
+            #         else:
+            #             matrix_format['linetowrite'] += "."
+            #         matrix_format['linetowrite'] += "\t.\tPASS\tAN={0};NS={1}\tGT:FT".format(len(encountered_calls)+1, str(call_data['snpcall']+call_data['indelcall']+call_data['refcall']))
+            #         for vcf_current_data in vcf_pending_data:
+            #             matrix_format['linetowrite'] += "\t{0}:".format(str(vcf_current_data['GT']))
+            #             if not vcf_current_data['was_called']:
+            #                 matrix_format['linetowrite'] += "NoCall"
+            #             elif not vcf_current_data['passed_coverage']:
+            #                 matrix_format['linetowrite'] += "CovFail"
+            #             elif not vcf_current_data['passed_proportion']:
+            #                 matrix_format['linetowrite'] += "PropFail"
+            #             else:
+            #                 matrix_format['linetowrite'] += "PASS"
+            #         matrix_format['linetowrite'] += "\n"
 
 
-# def send_to_matrix_handles(self, matrix_formats):
-#     """
-#     Writes headers and handles per-matrix logic.  Calls _write_matrix_line
-#     to handle the per-line computation and analysis.
-#     """
-#     for matrix_format in matrix_formats:
-#         if matrix_format['dataformat'] == 'matrix':
-#             matrix_format['handle'].write("LocusID\tReference\t")
-#             for genome in self._genomes:
-#                 matrix_format['handle'].write("{0}\t".format(genome.identifier()))
-#             for genome_path in self._failed_genomes:
-#                 matrix_format['handle'].write("{0}\t".format(genome_path))
-#             if matrix_format['filter'] == 'bestsnp' or matrix_format['filter'] == 'includeref':
-#                 matrix_format['handle'].write(
-#                     "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tPattern\tPattern#\n")
-#             else:
-#                 # must be all callable or missing data
-#                 matrix_format['handle'].write(
-#                     "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\t" +
-#                     "Contig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\n")
-#             matrix_format['linetowrite'] = ''
-#         elif matrix_format['dataformat'] == 'fasta':
-#             matrix_format['fastadata'] = GenomeStatus()
-#             for genome in self._genomes:
-#                 matrix_format['fastadata'].add_contig(genome.identifier())
-#         elif matrix_format['dataformat'] == 'vcf':
-#             matrix_format['handle'].write("##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(__version__))
-#             for current_contig in self._reference.get_contigs():
-#                 matrix_format['handle'].write("##contig=<ID=\"{0}\",length={1}>\n".format(current_contig,
-#                                                                                           self._reference.get_contig_length(
-#                                                                                               current_contig)))
-#             for genome in self._genomes:
-#                 matrix_format['handle'].write(
-#                     "##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>\n".format(genome.identifier()))
-#             matrix_format['handle'].write(
-#                 "##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">\n")
-#             matrix_format['handle'].write(
-#                 "##FILTER=<ID=NoCall,Description=\"No call for this sample at this position\">\n")
-#             matrix_format['handle'].write(
-#                 "##FILTER=<ID=CovFail,Description=\"Insufficient depth of coverage for this sample at this position\">\n")
-#             matrix_format['handle'].write(
-#                 "##FILTER=<ID=PropFail,Description=\"Insufficient proportion of reads were variant for this sample at this position\">\n")
-#             matrix_format['handle'].write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
-#             matrix_format['handle'].write(
-#                 "##FORMAT=<ID=FT,Number=1,Type=String,Description=\"Filters that failed for this sample at this position\">\n")
-#             matrix_format['handle'].write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
-#             for genome in self._genomes:
-#                 matrix_format['handle'].write("\t" + genome.identifier())
-#             matrix_format['handle'].write("\n")
-#     # Key None stores next unused
-#     pattern_data = {None: 1}
-#     for current_contig in self.get_contigs():
-#         for current_pos in range(1, self._reference.get_contig_length(current_contig) + 1):
-#             self._format_matrix_line(current_contig, current_pos, matrix_formats, pattern_data)
-#             for matrix_format in matrix_formats:
-#                 if matrix_format['dataformat'] == 'matrix' and matrix_format['linetowrite'] is not None:
-#                     matrix_format['handle'].write(matrix_format['linetowrite'])
-#                     matrix_format['linetowrite'] = ''
-#                 if matrix_format['dataformat'] == 'vcf' and matrix_format['linetowrite'] is not None:
-#                     matrix_format['handle'].write(matrix_format['linetowrite'])
-#                     matrix_format['linetowrite'] = ''
-#     for matrix_format in matrix_formats:
-#         if matrix_format['dataformat'] == 'fasta':
-#             matrix_format['fastadata'].send_to_fasta_handle(matrix_format['handle'])
+            # def send_to_matrix_handles(self, matrix_formats):
+            #     """
+            #     Writes headers and handles per-matrix logic.  Calls _write_matrix_line
+            #     to handle the per-line computation and analysis.
+            #     """
+            #     for matrix_format in matrix_formats:
+            #         if matrix_format['dataformat'] == 'matrix':
+            #             matrix_format['handle'].write("LocusID\tReference\t")
+            #             for genome in self._genomes:
+            #                 matrix_format['handle'].write("{0}\t".format(genome.identifier()))
+            #             for genome_path in self._failed_genomes:
+            #                 matrix_format['handle'].write("{0}\t".format(genome_path))
+            #             if matrix_format['filter'] == 'bestsnp' or matrix_format['filter'] == 'includeref':
+            #                 matrix_format['handle'].write(
+            #                     "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tPattern\tPattern#\n")
+            #             else:
+            #                 # must be all callable or missing data
+            #                 matrix_format['handle'].write(
+            #                     "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\t" +
+            #                     "Contig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\n")
+            #             matrix_format['linetowrite'] = ''
+            #         elif matrix_format['dataformat'] == 'fasta':
+            #             matrix_format['fastadata'] = GenomeStatus()
+            #             for genome in self._genomes:
+            #                 matrix_format['fastadata'].add_contig(genome.identifier())
+            #         elif matrix_format['dataformat'] == 'vcf':
+            #             matrix_format['handle'].write("##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(__version__))
+            #             for current_contig in self._reference.get_contigs():
+            #                 matrix_format['handle'].write("##contig=<ID=\"{0}\",length={1}>\n".format(current_contig,
+            #                                                                                           self._reference.get_contig_length(
+            #                                                                                               current_contig)))
+            #             for genome in self._genomes:
+            #                 matrix_format['handle'].write(
+            #                     "##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>\n".format(genome.identifier()))
+            #             matrix_format['handle'].write(
+            #                 "##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">\n")
+            #             matrix_format['handle'].write(
+            #                 "##FILTER=<ID=NoCall,Description=\"No call for this sample at this position\">\n")
+            #             matrix_format['handle'].write(
+            #                 "##FILTER=<ID=CovFail,Description=\"Insufficient depth of coverage for this sample at this position\">\n")
+            #             matrix_format['handle'].write(
+            #                 "##FILTER=<ID=PropFail,Description=\"Insufficient proportion of reads were variant for this sample at this position\">\n")
+            #             matrix_format['handle'].write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+            #             matrix_format['handle'].write(
+            #                 "##FORMAT=<ID=FT,Number=1,Type=String,Description=\"Filters that failed for this sample at this position\">\n")
+            #             matrix_format['handle'].write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
+            #             for genome in self._genomes:
+            #                 matrix_format['handle'].write("\t" + genome.identifier())
+            #             matrix_format['handle'].write("\n")
+            #     # Key None stores next unused
+            #     pattern_data = {None: 1}
+            #     for current_contig in self.get_contigs():
+            #         for current_pos in range(1, self._reference.get_contig_length(current_contig) + 1):
+            #             self._format_matrix_line(current_contig, current_pos, matrix_formats, pattern_data)
+            #             for matrix_format in matrix_formats:
+            #                 if matrix_format['dataformat'] == 'matrix' and matrix_format['linetowrite'] is not None:
+            #                     matrix_format['handle'].write(matrix_format['linetowrite'])
+            #                     matrix_format['linetowrite'] = ''
+            #                 if matrix_format['dataformat'] == 'vcf' and matrix_format['linetowrite'] is not None:
+            #                     matrix_format['handle'].write(matrix_format['linetowrite'])
+            #                     matrix_format['linetowrite'] = ''
+            #     for matrix_format in matrix_formats:
+            #         if matrix_format['dataformat'] == 'fasta':
+            #             matrix_format['fastadata'].send_to_fasta_handle(matrix_format['handle'])
