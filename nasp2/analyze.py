@@ -307,6 +307,10 @@ def analyze_position(reference_position, dups_position, samples):
                 masked_call_str.append(analysis.call)
             else:
                 masked_call_str.append('N')
+                is_all_sample_consensus = False
+
+            if analysis.simple_call == 'N':
+                is_all_sample_consensus = False
 
             # TODO: document meaning/purpose of pattern
             # Patterns include
