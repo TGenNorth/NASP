@@ -130,11 +130,11 @@ def _is_pass_filter(value, threshold):
     Returns:
         (bool, str) True if it passed and a character representing the reason it passed/failed.
     """
-    if value is '-':
+    if value == '-':
         # Cannot determine due to no value specified. Assume it passed.
         # Always the case for Fasta files, sometimes the case for VCF.
         return True, '-'
-    if value is '?':
+    if value == '?':
         # Missing VCF position.
         return False, '?'
     if value >= threshold:
@@ -482,9 +482,13 @@ def analyze_samples(reference_fasta, reference_dups, sample_analyses):
         # NOTE: if the loop does not run, None will be passed to write_general_stats.
         sample_stats = None
 
-        # for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
-        for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
+        is_first_line = True
+
+        for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
+        #for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
                                                      itertools.repeat(sample_groups)):
+
+
             # TODO: use the contig name from contig stat to begin reassembling the matrices.
             contig_stats.append(contig_stat)
 
