@@ -111,7 +111,7 @@ def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
         all[stat + ' (%)'] = "{0:.2f}%".format(any[stat] / reference_length * 100)
 
     with open('sample_stats.tsv', 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t')
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t', lineterminator='\n')
         writer.writeheader()
         handle.write('\n')
         # Write the any and all summaries genome.
@@ -158,7 +158,7 @@ def write_general_stats(filepath, contig_stats):
                       'all_passed_coverage (%)', 'all_passed_proportion', 'all_passed_proportion (%)',
                       'all_passed_consensus', 'all_passed_consensus (%)', 'quality_breadth', 'quality_breadth (%)',
                       'any_snps', 'any_snps (%)', 'best_snps', 'best_snps (%)')
-        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t')
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t', lineterminator='\n')
         writer.writeheader()
         handle.write('\n')
         # Calculate whole genome stat percentages.
@@ -174,7 +174,7 @@ def write_general_stats(filepath, contig_stats):
     return whole_genome_stats['reference_length']
 
 
-def write_master_matrix(filepath, contig_name, identifiers):
+def write_master_matrix(filepath, contig_name, identifiers, offset):
     """
     Args:
         filepath (str): Path to the output file.
@@ -182,13 +182,12 @@ def write_master_matrix(filepath, contig_name, identifiers):
         identifiers (tuple of
     """
     with open(filepath, 'w') as handle:
-        print('master', get_header('all_callable', identifiers))
-        writer = csv.DictWriter(handle, fieldnames=get_header('all_callable', identifiers), delimiter='\t')
+        handle.seek(offset)
+        writer = csv.DictWriter(handle, fieldnames=get_header('all_callable', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
         while True:
             row = yield
-            # print(row.call_str, position, contig_name, filepath)
             position += 1
             call_str = str(row.call_str, encoding='utf-8')
             call_was_made = str(row.CallWasMade, encoding='utf-8')
@@ -230,7 +229,7 @@ def write_master_matrix(filepath, contig_name, identifiers):
 
 def write_missingdata_matrix(filepath, contig_name, identifiers):
     with open(filepath, 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=get_header('missing_data', identifiers), delimiter='\t')
+        writer = csv.DictWriter(handle, fieldnames=get_header('missing_data', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
         while True:
@@ -313,8 +312,7 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
         num_analyses += len(sample)
 
     with open(filepath, 'w') as handle:
-        print(get_header('best_snp', sample_names))
-        writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t')
+        writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
         while True:

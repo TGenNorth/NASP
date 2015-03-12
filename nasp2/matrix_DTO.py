@@ -12,6 +12,7 @@ Created on April 3, 2014
 from xml.etree import ElementTree
 from concurrent.futures import ProcessPoolExecutor
 from collections import namedtuple
+import itertools
 
 from nasp2.parse import Vcf, Fasta
 
@@ -85,7 +86,11 @@ def parse_dto(xml_file):
         matrix_params['reference_fasta'] = matrix_params['reference_fasta'].result()
         matrix_params['reference_dups'] = matrix_params['reference_dups'].result()
         # TODO: try/catch futures exception to return a failed genome object and write the error to the parse log.
-        return MatrixParameters(**matrix_params), tuple(future.result() for future in futures)
+        # Group the analyses by sample name in order to collect sample-level statistics.
+        # The SampleAnalyses are sorted before grouping because groups are determined by when the key changes.
+        # See analyse.sample_positions() for more details regarding the structure of sample_groups
+        sample_analyses = tuple(tuple(v) for _, v in itertools.groupby(sorted(future.result() for future in futures), lambda x: x.name))
+        return MatrixParameters(**matrix_params), sample_analyses
 
 
 def main():
