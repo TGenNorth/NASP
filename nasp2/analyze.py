@@ -500,6 +500,5 @@ def analyze_samples(reference_fasta, reference_dups, sample_analyses):
                     for j, analysis in enumerate(sample):
                         sample_stats[i][j].update(analysis)
 
-        write_sample_stats(os.path.join(OUTPUT_DIR, 'sample_stats.tsv'), sample_stats, sample_groups)
-
-        write_general_stats(os.path.join(OUTPUT_DIR, 'general_stats.tsv'), contig_stats)
+        reference_length = write_general_stats(os.path.join(OUTPUT_DIR, 'general_stats.tsv'), contig_stats)
+        write_sample_stats(os.path.join(OUTPUT_DIR, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
