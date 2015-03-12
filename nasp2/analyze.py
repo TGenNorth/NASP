@@ -404,7 +404,7 @@ def analyze_position(reference_position, dups_position, samples):
 
 
 # @profile
-def analyze_contig(reference_contig, dups_contig, sample_groups):
+def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
     """
     analyze_contig expects reference_contig, dups_contig, and sample_analyses to represent the same contig from
     different sources.
@@ -428,8 +428,8 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
     # Initialize outfile coroutines. This will create the file, write the header, and wait for each line of data.
-    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_master.tsv'), reference_contig.name,
-                                        identifiers)
+    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, 'master_matrix.tsv'), reference_contig.name,
+                                        identifiers, offset)
     bestsnp_matrix = write_bestsnp_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_best.tsv'), reference_contig.name,
                                         sample_groups)
     missing_matrix = write_missingdata_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_missing.tsv'), reference_contig.name,
@@ -438,9 +438,11 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     bestsnp_matrix.send(None)
     missing_matrix.send(None)
 
+
+    contig_stats['reference_length'] = len(reference_contig)
     for position in map(analyze_position, reference_contig.positions, dups_contig.positions,
                         sample_positions(reference_contig.name, sample_groups)):
-        contig_stats['reference_length'] += 1
+        # contig_stats['reference_length'] += 1
         contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
         contig_stats['reference_duplicated'] += 1 if position.is_reference_duplicated else 0
         contig_stats['all_called'] += 1 if position.is_all_called else 0
@@ -467,31 +469,62 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     return sample_stats, contig_stats
 
 
+# The following equations represent the maximum number of characters a contig could use in the master matrix:
+# 2 * len(contig_name) + len('::') = LocusID(1) + Contig
+# 3 * '/'
+# (5 * #analyses + (1 ref)) = analyses calls + filter strings
+# 2 * len('FALSE') = InDupsPosition + SampleConsensus
+# #char in # analyses * 15 = #a/c/g/t/n/indel/snpcall/...
+# #fieldnames = '\t \n' delimiters
+# All * #positions
+#
+# + 2 * #char in range of positions = LocusID2 + Position
+def _file_positions(reference, sample_groups, offset = 0):
+    """
+    _file_positions yields a starting file position for each contig of the master matrix file.
+    This allows multiple processes to write to the same master matrix file while processing contigs in parallel.
+
+    Args:
+        reference (Fasta):
+        sample_groups (tuple of tuple of SampleAnalysis):
+    """
+    num_positions = 0
+    num_analyses = sum(len(sample) for sample in sample_groups)
+
+    num_chars_in_sequence_of_num_analyses = sum(len(str(x)) for x in range(num_analyses))
+
+    num_master_matrix_fieldnames = 22 + num_analyses
+
+    partial_line_size = 5 * num_analyses + 1 + num_chars_in_sequence_of_num_analyses * 15 + num_master_matrix_fieldnames + 15
+    for contig in reference.contigs:
+        yield offset
+        name_len = len(contig.name)
+        num_contig_positions = len(contig)
+        num_chars_in_sequence_of_positions = sum(len(str(x)) for x in range(num_positions, num_positions + num_contig_positions))
+        line_size = partial_line_size + 2 * name_len + 2 * num_chars_in_sequence_of_positions
+        num_positions += num_contig_positions
+        offset += line_size * num_contig_positions
+
+
 # TODO: Should analyze_samples return the contig_stats generator so that a unit test can check the return value and let
 # another function actually write the stats file?
 # @profile
-def analyze_samples(reference_fasta, reference_dups, sample_analyses):
+def analyze_samples(reference_fasta, reference_dups, sample_groups):
     """
     Args:
         reference_fasta (Fasta):
         reference_dups (Fasta):
-        sample_analyses (list of SampleAnalysis): The sample analysis are grouped by Sample.
+        sample_groups (tuple of tuple of SampleAnalysis): The sample analysis grouped by Sample.
     """
-
-    # Group the analyses by sample name in order to collect sample-level statistics.
-    # The SampleAnalyses are sorted before grouping because groups are determined by when the key changes.
-    sample_groups = tuple(tuple(v) for _, v in itertools.groupby(sorted(sample_analyses), lambda x: x.name))
     with ProcessPoolExecutor() as executor:
         contig_stats = []
         # NOTE: if the loop does not run, None will be passed to write_general_stats.
         sample_stats = None
 
-        is_first_line = True
+        file_positions = _file_positions(reference_fasta, sample_groups, 0)
 
         for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
-        #for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
-                                                     itertools.repeat(sample_groups)):
-
+                                                     itertools.repeat(sample_groups), file_positions):
 
             # TODO: use the contig name from contig stat to begin reassembling the matrices.
             contig_stats.append(contig_stat)
