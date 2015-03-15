@@ -70,7 +70,7 @@ def parse_dto(xml_file):
     with ProcessPoolExecutor() as executor:
         # Parse matrix parameters indexing the reference and duplicates file in parallel.
         matrix_params = {element.tag.replace('-', '_'): element.text for element in root.find("parameters").iter()}
-        matrix_params['reference_fasta'] = executor.submit(Fasta, matrix_params['reference_fasta'], 'reference', None)
+        matrix_params['reference_fasta'] = executor.submit(Fasta, matrix_params['reference_fasta'], 'reference', None, True)
         # TODO: handle undefined reference_dups
         matrix_params['reference_dups'] = executor.submit(Fasta, matrix_params['reference_dups'], 'reference', None)
         matrix_params['minimum_coverage'] = float(matrix_params['minimum_coverage'])
