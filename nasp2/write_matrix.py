@@ -110,7 +110,7 @@ def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
         any[stat + ' (%)'] = "{0:.2f}%".format(any[stat] / reference_length * 100)
         all[stat + ' (%)'] = "{0:.2f}%".format(any[stat] / reference_length * 100)
 
-    with open('sample_stats.tsv', 'w') as handle:
+    with open(filepath, 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t', lineterminator='\n')
         writer.writeheader()
         handle.write('\n')
@@ -174,7 +174,7 @@ def write_general_stats(filepath, contig_stats):
     return whole_genome_stats['reference_length']
 
 
-def write_master_matrix(filepath, contig_name, identifiers, offset):
+def write_master_matrix(filepath, contig_name, identifiers):
     """
     Args:
         filepath (str): Path to the output file.
@@ -182,7 +182,6 @@ def write_master_matrix(filepath, contig_name, identifiers, offset):
         identifiers (tuple of
     """
     with open(filepath, 'w') as handle:
-        handle.seek(offset)
         writer = csv.DictWriter(handle, fieldnames=get_header('all_callable', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0

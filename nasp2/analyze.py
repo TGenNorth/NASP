@@ -404,7 +404,7 @@ def analyze_position(reference_position, dups_position, samples):
 
 
 # @profile
-def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
+def analyze_contig(reference_contig, dups_contig, sample_groups):
     """
     analyze_contig expects reference_contig, dups_contig, and sample_analyses to represent the same contig from
     different sources.
@@ -428,8 +428,8 @@ def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
     identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
     # Initialize outfile coroutines. This will create the file, write the header, and wait for each line of data.
-    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, 'master_matrix.tsv'), reference_contig.name,
-                                        identifiers, offset)
+    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_master.tsv'), reference_contig.name,
+                                        identifiers)
     bestsnp_matrix = write_bestsnp_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_best.tsv'), reference_contig.name,
                                         sample_groups)
     missing_matrix = write_missingdata_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_missing.tsv'), reference_contig.name,
@@ -479,31 +479,31 @@ def analyze_contig(reference_contig, dups_contig, sample_groups, offset):
 # All * #positions
 #
 # + 2 * #char in range of positions = LocusID2 + Position
-def _file_positions(reference, sample_groups, offset = 0):
-    """
-    _file_positions yields a starting file position for each contig of the master matrix file.
-    This allows multiple processes to write to the same master matrix file while processing contigs in parallel.
-
-    Args:
-        reference (Fasta):
-        sample_groups (tuple of tuple of SampleAnalysis):
-    """
-    num_positions = 0
-    num_analyses = sum(len(sample) for sample in sample_groups)
-
-    num_chars_in_sequence_of_num_analyses = sum(len(str(x)) for x in range(num_analyses))
-
-    num_master_matrix_fieldnames = 22 + num_analyses
-
-    partial_line_size = 5 * num_analyses + 1 + num_chars_in_sequence_of_num_analyses * 15 + num_master_matrix_fieldnames + 15
-    for contig in reference.contigs:
-        yield offset
-        name_len = len(contig.name)
-        num_contig_positions = len(contig)
-        num_chars_in_sequence_of_positions = sum(len(str(x)) for x in range(num_positions, num_positions + num_contig_positions))
-        line_size = partial_line_size + 2 * name_len + 2 * num_chars_in_sequence_of_positions
-        num_positions += num_contig_positions
-        offset += line_size * num_contig_positions
+# def _file_positions(reference, sample_groups, offset = 0):
+#     """
+#     _file_positions yields a starting file position for each contig of the master matrix file.
+#     This allows multiple processes to write to the same master matrix file while processing contigs in parallel.
+#
+#     Args:
+#         reference (Fasta):
+#         sample_groups (tuple of tuple of SampleAnalysis):
+#     """
+#     num_positions = 0
+#     num_analyses = sum(len(sample) for sample in sample_groups)
+#
+#     num_chars_in_sequence_of_num_analyses = sum(len(str(x)) for x in range(num_analyses))
+#
+#     num_master_matrix_fieldnames = 22 + num_analyses
+#
+#     partial_line_size = 5 * num_analyses + 1 + num_chars_in_sequence_of_num_analyses * 15 + num_master_matrix_fieldnames + 15
+#     for contig in reference.contigs:
+#         yield offset
+#         name_len = len(contig.name)
+#         num_contig_positions = len(contig)
+#         num_chars_in_sequence_of_positions = sum(len(str(x)) for x in range(num_positions, num_positions + num_contig_positions))
+#         line_size = partial_line_size + 2 * name_len + 2 * num_chars_in_sequence_of_positions
+#         num_positions += num_contig_positions
+#         offset += line_size * num_contig_positions
 
 
 # TODO: Should analyze_samples return the contig_stats generator so that a unit test can check the return value and let
@@ -521,18 +521,40 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
         # NOTE: if the loop does not run, None will be passed to write_general_stats.
         sample_stats = None
 
-        file_positions = _file_positions(reference_fasta, sample_groups, 0)
+        # file_positions = _file_positions(reference_fasta, sample_groups, 10)
+
+        is_first_contig = True
 
         for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
-                                                     itertools.repeat(sample_groups), file_positions):
+        # for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
+                                                     itertools.repeat(sample_groups)):
+            # Concatenate the contig matrices.
+            if is_first_contig:
+                is_first_contig = False
+                os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
+                os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
+                os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
+            else:
+                with open('master_matrix.tsv', 'w') as master, open(contig_stat['Contig'] + '_master.tsv') as master_partial:
+                    master_partial.readline()
+                    master.writelines(line for line in master_partial)
+                os.remove(contig_stat['Contig'] + '_master.tsv')
+                with open('bestsnp_matrix.tsv', 'w') as bestsnp, open(contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
+                    bestsnp_partial.readline()
+                    bestsnp.writelines(line for line in bestsnp_partial)
+                os.remove(contig_stat['Contig'] + '_best.tsv')
+                with open('missingdata_matrix.tsv', 'w') as missing, open(contig_stat['Contig'] + '_missing.tsv') as missing_partial:
+                    missing_partial.readline()
+                    missing.writelines(line for line in missing_partial)
+                os.remove(contig_stat['Contig'] + '_missing.tsv')
 
-            # TODO: use the contig name from contig stat to begin reassembling the matrices.
             contig_stats.append(contig_stat)
 
             # Sum the SampleAnalysis stats preserving the sample_groups order.
             if sample_stats is None:
                 sample_stats = sample_stat
             else:
+                # (a + b for x, y in zip(sample_stats, sample_stat) for a, b in zip(x, y))
                 for i, sample in enumerate(sample_stats):
                     for j, analysis in enumerate(sample):
                         sample_stats[i][j].update(analysis)

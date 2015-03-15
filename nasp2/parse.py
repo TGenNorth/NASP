@@ -261,7 +261,7 @@ ContigIndex = namedtuple('ContigIndex', ['length', 'file_position'])
 
 class Fasta(SampleAnalysis):
 
-    def __init__(self, filepath, name, aligner):
+    def __init__(self, filepath, name, aligner, is_reference=False):
         """
         A Fasta represents a Fasta file.
 
@@ -269,12 +269,19 @@ class Fasta(SampleAnalysis):
             filepath (str): Path to Vcf file.
             name (str): Name of the sample.
             aligner (str): Name of the aligner used to create this file.
+            is_reference (bool): True if the file is the reference genome. All other files will yield empty when the contig is exhausted.
         """
         super(Fasta, self).__init__(filepath, name, aligner, None)
+        self._is_reference = is_reference
 
     @property
     def contigs(self):
-        return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath) for name, contig_index in self._index.items())
+        """
+        Return
+            FastaContig generator: Yields contigs sorted by length, longest to shortest.
+        """
+        # return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in self._index.items())
+        return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in sorted(self._index.items(), key=lambda x: x[1].length, reverse=True))
 
     def get_contig(self, contig_name):
         """
@@ -290,7 +297,7 @@ class Fasta(SampleAnalysis):
         if contig_index is None:
             logging.info("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
             return EmptyContig(contig_name)
-        return FastaContig(contig_name, contig_index.length, contig_index.file_position, self._filepath)
+        return FastaContig(contig_name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference)
 
     def _index_contigs(self):
         """
@@ -406,7 +413,7 @@ class EmptyContig(Contig):
 
 class FastaContig(Contig):
 
-    def __init__(self, name, length, file_position, file_path):
+    def __init__(self, name, length, file_position, file_path, is_reference):
         """
         FastaContig can be used to read frankenfastas, duplicates.txt, and the reference fasta.
 
@@ -414,12 +421,13 @@ class FastaContig(Contig):
             _name (str): The contig name defined in the fasta file.
             _length (int): Length of the contig sequence. It is used to
             _file_path (str): Path to fasta file.
-            _file_position (str): File position of the contig description as distinguished by a line starting with '>'
+            _file_position (str): File position of the first nucleotide base following the contig description.
         """
         self._name = name
         self._length = length
         self._file_path = file_path
         self._file_position = file_position
+        self._is_reference = is_reference
 
     def __repr__(self):
         return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self.name, self._length, self._file_position, self._file_path)
@@ -465,8 +473,8 @@ class FastaContig(Contig):
 
         # FIXME: If the FastaContig is the reference, this while loop creates an infinite loop.
         # Yield empty positions when the contig is exhausted.
-        # while True:
-        #     yield self.EMPTY_POSITION
+        while not self._is_reference:
+            yield self.EMPTY_POSITION
 
 
 # FIXME: Support for multiple samples in a vcf is disabled.
