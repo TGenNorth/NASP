@@ -346,6 +346,9 @@ class Fasta(SampleAnalysis):
                     # contig_name is everything between the '>' and the first whitespace character.
                     # As a result it excludes the optional description.
                     contig_name = line.partition(' ')[0][1:].rstrip()
+                    # TODO: This if statement removes a prefix added to the franken fasta contigs. Why is this prefix needed? Remove both.
+                    if contig_name.startswith('franken::'):
+                        contig_name = contig_name[len('franken::'):]
                     contig_file_position = file_position
                     contig_len = 0
                 else:

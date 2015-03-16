@@ -171,7 +171,7 @@ def write_general_stats(filepath, contig_stats):
                 contig_stat[stat + ' (%)'] = "{0:.2f}%".format(contig_stat[stat] / reference_length * 100)
             writer.writerow(contig_stat)
 
-    return whole_genome_stats['reference_length']
+    return reference_length
 
 
 def write_master_matrix(filepath, contig_name, identifiers):
@@ -188,6 +188,7 @@ def write_master_matrix(filepath, contig_name, identifiers):
         while True:
             row = yield
             position += 1
+            print(position, row.is_reference_duplicated)
             call_str = str(row.call_str, encoding='utf-8')
             call_was_made = str(row.CallWasMade, encoding='utf-8')
             passed_depth_filter = str(row.PassedDepthFilter, encoding='utf-8')
@@ -197,12 +198,12 @@ def write_master_matrix(filepath, contig_name, identifiers):
 
             line = {
                 'LocusID': "{0}::{1}".format(contig_name, position),
-                'Reference': call_str[0],
+                'Reference': row.call_str[0],
                 '#SNPcall': row.called_snp,
                 # TODO: replace with n/a
                 '#Indelcall': '0',
                 '#Refcall': row.called_reference,
-                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - call_was_made.count('N'), num_samples),
+                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
                 '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
                 '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
                 '#A': row.num_A,
@@ -216,13 +217,13 @@ def write_master_matrix(filepath, contig_name, identifiers):
                 'Position': position,
                 'InDupRegion': row.is_reference_duplicated,
                 'SampleConsensus': row.is_all_passed_consensus,
-                'CallWasMade': call_was_made,
-                'PassedDepthFilter': passed_depth_filter,
-                'PassedProportionFilter': passed_proportion_filter,
+                'CallWasMade': row.CallWasMade,
+                'PassedDepthFilter': row.PassedDepthFilter,
+                'PassedProportionFilter': row.PassedProportionFilter,
                 'Pattern': "".join(row.Pattern)
             }
             # Match each base call with its sample analysis column.
-            line.update({k: v for k, v in zip(identifiers, call_str[1:])})
+            line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
             writer.writerow(line)
 
 
@@ -238,10 +239,6 @@ def write_missingdata_matrix(filepath, contig_name, identifiers):
             if not (row.is_missing_matrix):
                 continue
 
-            # call_str = str(row.call_str, encoding='utf-8')
-            call_was_made = str(row.CallWasMade, encoding='utf-8')
-            passed_depth_filter = str(row.PassedDepthFilter, encoding='utf-8')
-            passed_proportion_filter = str(row.PassedProportionFilter, encoding='utf-8')
             # num_samples is the number of analyses not including the reference.
             num_samples = len(row.masked_call_str) - 1
 
@@ -252,7 +249,7 @@ def write_missingdata_matrix(filepath, contig_name, identifiers):
                 # TODO: replace with n/a
                 '#Indelcall': '0',
                 '#Refcall': row.called_reference,
-                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - call_was_made.count('N'), num_samples),
+                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
                 '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
                 '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
                 '#A': row.num_A,
@@ -266,9 +263,9 @@ def write_missingdata_matrix(filepath, contig_name, identifiers):
                 'Position': position,
                 'InDupRegion': row.is_reference_duplicated,
                 'SampleConsensus': row.is_all_passed_consensus,
-                'CallWasMade': call_was_made,
-                'PassedDepthFilter': passed_depth_filter,
-                'PassedProportionFilter': passed_proportion_filter,
+                'CallWasMade': row.CallWasMade,
+                'PassedDepthFilter': row.PassedDepthFilter,
+                'PassedProportionFilter': row.PassedProportionFilter,
                 'Pattern': "".join(row.Pattern)
             }
             # Match each base call with its sample analysis column.
@@ -321,19 +318,17 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
             if not row.is_best_snp:
                 continue
 
-            call_str = str(row.call_str, encoding='utf-8')
-            call_was_made = str(row.CallWasMade, encoding='utf-8')
             # num_samples is the number of analyses not including the reference.
-            num_samples = len(call_str) - 1
+            num_samples = len(row.call_str) - 1
 
             line = {
                 'LocusID': "{0}::{1}".format(contig_name, position),
-                'Reference': call_str[0],
+                'Reference': row.call_str[0],
                 '#SNPcall': row.called_snp,
                 # TODO: replace with n/a
                 '#Indelcall': '0',
                 '#Refcall': row.called_reference,
-                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - call_was_made.count('N'), num_samples),
+                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
                 '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
                 '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
                 '#A': row.num_A,
@@ -351,7 +346,7 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
             }
             # Match each base call with its sample analysis column.
             line.update(
-                {sample_name: call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})
+                {sample_name: row.call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})
 
             writer.writerow(line)
 

@@ -9,7 +9,9 @@ from concurrent.futures import ProcessPoolExecutor
 import itertools
 import os
 
-from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, write_general_stats, write_sample_stats
+from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, write_general_stats, \
+    write_sample_stats
+
 
 # TODO: Remove constant.
 OUTPUT_DIR = './'
@@ -200,6 +202,8 @@ def analyze_position(reference_position, dups_position, samples):
         'PassedProportionFilter': '',
         'Pattern': []
     })
+    # pattern = []
+    # pattern_append = pattern.append
 
     # TODO: document pattern legend
     # pattern_legend
@@ -213,7 +217,8 @@ def analyze_position(reference_position, dups_position, samples):
 
     # TODO: replace bytearray with a list.
     # call_str is the base call for each SampleAnalysis starting with the reference.
-    call_str = bytearray(reference_position.call, encoding='utf-8')
+    call_str = [reference_position.call]
+    call_str_append = call_str.append
 
     # masked_call_str is the same as the call string except calls that did not pass the coverage/proportion filter are
     # masked out with 'N' indicating they did not pass.
@@ -222,31 +227,30 @@ def analyze_position(reference_position, dups_position, samples):
     # all_sample_stats is a list of sample_stats. It represents all the SampleAnalysis stats grouped by sample name.
     all_sample_stats = []
     for sample in samples:
+        # any - True if true in any of the analysis_stats.
+        any = Counter({
+            'was_called': 0,
+            'passed_coverage_filter': 0,
+            'passed_proportion_filter': 0,
+            'quality_breadth': 0,
+            'called_reference': 0,
+            'called_snp': 0,
+            'called_degen': 0
+        })
+        # all - True if true in all of the analysis_stats.
+        all = Counter({
+            'was_called': 1,
+            'passed_coverage_filter': 1,
+            'passed_proportion_filter': 1,
+            'quality_breadth': 1,
+            'called_reference': 1,
+            'called_snp': 1,
+            'called_degen': 1
+        })
         # sample_stats is composed of analysis_stats dictionaries for each aligner/snpcaller used on the sample.
         # The first two entries are special in that they summarize the analysis_stats. They are using a tripwire approach
         # where the flag will toggle if the assumption fails.
-        sample_stats = [
-            # any - True if true in any of the analysis_stats.
-            Counter({
-                'was_called': 0,
-                'passed_coverage_filter': 0,
-                'passed_proportion_filter': 0,
-                'quality_breadth': 0,
-                'called_reference': 0,
-                'called_snp': 0,
-                'called_degen': 0
-            }),
-            # all - True if true in all of the analysis_stats.
-            Counter({
-                'was_called': 1,
-                'passed_coverage_filter': 1,
-                'passed_proportion_filter': 1,
-                'quality_breadth': 1,
-                'called_reference': 1,
-                'called_snp': 1,
-                'called_degen': 1
-            })
-        ]
+        sample_stats = [any, all]
 
         # prev_analysis_call is used to detect sample consensus.
         prev_analysis_call = None
@@ -299,7 +303,7 @@ def analyze_position(reference_position, dups_position, samples):
             else:
                 is_all_passed_proportion = False
 
-            call_str.append(ord(analysis.call))
+            call_str_append(analysis.call)
 
             # Missing Data Matrix masks calls that did not pass a filter with 'N'
             # TODO: document that we are checking for was_called because we don't want to mask 'X' calls
@@ -357,10 +361,10 @@ def analyze_position(reference_position, dups_position, samples):
             for key, value in analysis_stats.items():
                 if value:
                     # any - The stat passed in at least one analysis_stat.
-                    sample_stats[0][key] = 1
+                    any[key] = 1
                 else:
                     # all - The stat failed in at least one analysis_stat.
-                    sample_stats[1][key] = 0
+                    all[key] = 0
 
         all_sample_stats.append(sample_stats)
 
@@ -396,9 +400,9 @@ def analyze_position(reference_position, dups_position, samples):
         # Strings
         call_str=call_str,
         masked_call_str=masked_call_str,
-        CallWasMade=bytearray(position_stats['CallWasMade'], encoding='utf-8'),
-        PassedDepthFilter=bytearray(position_stats['PassedDepthFilter'], encoding='utf-8'),
-        PassedProportionFilter=bytearray(position_stats['PassedProportionFilter'], encoding='utf-8'),
+        CallWasMade=position_stats['CallWasMade'],
+        PassedDepthFilter=position_stats['PassedDepthFilter'],
+        PassedProportionFilter=position_stats['PassedProportionFilter'],
         Pattern=position_stats['Pattern']
     )
 
@@ -428,19 +432,25 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
     # Initialize outfile coroutines. This will create the file, write the header, and wait for each line of data.
-    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_master.tsv'), reference_contig.name,
+    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_master.tsv'),
+                                        reference_contig.name,
                                         identifiers)
-    bestsnp_matrix = write_bestsnp_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_best.tsv'), reference_contig.name,
-                                        sample_groups)
-    missing_matrix = write_missingdata_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_missing.tsv'), reference_contig.name,
-                                        identifiers)
+    bestsnp_matrix = write_bestsnp_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_best.tsv'),
+                                          reference_contig.name,
+                                          sample_groups)
+    missing_matrix = write_missingdata_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_missing.tsv'),
+                                              reference_contig.name,
+                                              identifiers)
     master_matrix.send(None)
     bestsnp_matrix.send(None)
     missing_matrix.send(None)
 
-
     contig_stats['reference_length'] = len(reference_contig)
-    for position in map(analyze_position, reference_contig.positions, dups_contig.positions,
+    # FIXME: Ideally the Fasta.contigs generator should yield the same for both the reference and duplicates fastas.
+    # The change that introduced sorting by length did not consistently result in an identical order. Calling get_contig on dups
+    # was a quick fix. It also has the advantage that it will yield empty contigs if the contig does not exist. Perhaps a analyze_samples
+    # could pass a generator that yields the contigs in the right order.
+    for position in map(analyze_position, reference_contig.positions, dups_contig.get_contig(reference_contig.name).positions,
                         sample_positions(reference_contig.name, sample_groups)):
         # contig_stats['reference_length'] += 1
         contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
@@ -480,7 +490,7 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
 #
 # + 2 * #char in range of positions = LocusID2 + Position
 # def _file_positions(reference, sample_groups, offset = 0):
-#     """
+# """
 #     _file_positions yields a starting file position for each contig of the master matrix file.
 #     This allows multiple processes to write to the same master matrix file while processing contigs in parallel.
 #
@@ -521,12 +531,9 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
         # NOTE: if the loop does not run, None will be passed to write_general_stats.
         sample_stats = None
 
-        # file_positions = _file_positions(reference_fasta, sample_groups, 10)
-
         is_first_contig = True
 
         for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
-        # for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
                                                      itertools.repeat(sample_groups)):
             # Concatenate the contig matrices.
             if is_first_contig:
@@ -535,15 +542,15 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
                 os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
                 os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
             else:
-                with open('master_matrix.tsv', 'w') as master, open(contig_stat['Contig'] + '_master.tsv') as master_partial:
+                with open('master_matrix.tsv', 'a') as master, open(contig_stat['Contig'] + '_master.tsv') as master_partial:
                     master_partial.readline()
                     master.writelines(line for line in master_partial)
                 os.remove(contig_stat['Contig'] + '_master.tsv')
-                with open('bestsnp_matrix.tsv', 'w') as bestsnp, open(contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
+                with open('bestsnp_matrix.tsv', 'a') as bestsnp, open(contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
                     bestsnp_partial.readline()
                     bestsnp.writelines(line for line in bestsnp_partial)
                 os.remove(contig_stat['Contig'] + '_best.tsv')
-                with open('missingdata_matrix.tsv', 'w') as missing, open(contig_stat['Contig'] + '_missing.tsv') as missing_partial:
+                with open('missingdata_matrix.tsv', 'a') as missing, open(contig_stat['Contig'] + '_missing.tsv') as missing_partial:
                     missing_partial.readline()
                     missing.writelines(line for line in missing_partial)
                 os.remove(contig_stat['Contig'] + '_missing.tsv')

@@ -10,8 +10,6 @@ from nasp2.matrix_DTO import parse_dto
 
 
 def explain(matrix_parameters, sample_groups):
-    sample_groups = tuple(tuple(v) for _, v in itertools.groupby(sorted(sample_groups), lambda x: x.name))
-
     from nasp2.analyze import sample_positions, analyze_position
 
     while True:
@@ -24,10 +22,19 @@ def explain(matrix_parameters, sample_groups):
             continue
         reference_contig = matrix_parameters.reference_fasta.get_contig(contig_name)
         dups_contig = matrix_parameters.reference_dups.get_contig(contig_name)
+        print("Contig Objects:")
+        print(reference_contig)
+        print(dups_contig)
+        for sample in sample_groups:
+            print(sample[0].name)
+            for analysis in sample:
+                print('\t', analysis.get_contig(reference_contig.name))
+        
+        print("Scanning files...")
         for idx, row in enumerate(zip(reference_contig.positions, dups_contig.positions, sample_positions(reference_contig.name, sample_groups))):
             if index == idx:
                 print('\a')
-                print('Positions:', "\n".join(str(row)), '\n')
+                #print('Positions:', "\n".join(str(row)), '\n')
                 print('Position Analysis:')
                 print(analyze_position(row[0], row[1], row[2]))
                 break
@@ -42,6 +49,12 @@ def main():
     if len(sys.argv) > 2 and sys.argv[2] == "explain":
         return explain(matrix_parameters, sample_groups)
 
+    #for ref, dup in zip(matrix_parameters.reference_fasta.contigs, matrix_parameters.reference_dups.contigs):
+    #    if ref.name == dup.name:
+    #        print(ref.name, dup.name)
+    #    else:
+    #        print('\t', ref.name, dup.name)
+        
     from nasp2.analyze import analyze_samples
 
     analyze_samples(matrix_parameters.reference_fasta, matrix_parameters.reference_dups, sample_groups)
