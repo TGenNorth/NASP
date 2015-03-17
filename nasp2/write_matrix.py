@@ -188,13 +188,8 @@ def write_master_matrix(filepath, contig_name, identifiers):
         while True:
             row = yield
             position += 1
-            print(position, row.is_reference_duplicated)
-            call_str = str(row.call_str, encoding='utf-8')
-            call_was_made = str(row.CallWasMade, encoding='utf-8')
-            passed_depth_filter = str(row.PassedDepthFilter, encoding='utf-8')
-            passed_proportion_filter = str(row.PassedProportionFilter, encoding='utf-8')
             # num_samples is the number of analyses not including the reference.
-            num_samples = len(call_str) - 1
+            num_samples = len(row.call_str) - 1
 
             line = {
                 'LocusID': "{0}::{1}".format(contig_name, position),

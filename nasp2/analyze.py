@@ -116,7 +116,7 @@ def sample_positions(contig_name, sample_groups):
 
     while True:
         # The inner tuple is all the sample analyses for a single sample.
-        # The outer tuple is all the sample analyses.
+        # The outer tuple is all the sample groupings.
         # ( (SampleInfo, SampleInfo,), (SampleInfo, SampleInfo), )
         yield tuple(tuple(map(next, contig_group)) for contig_group in contig_groups)
 
@@ -170,7 +170,11 @@ def analyze_position(reference_position, dups_position, samples):
     is_all_called = True
     is_all_passed_coverage = True
     is_all_passed_proportion = True
+    # A sample has position consensus if:
+    # - All analyses called and pass coverage/proportion filters.
+    # - All analyses for the same sample match. Two analyses for the same position may differ if they belong to different samples.
     is_all_sample_consensus = True
+    # Quality breadth positions are all be certain to be accurate.
     # General Stats quality breadth passes if all the following conditions for the position are true:
     # - Reference called and not duplicated.
     # - All analyses called and passed all filters.
@@ -215,7 +219,6 @@ def analyze_position(reference_position, dups_position, samples):
         pattern_legend[reference_position.simple_call] = '1'
 
 
-    # TODO: replace bytearray with a list.
     # call_str is the base call for each SampleAnalysis starting with the reference.
     call_str = [reference_position.call]
     call_str_append = call_str.append
@@ -266,14 +269,16 @@ def analyze_position(reference_position, dups_position, samples):
                 'called_degen': 0
             })
 
-            # TODO: Must also be called (not X/N) and pass coverage/proportion filters
-            # A sample has position consensus if all of its SampleAnalysis combinations have the same call.
+            call_str_append(analysis.call)
+
+            # Check if all analyses for the same sample match.
             if prev_analysis_call is None:
                 prev_analysis_call = analysis.simple_call
             elif prev_analysis_call != analysis.simple_call:
                 is_all_sample_consensus = False
                 is_all_quality_breadth = False
 
+            # A position is called if it was identified as one of A/C/G/T or a degeneracy.
             # X means no value, N means any value.
             if analysis.call in ['X', 'N']:
                 position_stats['CallWasMade'] += 'N'
@@ -287,6 +292,7 @@ def analyze_position(reference_position, dups_position, samples):
             # FIXME: coverage/proportion may be "PASS" if the value is not deprecated in the VCF contig parser.
             # get_proportion/get_coverage
 
+            # Check if the position passed the minimum coverage value set by the user.
             is_pass_coverage, pass_str = _is_pass_filter(analysis.coverage, coverage_threshold)
             position_stats['PassedDepthFilter'] += pass_str
             if is_pass_coverage:
@@ -295,6 +301,7 @@ def analyze_position(reference_position, dups_position, samples):
             else:
                 is_all_passed_coverage = False
 
+            # Check if the position passed the minimum proportion value set by the user.
             is_pass_proportion, pass_str = _is_pass_filter(analysis.proportion, proportion_threshold)
             position_stats['PassedProportionFilter'] += pass_str
             if is_pass_proportion:
@@ -303,10 +310,9 @@ def analyze_position(reference_position, dups_position, samples):
             else:
                 is_all_passed_proportion = False
 
-            call_str_append(analysis.call)
-
             # Missing Data Matrix masks calls that did not pass a filter with 'N'
             # TODO: document that we are checking for was_called because we don't want to mask 'X' calls
+            # TODO: Can this be better expressed?
             if not analysis_stats['was_called'] or is_pass_coverage and is_pass_proportion:
                 masked_call_str.append(analysis.call)
             else:
@@ -317,7 +323,7 @@ def analyze_position(reference_position, dups_position, samples):
                 is_all_sample_consensus = False
 
             # TODO: document meaning/purpose of pattern
-            # Patterns include
+            # Patterns use numbers to show which analyses were called A/C/G/T and which samples had the same call value.
             if analysis.simple_call != 'N' and is_pass_coverage and is_pass_proportion:
                 # Each new base call encountered is assigned a the next higher number
                 if analysis.simple_call not in pattern_legend:
@@ -332,27 +338,35 @@ def analyze_position(reference_position, dups_position, samples):
 
             # TODO: Clarify the purpose of this if statement.
             # Only count significant measurements.
-            if is_pass_coverage and is_pass_proportion and reference_position.simple_call != 'N' and dups_position.call != '1':
+            if is_pass_coverage and is_pass_proportion and reference_position.simple_call != 'N':
                 analysis_stats['quality_breadth'] = 1
-
-                # TODO: Should the first if be simplecall?
-                if analysis.call in ['X', 'N']:
+                # TODO: Should the first if be simple_call?
+                # if analysis.call in ['X', 'N']:
+                if analysis.simple_call == 'N':
                     position_stats['called_degen'] += 1
                     analysis_stats['called_degen'] = 1
                 elif analysis.call == reference_position.call:
                     position_stats['called_reference'] += 1
                     analysis_stats['called_reference'] = 1
                 else:
+                    # Called A/C/G/T and doesn't match the reference.
                     position_stats['called_snp'] += 1
-                    analysis_stats['called_snp'] = 1
-                    is_missing_matrix = True
+                    if dups_position.call != '1':
+                        analysis_stats['called_snp'] = 1
+                        is_missing_matrix = True
+
+                # Sample stats is a little stricter than the matrices on what passes.
+                if dups_position.call == '1':
+                    analysis_stats['quality_breadth'] = 0
+                    analysis_stats['called_degen'] = 0
+                    analysis_stats['called_reference'] = 0
+                    is_all_quality_breadth = False
+
             else:
                 is_all_quality_breadth = False
 
             sample_stats.append(analysis_stats)
 
-
-        # NOTE: There could be an index error due to [2:] if there is not at least one sample analysis in sample_stats.
         # Summarize the statistics for each sample where any or all of its SampleAnalysis combinations passed.
         # It is using a tripwire approach where the if statement toggles the flag if the assumption fails.
         # - any assumes all the stats failed
@@ -533,7 +547,8 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
 
         is_first_contig = True
 
-        for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, reference_dups.contigs,
+        # for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
+        for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
                                                      itertools.repeat(sample_groups)):
             # Concatenate the contig matrices.
             if is_first_contig:
