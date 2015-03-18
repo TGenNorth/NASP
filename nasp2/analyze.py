@@ -11,6 +11,7 @@ import os
 
 from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
     write_includeref_matrix, \
+    write_missingdata_snpfasta, write_bestsnp_snpfasta, \
     write_general_stats, write_sample_stats
 
 
@@ -490,10 +491,15 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     includeref_matrix = write_includeref_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_includeref.tsv'),
                                                 reference_contig.name,
                                                 identifiers)
+    missingdata_snpfasta = write_missingdata_snpfasta(reference_contig.name, identifiers)
+    bestsnp_snpfasta = write_bestsnp_snpfasta(reference_contig.name, identifiers)
+
     master_matrix.send(None)
     bestsnp_matrix.send(None)
     missing_matrix.send(None)
     includeref_matrix.send(None)
+    missingdata_snpfasta.send(None)
+    bestsnp_snpfasta.send(None)
 
     contig_stats['reference_length'] = len(reference_contig)
     # FIXME: Ideally the Fasta.contigs generator should yield the same for both the reference and duplicates fastas.
@@ -527,49 +533,12 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
         bestsnp_matrix.send(position)
         missing_matrix.send(position)
         includeref_matrix.send(position)
+        missingdata_snpfasta.send(position)
+        bestsnp_snpfasta.send(position)
 
     return sample_stats, contig_stats
 
 
-# The following equations represent the maximum number of characters a contig could use in the master matrix:
-# 2 * len(contig_name) + len('::') = LocusID(1) + Contig
-# 3 * '/'
-# (5 * #analyses + (1 ref)) = analyses calls + filter strings
-# 2 * len('FALSE') = InDupsPosition + SampleConsensus
-# #char in # analyses * 15 = #a/c/g/t/n/indel/snpcall/...
-# #fieldnames = '\t \n' delimiters
-# All * #positions
-#
-# + 2 * #char in range of positions = LocusID2 + Position
-# def _file_positions(reference, sample_groups, offset = 0):
-# """
-# _file_positions yields a starting file position for each contig of the master matrix file.
-# This allows multiple processes to write to the same master matrix file while processing contigs in parallel.
-#
-#     Args:
-#         reference (Fasta):
-#         sample_groups (tuple of tuple of SampleAnalysis):
-#     """
-#     num_positions = 0
-#     num_analyses = sum(len(sample) for sample in sample_groups)
-#
-#     num_chars_in_sequence_of_num_analyses = sum(len(str(x)) for x in range(num_analyses))
-#
-#     num_master_matrix_fieldnames = 22 + num_analyses
-#
-#     partial_line_size = 5 * num_analyses + 1 + num_chars_in_sequence_of_num_analyses * 15 + num_master_matrix_fieldnames + 15
-#     for contig in reference.contigs:
-#         yield offset
-#         name_len = len(contig.name)
-#         num_contig_positions = len(contig)
-#         num_chars_in_sequence_of_positions = sum(len(str(x)) for x in range(num_positions, num_positions + num_contig_positions))
-#         line_size = partial_line_size + 2 * name_len + 2 * num_chars_in_sequence_of_positions
-#         num_positions += num_contig_positions
-#         offset += line_size * num_contig_positions
-
-
-# TODO: Should analyze_samples return the contig_stats generator so that a unit test can check the return value and let
-# another function actually write the stats file?
 # @profile
 def analyze_samples(reference_fasta, reference_dups, sample_groups):
     """
@@ -588,7 +557,7 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
         for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
         # for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
                                             itertools.repeat(sample_groups)):
-            # Concatenate the contig matrices.
+            # Concatenate the contig matrices. The first one is simply renamed and the remaining contigs appended to it.
             if is_first_contig:
                 is_first_contig = False
                 os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
