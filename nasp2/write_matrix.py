@@ -3,6 +3,7 @@ __author__ = 'jtravis'
 import csv
 import functools
 from collections import Counter
+from contextlib import ExitStack
 
 
 def get_vcf_metadata(nasp_version, identifiers, contigs):
@@ -228,6 +229,40 @@ def write_master_matrix(filepath, contig_name, identifiers):
             writer.writerow(line)
 
 
+def write_missingdata_snpfasta(contig_name, identifiers):
+    """
+    Args:
+        contig_name (str):
+        identifiers (tuple of Strings):
+    """
+    # All opened files will automatically be closed at the end of
+    # the with statement, even if attempts to open files later
+    # in the list raise an exception
+    with ExitStack() as stack:
+        files = tuple(stack.enter_context(open(contig_name + '_' + identifier + '_missing.snpfasta', 'w')) for identifier in identifiers)
+
+        # Write contig description / header
+        for file, identifier in zip(files, identifiers):
+            file.write('>' + identifier + '\n')
+
+        line_length = 0
+
+        while True:
+            row = yield
+
+            if not row.is_missing_matrix:
+                continue
+
+            line_length += 1
+
+            for file, call in zip(files, row.masked_call_str):
+                file.write(call)
+                # Wrap line every 80 characters.
+                if line_length >= 80:
+                    file.write('\n')
+                    line_length = 0
+
+
 def write_missingdata_matrix(filepath, contig_name, identifiers):
     with open(filepath, 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('missing_data', identifiers), delimiter='\t', lineterminator='\n')
@@ -237,7 +272,7 @@ def write_missingdata_matrix(filepath, contig_name, identifiers):
             row = yield
             position += 1
 
-            if not (row.is_missing_matrix):
+            if not row.is_missing_matrix:
                 continue
 
             # num_samples is the number of analyses not including the reference.
@@ -294,6 +329,40 @@ def write_missingdata_matrix(filepath, contig_name, identifiers):
 #                 'INFO': '',
 #                 'FORMAT': ''
 #             })
+
+
+def write_bestsnp_snpfasta(contig_name, identifiers):
+    """
+    Args:
+        contig_name (str):
+        identifiers (tuple of Strings):
+    """
+    # All opened files will automatically be closed at the end of
+    # the with statement, even if attempts to open files later
+    # in the list raise an exception
+    with ExitStack() as stack:
+        files = tuple(stack.enter_context(open(contig_name + '_' + identifier + '_bestsnp.snpfasta', 'w')) for identifier in identifiers)
+
+        # Write contig description / header
+        for file, identifier in zip(files, identifiers):
+            file.write('>' + identifier + '\n')
+
+        line_length = 0
+
+        while True:
+            row = yield
+
+            if not row.is_best_snp:
+                continue
+
+            line_length += 1
+
+            for file, call in zip(files, row.masked_call_str):
+                file.write(call)
+                # Wrap line every 80 characters.
+                if line_length >= 80:
+                    file.write('\n')
+                    line_length = 0
 
 
 def write_bestsnp_matrix(filepath, contig_name, sample_groups):
@@ -361,7 +430,7 @@ def write_includeref_matrix(filepath, contig_name, identifiers):
             row = yield
             position += 1
 
-            if not row.is_all_passed_consensus or row.is_reference_duplicated:
+            if not row.is_all_quality_breadth:
                 continue
 
             # num_samples is the number of analyses not including the reference.
@@ -391,7 +460,7 @@ def write_includeref_matrix(filepath, contig_name, identifiers):
                 'Pattern': "".join(row.Pattern)
             }
             # Match each base call with its sample analysis column.
-            line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
+            line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
 
             writer.writerow(line)
 
