@@ -300,6 +300,7 @@ def analyze_position(reference_position, dups_position, samples):
                 position_stats['passed_coverage_filter'] += 1
             else:
                 is_all_passed_coverage = False
+                is_all_quality_breadth = False
 
             # Check if the position passed the minimum proportion value set by the user.
             is_pass_proportion, pass_str = _is_pass_filter(analysis.proportion, proportion_threshold)
@@ -309,6 +310,7 @@ def analyze_position(reference_position, dups_position, samples):
                 position_stats['passed_proportion_filter'] += 1
             else:
                 is_all_passed_proportion = False
+                is_all_quality_breadth = False
 
             # Missing Data Matrix masks calls that did not pass a filter with 'N'
             # TODO: document that we are checking for was_called because we don't want to mask 'X' calls
@@ -318,9 +320,11 @@ def analyze_position(reference_position, dups_position, samples):
             else:
                 masked_call_str.append('N')
                 is_all_sample_consensus = False
+                is_all_quality_breadth = False
 
             if analysis.simple_call == 'N':
                 is_all_sample_consensus = False
+                is_all_quality_breadth = False
 
             # TODO: document meaning/purpose of pattern
             # Patterns use numbers to show which analyses were called A/C/G/T and which samples had the same call value.
@@ -469,7 +473,7 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     # could pass a generator that yields the contigs in the right order.
     for position in map(analyze_position, reference_contig.positions, dups_contig.get_contig(reference_contig.name).positions,
                         sample_positions(reference_contig.name, sample_groups)):
-        # contig_stats['reference_length'] += 1
+        #contig_stats['reference_length'] += 1
         contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
         contig_stats['reference_duplicated'] += 1 if position.is_reference_duplicated else 0
         contig_stats['all_called'] += 1 if position.is_all_called else 0
@@ -554,30 +558,30 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
         for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
         #for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
                                                      itertools.repeat(sample_groups)):
-            # Concatenate the contig matrices.
-            if is_first_contig:
-                is_first_contig = False
-                os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
-                os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
-                os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
-                os.rename(contig_stat['Contig'] + '_includeref.tsv', 'withallrefpos_matrix.tsv')
-            else:
-                with open('master_matrix.tsv', 'a') as master, open(contig_stat['Contig'] + '_master.tsv') as master_partial:
-                    master_partial.readline()
-                    master.writelines(line for line in master_partial)
-                os.remove(contig_stat['Contig'] + '_master.tsv')
-                with open('bestsnp_matrix.tsv', 'a') as bestsnp, open(contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
-                    bestsnp_partial.readline()
-                    bestsnp.writelines(line for line in bestsnp_partial)
-                os.remove(contig_stat['Contig'] + '_best.tsv')
-                with open('missingdata_matrix.tsv', 'a') as missing, open(contig_stat['Contig'] + '_missing.tsv') as missing_partial:
-                    missing_partial.readline()
-                    missing.writelines(line for line in missing_partial)
-                os.remove(contig_stat['Contig'] + '_missing.tsv')
-                with open('withallrefpos_matrix.tsv', 'a') as includeref, open(contig_stat['Contig'] + '_includeref.tsv') as includeref_partial:
-                    includeref_partial.readline()
-                    includeref.writelines(line for line in includeref_partial)
-                os.remove(contig_stat['Contig'] + '_includeref.tsv')
+#            # Concatenate the contig matrices.
+#            if is_first_contig:
+#                is_first_contig = False
+#                os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
+#                os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
+#                os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
+#                os.rename(contig_stat['Contig'] + '_includeref.tsv', 'withallrefpos_matrix.tsv')
+#            else:
+#                with open('master_matrix.tsv', 'a') as master, open(contig_stat['Contig'] + '_master.tsv') as master_partial:
+#                    master_partial.readline()
+#                    master.writelines(line for line in master_partial)
+#                os.remove(contig_stat['Contig'] + '_master.tsv')
+#                with open('bestsnp_matrix.tsv', 'a') as bestsnp, open(contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
+#                    bestsnp_partial.readline()
+#                    bestsnp.writelines(line for line in bestsnp_partial)
+#                os.remove(contig_stat['Contig'] + '_best.tsv')
+#                with open('missingdata_matrix.tsv', 'a') as missing, open(contig_stat['Contig'] + '_missing.tsv') as missing_partial:
+#                    missing_partial.readline()
+#                    missing.writelines(line for line in missing_partial)
+#                os.remove(contig_stat['Contig'] + '_missing.tsv')
+#                with open('withallrefpos_matrix.tsv', 'a') as includeref, open(contig_stat['Contig'] + '_includeref.tsv') as includeref_partial:
+#                    includeref_partial.readline()
+#                    includeref.writelines(line for line in includeref_partial)
+#                os.remove(contig_stat['Contig'] + '_includeref.tsv')
 
             contig_stats.append(contig_stat)
 
