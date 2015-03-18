@@ -168,7 +168,7 @@ def write_general_stats(filepath, contig_stats):
         for contig_stat in contig_stats:
             # Calculate contig stat percentages.
             for stat in fieldnames[2::2]:
-                contig_stat[stat + ' (%)'] = "{0:.2f}%".format(contig_stat[stat] / reference_length * 100)
+                contig_stat[stat + ' (%)'] = "{0:.2f}%".format(contig_stat[stat] / contig_stat['reference_length'] * 100)
             writer.writerow(contig_stat)
 
     return reference_length
@@ -342,6 +342,50 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
             # Match each base call with its sample analysis column.
             line.update(
                 {sample_name: row.call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})
+
+            writer.writerow(line)
+
+
+def write_includeref_matrix(filepath, contig_name, identifiers):
+    with open(filepath, 'w') as handle:
+        writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', identifiers), delimiter='\t', lineterminator='\n')
+        writer.writeheader()
+        position = 0
+        while True:
+            row = yield
+            position += 1
+
+            if not row.is_all_passed_consensus or row.is_reference_duplicated:
+                continue
+
+            # num_samples is the number of analyses not including the reference.
+            num_samples = len(row.call_str) - 1
+
+            line = {
+                'LocusID': "{0}::{1}".format(contig_name, position),
+                'Reference': row.call_str[0],
+                '#SNPcall': row.called_snp,
+                # TODO: replace with n/a
+                '#Indelcall': '0',
+                '#Refcall': row.called_reference,
+                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
+                '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
+                '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
+                '#A': row.num_A,
+                '#C': row.num_C,
+                '#G': row.num_G,
+                '#T': row.num_T,
+                # TODO: replace with n/a
+                '#Indel': '0',
+                '#NXdegen': row.num_N,
+                'Contig': contig_name,
+                'Position': position,
+                'InDupRegion': row.is_reference_duplicated,
+                'SampleConsensus': row.is_all_passed_consensus,
+                'Pattern': "".join(row.Pattern)
+            }
+            # Match each base call with its sample analysis column.
+            line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
 
             writer.writerow(line)
 

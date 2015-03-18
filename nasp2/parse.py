@@ -470,8 +470,10 @@ class FastaContig(Contig):
                     # FIXME: Will having "infinite" values create problems later on?
                     yield Position(
                         call=call,
-                        coverage=float('Infinity'),
-                        proportion=float('Infinity'),
+                        #coverage=float('Infinity'),
+                        #proportion=float('Infinity'),
+                        coverage='-',
+                        proportion='-',
                     )
 
         # FIXME: If the FastaContig is the reference, this while loop creates an infinite loop.

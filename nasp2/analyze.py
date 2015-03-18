@@ -9,8 +9,8 @@ from concurrent.futures import ProcessPoolExecutor
 import itertools
 import os
 
-from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, write_general_stats, \
-    write_sample_stats
+from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, write_includeref_matrix,\
+    write_general_stats, write_sample_stats
 
 
 # TODO: Remove constant.
@@ -348,12 +348,11 @@ def analyze_position(reference_position, dups_position, samples):
                 elif analysis.call == reference_position.call:
                     position_stats['called_reference'] += 1
                     analysis_stats['called_reference'] = 1
-                else:
+                elif dups_position.call != '1':
                     # Called A/C/G/T and doesn't match the reference.
                     position_stats['called_snp'] += 1
-                    if dups_position.call != '1':
-                        analysis_stats['called_snp'] = 1
-                        is_missing_matrix = True
+                    analysis_stats['called_snp'] = 1
+                    is_missing_matrix = True
 
                 # Sample stats is a little stricter than the matrices on what passes.
                 if dups_position.call == '1':
@@ -455,9 +454,13 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     missing_matrix = write_missingdata_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_missing.tsv'),
                                               reference_contig.name,
                                               identifiers)
+    includeref_matrix = write_includeref_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_includeref.tsv'),
+                                               reference_contig.name,
+                                               identifiers)
     master_matrix.send(None)
     bestsnp_matrix.send(None)
     missing_matrix.send(None)
+    includeref_matrix.send(None)
 
     contig_stats['reference_length'] = len(reference_contig)
     # FIXME: Ideally the Fasta.contigs generator should yield the same for both the reference and duplicates fastas.
@@ -489,6 +492,7 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
         master_matrix.send(position)
         bestsnp_matrix.send(position)
         missing_matrix.send(position)
+        includeref_matrix.send(position)
 
     return sample_stats, contig_stats
 
@@ -547,8 +551,8 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
 
         is_first_contig = True
 
-        # for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
-        for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
+        for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
+        #for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
                                                      itertools.repeat(sample_groups)):
             # Concatenate the contig matrices.
             if is_first_contig:
@@ -556,6 +560,7 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
                 os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
                 os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
                 os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
+                os.rename(contig_stat['Contig'] + '_includeref.tsv', 'withallrefpos_matrix.tsv')
             else:
                 with open('master_matrix.tsv', 'a') as master, open(contig_stat['Contig'] + '_master.tsv') as master_partial:
                     master_partial.readline()
@@ -569,6 +574,10 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
                     missing_partial.readline()
                     missing.writelines(line for line in missing_partial)
                 os.remove(contig_stat['Contig'] + '_missing.tsv')
+                with open('withallrefpos_matrix.tsv', 'a') as includeref, open(contig_stat['Contig'] + '_includeref.tsv') as includeref_partial:
+                    includeref_partial.readline()
+                    includeref.writelines(line for line in includeref_partial)
+                os.remove(contig_stat['Contig'] + '_includeref.tsv')
 
             contig_stats.append(contig_stat)
 
@@ -577,9 +586,9 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
                 sample_stats = sample_stat
             else:
                 # (a + b for x, y in zip(sample_stats, sample_stat) for a, b in zip(x, y))
-                for i, sample in enumerate(sample_stats):
+                for i, sample in enumerate(sample_stat):
                     for j, analysis in enumerate(sample):
                         sample_stats[i][j].update(analysis)
-
+            
         reference_length = write_general_stats(os.path.join(OUTPUT_DIR, 'general_stats.tsv'), contig_stats)
         write_sample_stats(os.path.join(OUTPUT_DIR, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
