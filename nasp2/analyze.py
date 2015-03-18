@@ -9,8 +9,11 @@ from concurrent.futures import ProcessPoolExecutor
 import itertools
 import os
 
-from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, write_includeref_matrix,\
+from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
+    write_includeref_matrix, \
     write_general_stats, write_sample_stats
+
+
 
 
 # TODO: Remove constant.
@@ -228,9 +231,32 @@ def analyze_position(reference_position, dups_position, samples):
     masked_call_str = [reference_position.call]
 
     # all_sample_stats is a list of sample_stats. It represents all the SampleAnalysis stats grouped by sample name.
-    all_sample_stats = []
+    all_sample_stats = [
+        [
+            # any - True if true in any analysis_stats for any sample.
+            Counter({
+                'was_called': 0,
+                'passed_coverage_filter': 0,
+                'passed_proportion_filter': 0,
+                'quality_breadth': 0,
+                'called_reference': 0,
+                'called_snp': 0,
+                'called_degen': 0
+            }),
+            # all - True if tru of all analysis_stats for all samples.
+            Counter({
+                'was_called': 1,
+                'passed_coverage_filter': 1,
+                'passed_proportion_filter': 1,
+                'quality_breadth': 1,
+                'called_reference': 1,
+                'called_snp': 1,
+                'called_degen': 1
+            })
+        ]
+    ]
     for sample in samples:
-        # any - True if true in any of the analysis_stats.
+        # any - True if true in any of the analysis_stats for the same sample.
         any = Counter({
             'was_called': 0,
             'passed_coverage_filter': 0,
@@ -240,7 +266,7 @@ def analyze_position(reference_position, dups_position, samples):
             'called_snp': 0,
             'called_degen': 0
         })
-        # all - True if true in all of the analysis_stats.
+        # all - True if true in all of the analysis_stats for the same sample.
         all = Counter({
             'was_called': 1,
             'passed_coverage_filter': 1,
@@ -380,9 +406,11 @@ def analyze_position(reference_position, dups_position, samples):
                 if value:
                     # any - The stat passed in at least one analysis_stat.
                     any[key] = 1
+                    all_sample_stats[0][0][key] = 1
                 else:
                     # all - The stat failed in at least one analysis_stat.
                     all[key] = 0
+                    all_sample_stats[0][1][key] = 0
 
         all_sample_stats.append(sample_stats)
 
@@ -460,8 +488,8 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
                                               reference_contig.name,
                                               identifiers)
     includeref_matrix = write_includeref_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_includeref.tsv'),
-                                               reference_contig.name,
-                                               identifiers)
+                                                reference_contig.name,
+                                                identifiers)
     master_matrix.send(None)
     bestsnp_matrix.send(None)
     missing_matrix.send(None)
@@ -472,9 +500,10 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     # The change that introduced sorting by length did not consistently result in an identical order. Calling get_contig on dups
     # was a quick fix. It also has the advantage that it will yield empty contigs if the contig does not exist. Perhaps a analyze_samples
     # could pass a generator that yields the contigs in the right order.
-    for position in map(analyze_position, reference_contig.positions, dups_contig.get_contig(reference_contig.name).positions,
+    for position in map(analyze_position, reference_contig.positions,
+                        dups_contig.get_contig(reference_contig.name).positions,
                         sample_positions(reference_contig.name, sample_groups)):
-        #contig_stats['reference_length'] += 1
+        # contig_stats['reference_length'] += 1
         contig_stats['reference_clean'] += 1 if position.is_reference_clean else 0
         contig_stats['reference_duplicated'] += 1 if position.is_reference_duplicated else 0
         contig_stats['all_called'] += 1 if position.is_all_called else 0
@@ -514,8 +543,8 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
 # + 2 * #char in range of positions = LocusID2 + Position
 # def _file_positions(reference, sample_groups, offset = 0):
 # """
-#     _file_positions yields a starting file position for each contig of the master matrix file.
-#     This allows multiple processes to write to the same master matrix file while processing contigs in parallel.
+# _file_positions yields a starting file position for each contig of the master matrix file.
+# This allows multiple processes to write to the same master matrix file while processing contigs in parallel.
 #
 #     Args:
 #         reference (Fasta):
@@ -557,32 +586,36 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
         is_first_contig = True
 
         for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
-        #for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
-                                                     itertools.repeat(sample_groups)):
-#            # Concatenate the contig matrices.
-#            if is_first_contig:
-#                is_first_contig = False
-#                os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
-#                os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
-#                os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
-#                os.rename(contig_stat['Contig'] + '_includeref.tsv', 'withallrefpos_matrix.tsv')
-#            else:
-#                with open('master_matrix.tsv', 'a') as master, open(contig_stat['Contig'] + '_master.tsv') as master_partial:
-#                    master_partial.readline()
-#                    master.writelines(line for line in master_partial)
-#                os.remove(contig_stat['Contig'] + '_master.tsv')
-#                with open('bestsnp_matrix.tsv', 'a') as bestsnp, open(contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
-#                    bestsnp_partial.readline()
-#                    bestsnp.writelines(line for line in bestsnp_partial)
-#                os.remove(contig_stat['Contig'] + '_best.tsv')
-#                with open('missingdata_matrix.tsv', 'a') as missing, open(contig_stat['Contig'] + '_missing.tsv') as missing_partial:
-#                    missing_partial.readline()
-#                    missing.writelines(line for line in missing_partial)
-#                os.remove(contig_stat['Contig'] + '_missing.tsv')
-#                with open('withallrefpos_matrix.tsv', 'a') as includeref, open(contig_stat['Contig'] + '_includeref.tsv') as includeref_partial:
-#                    includeref_partial.readline()
-#                    includeref.writelines(line for line in includeref_partial)
-#                os.remove(contig_stat['Contig'] + '_includeref.tsv')
+        # for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
+                                            itertools.repeat(sample_groups)):
+            # Concatenate the contig matrices.
+            if is_first_contig:
+                is_first_contig = False
+                os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
+                os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
+                os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
+                os.rename(contig_stat['Contig'] + '_includeref.tsv', 'withallrefpos_matrix.tsv')
+            else:
+                with open('master_matrix.tsv', 'a') as master, open(
+                                contig_stat['Contig'] + '_master.tsv') as master_partial:
+                    master_partial.readline()
+                    master.writelines(line for line in master_partial)
+                os.remove(contig_stat['Contig'] + '_master.tsv')
+                with open('bestsnp_matrix.tsv', 'a') as bestsnp, open(
+                                contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
+                    bestsnp_partial.readline()
+                    bestsnp.writelines(line for line in bestsnp_partial)
+                os.remove(contig_stat['Contig'] + '_best.tsv')
+                with open('missingdata_matrix.tsv', 'a') as missing, open(
+                                contig_stat['Contig'] + '_missing.tsv') as missing_partial:
+                    missing_partial.readline()
+                    missing.writelines(line for line in missing_partial)
+                os.remove(contig_stat['Contig'] + '_missing.tsv')
+                with open('withallrefpos_matrix.tsv', 'a') as includeref, open(
+                                contig_stat['Contig'] + '_includeref.tsv') as includeref_partial:
+                    includeref_partial.readline()
+                    includeref.writelines(line for line in includeref_partial)
+                os.remove(contig_stat['Contig'] + '_includeref.tsv')
 
             contig_stats.append(contig_stat)
 
@@ -594,6 +627,6 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
                 for i, sample in enumerate(sample_stat):
                     for j, analysis in enumerate(sample):
                         sample_stats[i][j].update(analysis)
-            
+
         reference_length = write_general_stats(os.path.join(OUTPUT_DIR, 'general_stats.tsv'), contig_stats)
         write_sample_stats(os.path.join(OUTPUT_DIR, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)

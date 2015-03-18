@@ -90,39 +90,45 @@ def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
                   'quality_breadth', 'quality_breadth (%)', 'called_reference', 'called_reference (%)',
                   'called_snp', 'called_snp (%)', 'called_degen', 'called_degen (%)')
 
-    any = Counter({'Sample': '[any]'})
-    all = Counter({'Sample': '[all]'})
+    genome_any = sample_stats[0][0]
+    genome_all = sample_stats[0][1]
 
-    for sample_stat, sample in zip(sample_stats, sample_groups):
-        any.update(sample_stat[0])
-        all.update(sample_stat[1])
-        sample_stat[0]['Sample'] = sample[0].name
-        sample_stat[0]['Sample::Analysis'] = '[any]'
-        sample_stat[1]['Sample'] = sample[0].name
-        sample_stat[1]['Sample::Analysis'] = '[all]'
+    # Join identifiers with genome any/all summary data.
+    genome_any['Sample'] = '[any]'
+    genome_all['Sample'] = '[all]'
 
-        for stat in fieldnames[2::2]:
-            sample_stat[0][stat + ' (%)'] = "{0:.2f}%".format(sample_stat[0][stat] / reference_length * 100)
-            sample_stat[1][stat + ' (%)'] = "{0:.2f}%".format(sample_stat[1][stat] / reference_length * 100)
-
-    # Calculate overall stat percentages
+    # Calculate genome any/all stat percentages.
     for stat in fieldnames[2::2]:
-        any[stat + ' (%)'] = "{0:.2f}%".format(any[stat] / reference_length * 100)
-        all[stat + ' (%)'] = "{0:.2f}%".format(any[stat] / reference_length * 100)
+        genome_any[stat + ' (%)'] = "{0:.2f}%".format(genome_any[stat] / reference_length * 100)
+        genome_all[stat + ' (%)'] = "{0:.2f}%".format(genome_all[stat] / reference_length * 100)
 
     with open(filepath, 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter='\t', lineterminator='\n')
         writer.writeheader()
         handle.write('\n')
-        # Write the any and all summaries genome.
-        writer.writerow(any)
-        writer.writerow(all)
+        # Write the whole genome any/all summaries.
+        writer.writerow(genome_any)
+        writer.writerow(genome_all)
 
         # Join sample names and analysis identifiers with the analysis stats before writing them to file.
-        for sample_stat, sample in zip(sample_stats, sample_groups):
+        # sample_stats[1:] skips the overall genome summaries which have no corresponding sample.
+        for sample_stat, sample in zip(sample_stats[1:], sample_groups):
+            sample_any = sample_stat[0]
+            sample_all = sample_stat[1]
+
             handle.write('\n')
-            writer.writerow(sample_stat[0])
-            writer.writerow(sample_stat[1])
+            # Join identifiers with per-analysis any/all summary data.
+            sample_any['Sample'] = sample[0].name
+            sample_any['Sample::Analysis'] = '[any]'
+            sample_all['Sample'] = sample[0].name
+            sample_all['Sample::Analysis'] = '[all]'
+
+            # Calculate sample any/all summary stat percentages
+            for stat in fieldnames[2::2]:
+                sample_any[stat + ' (%)'] = "{0:.2f}%".format(sample_any[stat] / reference_length * 100)
+                sample_all[stat + ' (%)'] = "{0:.2f}%".format(sample_all[stat] / reference_length * 100)
+            writer.writerow(sample_any)
+            writer.writerow(sample_all)
             # Join sample identifiers with sample data then write to file.
             for analysis_stats, identifier in zip(sample_stat[2:], sample):
                 # Calculate per-analysis stat percentages
