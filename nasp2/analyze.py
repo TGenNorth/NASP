@@ -271,24 +271,6 @@ def analyze_position(reference_position, dups_position, samples):
 
             call_str_append(analysis.call)
 
-            # Check if all analyses for the same sample match.
-            if prev_analysis_call is None:
-                prev_analysis_call = analysis.simple_call
-            elif prev_analysis_call != analysis.simple_call:
-                is_all_sample_consensus = False
-                is_all_quality_breadth = False
-
-            # A position is called if it was identified as one of A/C/G/T or a degeneracy.
-            # X means no value, N means any value.
-            if analysis.call in ['X', 'N']:
-                position_stats['CallWasMade'] += 'N'
-                is_all_called = False
-                is_all_quality_breadth = False
-            else:
-                analysis_stats['was_called'] = 1
-                position_stats['was_called'] += 1
-                position_stats['CallWasMade'] += 'Y'
-
             # FIXME: coverage/proportion may be "PASS" if the value is not deprecated in the VCF contig parser.
             # get_proportion/get_coverage
 
@@ -312,10 +294,29 @@ def analyze_position(reference_position, dups_position, samples):
                 is_all_passed_proportion = False
                 is_all_quality_breadth = False
 
+            # Check if all analyses for the same sample match.
+            if prev_analysis_call is None:
+                prev_analysis_call = analysis.simple_call
+            elif prev_analysis_call != analysis.simple_call:
+                is_all_sample_consensus = False
+                is_all_quality_breadth = False
+
+            # A position is called if it was identified as one of A/C/G/T or a degeneracy.
+            # X means no value, N means any value.
+            is_called = True
+            if analysis.call in ['X', 'N']:
+                position_stats['CallWasMade'] += 'N'
+                is_all_called = False
+                is_all_quality_breadth = False
+            else:
+                analysis_stats['was_called'] = 1
+                position_stats['was_called'] += 1
+                position_stats['CallWasMade'] += 'Y'
+
             # Missing Data Matrix masks calls that did not pass a filter with 'N'
             # TODO: document that we are checking for was_called because we don't want to mask 'X' calls
             # TODO: Can this be better expressed?
-            if not analysis_stats['was_called'] or is_pass_coverage and is_pass_proportion:
+            if not is_called or is_pass_coverage and is_pass_proportion:
                 masked_call_str.append(analysis.call)
             else:
                 masked_call_str.append('N')
@@ -342,7 +343,7 @@ def analyze_position(reference_position, dups_position, samples):
 
             # TODO: Clarify the purpose of this if statement.
             # Only count significant measurements.
-            if is_pass_coverage and is_pass_proportion and reference_position.simple_call != 'N':
+            if not is_called and is_pass_coverage and is_pass_proportion and reference_position.simple_call != 'N':
                 analysis_stats['quality_breadth'] = 1
                 # TODO: Should the first if be simple_call?
                 # if analysis.call in ['X', 'N']:
