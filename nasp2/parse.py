@@ -296,7 +296,7 @@ class Fasta(SampleAnalysis):
         contig_index = self._index.get(contig_name)
         if contig_index is None:
             logging.info("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
-            return EmptyContig(contig_name)
+            return EmptyContig(contig_name, is_fasta=True)
         return FastaContig(contig_name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference)
 
     def _index_contigs(self):
@@ -367,7 +367,13 @@ class Fasta(SampleAnalysis):
 class Contig(metaclass=ABCMeta):
     # An empty position represents gaps between positions or the sample contig is shorter than the
     # reference contig.
-    EMPTY_POSITION = Position(call='X', coverage='?', proportion='?')
+    FASTA_EMPTY_POSITION = Position(
+        call='X',
+        coverage='-',
+        proportion='-'
+    )
+
+    VCF_EMPTY_POSITION = Position(call='X', coverage='?', proportion='?')
 
     @property
     @abstractmethod
@@ -392,14 +398,16 @@ class Contig(metaclass=ABCMeta):
 
 
 class EmptyContig(Contig):
-    def __init__(self, name):
+    def __init__(self, name, is_fasta=False):
         """
         EmptyContig is a placeholder that yields empty positions for a contig that does not exist in a SampleAnalysis.
 
         Args:
             name (str): Name of the contig.
+            is_fasta (bool): A Fasta position always passes coverage and proportion filters.
         """
         self._name = name
+        self._is_fasta = is_fasta
 
     @property
     def name(self):
@@ -407,11 +415,15 @@ class EmptyContig(Contig):
 
     @property
     def positions(self):
-        while True:
-            yield self.EMPTY_POSITION
+        if self._is_fasta:
+            while True:
+                yield self.FASTA_EMPTY_POSITION
+        else:
+            while True:
+                yield self.VCF_EMPTY_POSITION
 
     def __repr__(self):
-        return "{0}({1!r})".format(self.__class__.__name__, self.name)
+        return "{0}(name={1!r}, is_fasta={2!r})".format(self.__class__.__name__, self.name, self.is_fasta)
 
 
 class FastaContig(Contig):
@@ -479,7 +491,7 @@ class FastaContig(Contig):
         # FIXME: If the FastaContig is the reference, this while loop creates an infinite loop.
         # Yield empty positions when the contig is exhausted.
         while not self._is_reference:
-            yield self.EMPTY_POSITION
+            yield self.FASTA_EMPTY_POSITION
 
 
 # FIXME: Support for multiple samples in a vcf is disabled.
@@ -617,6 +629,13 @@ class VcfContig(Contig):
                 sample_proportion = -1
             elif 'PASS' in failed_filters:
                 sample_proportion = 'PASS'
+
+        # Some big SNP callers, like GATK, do not provide proportion information when
+        # the position is called reference.  We cannot filter these positions.
+        # TODO: Remove - unnecessary
+        if sample_proportion is None and is_snp:
+            sample_proportion = '-'
+
         return sample_proportion
 
     @property
@@ -697,7 +716,7 @@ class VcfContig(Contig):
                     position += 1
                     # TODO: Remove
                     # print('\t', position, row['POS'], 'GAP', self._filepath, row)
-                    yield self.EMPTY_POSITION
+                    yield self.VCF_EMPTY_POSITION
 
                 # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
                 # { 'NS': '3', 'DP': '4', 'AF': '0.5', 'DB': None, 'H2': None }
@@ -730,7 +749,6 @@ class VcfContig(Contig):
                 # call != ref checks if the sample is a SNP. The ref may have more than one position if it's an indel.
                 proportion = self._get_proportion(row, coverage, call != row['REF'][:1])
 
-
                 position += 1
                 # print('\t', position, row['POS'], 'NORMAL', self._filepath, row)
                 # Yield the position.
@@ -745,7 +763,7 @@ class VcfContig(Contig):
             # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
             while True:
                 position += 1
-                yield self.EMPTY_POSITION
+                yield self.VCF_EMPTY_POSITION
 
 
 class MalformedInputFile(Exception):
