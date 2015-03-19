@@ -6,19 +6,12 @@ __author__ = 'jtravis'
 
 from collections import namedtuple, Counter
 from concurrent.futures import ProcessPoolExecutor
-import itertools
 import os
 
 from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
     write_includeref_matrix, \
     write_missingdata_snpfasta, write_bestsnp_snpfasta, \
     write_general_stats, write_sample_stats
-
-
-
-
-# TODO: Remove constant.
-OUTPUT_DIR = './'
 
 
 # TODO: Remove profile. It is a dummy wrapper to leave @profile decorators in place when not profiling.
@@ -333,6 +326,7 @@ def analyze_position(reference_position, dups_position, samples):
             is_called = True
             if analysis.call in ['X', 'N']:
                 position_stats['CallWasMade'] += 'N'
+                is_called = False
                 is_all_called = False
                 is_all_quality_breadth = False
             else:
@@ -370,7 +364,7 @@ def analyze_position(reference_position, dups_position, samples):
 
             # TODO: Clarify the purpose of this if statement.
             # Only count significant measurements.
-            if not is_called and is_pass_coverage and is_pass_proportion and reference_position.simple_call != 'N':
+            if is_called and is_pass_coverage and is_pass_proportion and reference_position.simple_call != 'N':
                 analysis_stats['quality_breadth'] = 1
                 # TODO: Should the first if be simple_call?
                 # if analysis.call in ['X', 'N']:
@@ -455,7 +449,7 @@ def analyze_position(reference_position, dups_position, samples):
 
 
 # @profile
-def analyze_contig(reference_contig, dups_contig, sample_groups):
+def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, reference_contig):
     """
     analyze_contig expects reference_contig, dups_contig, and sample_analyses to represent the same contig from
     different sources.
@@ -475,31 +469,17 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
     sample_stats = None
     contig_stats = Counter({'Contig': reference_contig.name})
 
-    # FIXME: Must the identifiers be recalculated for every contig?
-    identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
-
+    coroutines = (
+        write_master_matrix(tempdirname, reference_contig.name, '_master_matrix.tsv', identifiers),
+        write_bestsnp_matrix(tempdirname, reference_contig.name, '_bestsnp_matrix.tsv', sample_groups),
+        write_missingdata_matrix(tempdirname, reference_contig.name, '_missingdata_matrix.tsv', identifiers),
+        write_includeref_matrix(tempdirname, reference_contig.name, '_withallrefpos.tsv', identifiers),
+        write_missingdata_snpfasta(tempdirname, reference_contig.name, '_missingdata.snpfasta', identifiers),
+        write_bestsnp_snpfasta(tempdirname, reference_contig.name, '_bestsnp.snpfasta', identifiers)
+    )
     # Initialize outfile coroutines. This will create the file, write the header, and wait for each line of data.
-    master_matrix = write_master_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_master.tsv'),
-                                        reference_contig.name,
-                                        identifiers)
-    bestsnp_matrix = write_bestsnp_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_best.tsv'),
-                                          reference_contig.name,
-                                          sample_groups)
-    missing_matrix = write_missingdata_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_missing.tsv'),
-                                              reference_contig.name,
-                                              identifiers)
-    includeref_matrix = write_includeref_matrix(os.path.join(OUTPUT_DIR, reference_contig.name + '_includeref.tsv'),
-                                                reference_contig.name,
-                                                identifiers)
-    missingdata_snpfasta = write_missingdata_snpfasta(reference_contig.name, identifiers)
-    bestsnp_snpfasta = write_bestsnp_snpfasta(reference_contig.name, identifiers)
-
-    master_matrix.send(None)
-    bestsnp_matrix.send(None)
-    missing_matrix.send(None)
-    includeref_matrix.send(None)
-    missingdata_snpfasta.send(None)
-    bestsnp_snpfasta.send(None)
+    for coroutine in coroutines:
+        coroutine.send(None)
 
     contig_stats['reference_length'] = len(reference_contig)
     # FIXME: Ideally the Fasta.contigs generator should yield the same for both the reference and duplicates fastas.
@@ -528,65 +508,100 @@ def analyze_contig(reference_contig, dups_contig, sample_groups):
                 for j, analysis in enumerate(sample):
                     sample_stats[i][j].update(analysis)
 
-        # Write position to Contig Master Matrix.
-        master_matrix.send(position)
-        bestsnp_matrix.send(position)
-        missing_matrix.send(position)
-        includeref_matrix.send(position)
-        missingdata_snpfasta.send(position)
-        bestsnp_snpfasta.send(position)
+        for coroutine in coroutines:
+            coroutine.send(position)
 
     return sample_stats, contig_stats
 
 
+def _concat_matrix(dest, src):
+    """
+    Append src to dest file then delete src.
+
+    Assumes both files are TSV matrices
+
+    Args:
+        dest (str):
+        src (str):
+    """
+    with open(dest, 'a') as complete, open(src) as partial:
+        partial.readline()
+        complete.write(partial.read())
+
+from contextlib import ExitStack
+def _concat_snpfasta_contig(directory, contig_name, identifiers, suffix):
+    with ExitStack() as stack:
+        analyses = tuple(stack.enter_context(open(os.path.join(directory, identifier + suffix), 'a+')) for identifier in identifiers)
+        analysis_contigs = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
+
+        for identifier, analysis, analysis_contig in zip(identifiers, analyses, analysis_contigs):
+            line_length = 0
+            analysis.write('>{0}\n'.format(identifier))
+            for call in analysis_contig.read():
+                line_length += 1
+                # Wrap lines every 80 characters.
+                if line_length >= 80:
+                    line_length = 0
+                    analysis.write('{0}\n'.format(call))
+                else:
+                    analysis.write(call)
+
+
+def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
+    with ExitStack() as stack, open(os.path.join(dest_dir, dest), 'w') as dest:
+        for analysis in (stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'r')) for identifier in identifiers):
+            dest.write(analysis.read())
+            dest.write('\n')
+
+from tempfile import TemporaryDirectory
+import functools
+
+# TODO: Move to write_matrix.py
 # @profile
-def analyze_samples(reference_fasta, reference_dups, sample_groups):
+def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, max_workers=None):
     """
     Args:
         reference_fasta (Fasta):
         reference_dups (Fasta):
         sample_groups (tuple of tuple of SampleAnalysis): The sample analysis grouped by Sample.
     """
-    with ProcessPoolExecutor() as executor:
-        contig_stats = []
-        # NOTE: if the loop does not run, None will be passed to write_general_stats.
-        sample_stats = None
+    # TODO: add coverage/proportion parameters and use consistent ordering with what is passed to analyze contig.
+    contig_stats = []
+    # NOTE: if the loop does not run, None will be passed to write_general_stats.
+    # Sample stats
+    sample_stats = None
+    is_first_contig = True
+    # TODO: explain what an identifier is
+    identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
-        is_first_contig = True
+    matrices = ('master_matrix.tsv', 'bestsnp_matrix.tsv', 'missingdata_matrix.tsv', 'withallrefpos.tsv')
 
-        for sample_stat, contig_stat in executor.map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
-        # for sample_stat, contig_stat in map(analyze_contig, reference_fasta.contigs, itertools.repeat(reference_dups),
-                                            itertools.repeat(sample_groups)):
-            # Concatenate the contig matrices. The first one is simply renamed and the remaining contigs appended to it.
-            if is_first_contig:
-                is_first_contig = False
-                os.rename(contig_stat['Contig'] + '_master.tsv', 'master_matrix.tsv')
-                os.rename(contig_stat['Contig'] + '_best.tsv', 'bestsnp_matrix.tsv')
-                os.rename(contig_stat['Contig'] + '_missing.tsv', 'missingdata_matrix.tsv')
-                os.rename(contig_stat['Contig'] + '_includeref.tsv', 'withallrefpos_matrix.tsv')
-            else:
-                with open('master_matrix.tsv', 'a') as master, open(
-                                contig_stat['Contig'] + '_master.tsv') as master_partial:
-                    master_partial.readline()
-                    master.writelines(line for line in master_partial)
-                os.remove(contig_stat['Contig'] + '_master.tsv')
-                with open('bestsnp_matrix.tsv', 'a') as bestsnp, open(
-                                contig_stat['Contig'] + '_best.tsv') as bestsnp_partial:
-                    bestsnp_partial.readline()
-                    bestsnp.writelines(line for line in bestsnp_partial)
-                os.remove(contig_stat['Contig'] + '_best.tsv')
-                with open('missingdata_matrix.tsv', 'a') as missing, open(
-                                contig_stat['Contig'] + '_missing.tsv') as missing_partial:
-                    missing_partial.readline()
-                    missing.writelines(line for line in missing_partial)
-                os.remove(contig_stat['Contig'] + '_missing.tsv')
-                with open('withallrefpos_matrix.tsv', 'a') as includeref, open(
-                                contig_stat['Contig'] + '_includeref.tsv') as includeref_partial:
-                    includeref_partial.readline()
-                    includeref.writelines(line for line in includeref_partial)
-                os.remove(contig_stat['Contig'] + '_includeref.tsv')
-
+    # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
+    # temporary directory which is deleted automatically.
+    with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=output_dir) as tempdirname:
+        # Only the reference contig is changing, bind the other parameters to the function.
+        analyze = functools.partial(analyze_contig, tempdirname, identifiers, sample_groups, reference_dups)
+        for sample_stat, contig_stat in executor.map(analyze, reference_fasta.contigs):
             contig_stats.append(contig_stat)
+            contig_name = contig_stat['Contig']
+
+            # Concatenate the contig matrices.
+            for matrix in matrices:
+                # Path to a contig matrix.
+                partial = os.path.join(tempdirname, '{0}_{1}'.format(contig_name, matrix))
+                # Path to the matrix where all the contigs will be concatenated.
+                complete = os.path.join(output_dir, matrix)
+
+                # The first contig is simply renamed to avoid unnecessary copies and the remaining contigs are appended.
+                if is_first_contig:
+                    # TODO: Replace with shutil.move which can handle cross-filesystem moves.
+                    os.rename(partial, complete)
+                else:
+                    _concat_matrix('{0}_{1}'.format(contig_name, matrix), matrix)
+            is_first_contig = False
+
+            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_missingdata.snpfasta')
+            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_bestsnp.snpfasta')
 
             # Sum the SampleAnalysis stats preserving the sample_groups order.
             if sample_stats is None:
@@ -597,5 +612,8 @@ def analyze_samples(reference_fasta, reference_dups, sample_groups):
                     for j, analysis in enumerate(sample):
                         sample_stats[i][j].update(analysis)
 
-        reference_length = write_general_stats(os.path.join(OUTPUT_DIR, 'general_stats.tsv'), contig_stats)
-        write_sample_stats(os.path.join(OUTPUT_DIR, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
+        _concat_snpfasta(output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
+        _concat_snpfasta(output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
+
+    reference_length = write_general_stats(os.path.join(output_dir, 'general_stats.tsv'), contig_stats)
+    write_sample_stats(os.path.join(output_dir, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)

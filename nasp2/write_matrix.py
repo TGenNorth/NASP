@@ -1,5 +1,12 @@
+"""
+write_matrix handles all disk IO operations.
+
+TODO: Most of the functions are written as coroutines that could be used improve performance by using asyncio to
+continue processing instead of waiting for data to be read/written to/from disk.
+"""
 __author__ = 'jtravis'
 
+import os
 import csv
 import functools
 from collections import Counter
@@ -140,11 +147,6 @@ def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
                 writer.writerow(analysis_stats)
 
 
-def _sum_contig_stats(summation, contig_stat):
-    summation.update(contig_stat)
-    return summation
-
-
 def write_general_stats(filepath, contig_stats):
     """
     Args:
@@ -154,7 +156,10 @@ def write_general_stats(filepath, contig_stats):
     Return:
         int: Total reference length.
     """
-    whole_genome_stats = functools.reduce(_sum_contig_stats, contig_stats, Counter({'Contig': ''}))
+    # Sum contig stats
+    whole_genome_stats = Counter({'Contig': ''})
+    for contig_stat in contig_stats:
+        whole_genome_stats.update(contig_stat)
     whole_genome_stats['Contig'] = 'Whole Genome'
 
     reference_length = whole_genome_stats['reference_length']
@@ -181,14 +186,14 @@ def write_general_stats(filepath, contig_stats):
     return reference_length
 
 
-def write_master_matrix(filepath, contig_name, identifiers):
+def write_master_matrix(directory, contig_name, suffix, identifiers):
     """
     Args:
         filepath (str): Path to the output file.
         contig_name (str): Name
         identifiers (tuple of
     """
-    with open(filepath, 'w') as handle:
+    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('all_callable', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -229,7 +234,7 @@ def write_master_matrix(filepath, contig_name, identifiers):
             writer.writerow(line)
 
 
-def write_missingdata_snpfasta(contig_name, identifiers):
+def write_missingdata_snpfasta(directory, contig_name, suffix, identifiers):
     """
     Args:
         contig_name (str):
@@ -239,13 +244,7 @@ def write_missingdata_snpfasta(contig_name, identifiers):
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
-        files = tuple(stack.enter_context(open(contig_name + '_' + identifier + '_missing.snpfasta', 'w')) for identifier in identifiers)
-
-        # Write contig description / header
-        for file, identifier in zip(files, identifiers):
-            file.write('>' + identifier + '\n')
-
-        line_length = 0
+        files = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix), 'w')) for identifier in identifiers)
 
         while True:
             row = yield
@@ -253,18 +252,12 @@ def write_missingdata_snpfasta(contig_name, identifiers):
             if not row.is_missing_matrix:
                 continue
 
-            line_length += 1
-
             for file, call in zip(files, row.masked_call_str):
                 file.write(call)
-                # Wrap line every 80 characters.
-                if line_length >= 80:
-                    file.write('\n')
-                    line_length = 0
 
 
-def write_missingdata_matrix(filepath, contig_name, identifiers):
-    with open(filepath, 'w') as handle:
+def write_missingdata_matrix(directory, contig_name, suffix, identifiers):
+    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('missing_data', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -331,7 +324,7 @@ def write_missingdata_matrix(filepath, contig_name, identifiers):
 #             })
 
 
-def write_bestsnp_snpfasta(contig_name, identifiers):
+def write_bestsnp_snpfasta(directory, contig_name, suffix, identifiers):
     """
     Args:
         contig_name (str):
@@ -341,13 +334,7 @@ def write_bestsnp_snpfasta(contig_name, identifiers):
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
-        files = tuple(stack.enter_context(open(contig_name + '_' + identifier + '_bestsnp.snpfasta', 'w')) for identifier in identifiers)
-
-        # Write contig description / header
-        for file, identifier in zip(files, identifiers):
-            file.write('>' + identifier + '\n')
-
-        line_length = 0
+        files = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix), 'w')) for identifier in identifiers)
 
         while True:
             row = yield
@@ -355,17 +342,11 @@ def write_bestsnp_snpfasta(contig_name, identifiers):
             if not row.is_best_snp:
                 continue
 
-            line_length += 1
-
-            for file, call in zip(files, row.masked_call_str):
+            for file, call in zip(files, row.call_str):
                 file.write(call)
-                # Wrap line every 80 characters.
-                if line_length >= 80:
-                    file.write('\n')
-                    line_length = 0
 
 
-def write_bestsnp_matrix(filepath, contig_name, sample_groups):
+def write_bestsnp_matrix(directory, contig_name, suffix, sample_groups):
     sample_names = tuple(sample[0].name for sample in sample_groups)
 
     # first_analysis_index is a list of the index of the first analysis for each sample in the call string
@@ -377,7 +358,7 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
         first_analysis_index.append(num_analyses)
         num_analyses += len(sample)
 
-    with open(filepath, 'w') as handle:
+    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -421,8 +402,8 @@ def write_bestsnp_matrix(filepath, contig_name, sample_groups):
             writer.writerow(line)
 
 
-def write_includeref_matrix(filepath, contig_name, identifiers):
-    with open(filepath, 'w') as handle:
+def write_includeref_matrix(directory, contig_name, suffix, identifiers):
+    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -463,100 +444,3 @@ def write_includeref_matrix(filepath, contig_name, identifiers):
             line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
 
             writer.writerow(line)
-
-
-            # def write_fasta(filepath, contig_name):
-            #     with open(filepath, 'w') as handle:
-            #         handle.write('>' + contig_name + '\n')
-            #         num_chars = 0
-            #         while True:
-            #             row = yield
-            #             handle.write(row)
-            #             num_chars += 1
-            #             if num_chars == 80:
-            #                 handle.write('\n')
-            #                 num_chars = 0
-
-            # for matrix_format in all_vcfs:
-            # if len(encountered_calls) > 0:
-            #             matrix_format['linetowrite'] += ",".join(encountered_calls)
-            #         else:
-            #             matrix_format['linetowrite'] += "."
-            #         matrix_format['linetowrite'] += "\t.\tPASS\tAN={0};NS={1}\tGT:FT".format(len(encountered_calls)+1, str(call_data['snpcall']+call_data['indelcall']+call_data['refcall']))
-            #         for vcf_current_data in vcf_pending_data:
-            #             matrix_format['linetowrite'] += "\t{0}:".format(str(vcf_current_data['GT']))
-            #             if not vcf_current_data['was_called']:
-            #                 matrix_format['linetowrite'] += "NoCall"
-            #             elif not vcf_current_data['passed_coverage']:
-            #                 matrix_format['linetowrite'] += "CovFail"
-            #             elif not vcf_current_data['passed_proportion']:
-            #                 matrix_format['linetowrite'] += "PropFail"
-            #             else:
-            #                 matrix_format['linetowrite'] += "PASS"
-            #         matrix_format['linetowrite'] += "\n"
-
-
-            # def send_to_matrix_handles(self, matrix_formats):
-            #     """
-            #     Writes headers and handles per-matrix logic.  Calls _write_matrix_line
-            #     to handle the per-line computation and analysis.
-            #     """
-            #     for matrix_format in matrix_formats:
-            #         if matrix_format['dataformat'] == 'matrix':
-            #             matrix_format['handle'].write("LocusID\tReference\t")
-            #             for genome in self._genomes:
-            #                 matrix_format['handle'].write("{0}\t".format(genome.identifier()))
-            #             for genome_path in self._failed_genomes:
-            #                 matrix_format['handle'].write("{0}\t".format(genome_path))
-            #             if matrix_format['filter'] == 'bestsnp' or matrix_format['filter'] == 'includeref':
-            #                 matrix_format['handle'].write(
-            #                     "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tPattern\tPattern#\n")
-            #             else:
-            #                 # must be all callable or missing data
-            #                 matrix_format['handle'].write(
-            #                     "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\t" +
-            #                     "Contig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\n")
-            #             matrix_format['linetowrite'] = ''
-            #         elif matrix_format['dataformat'] == 'fasta':
-            #             matrix_format['fastadata'] = GenomeStatus()
-            #             for genome in self._genomes:
-            #                 matrix_format['fastadata'].add_contig(genome.identifier())
-            #         elif matrix_format['dataformat'] == 'vcf':
-            #             matrix_format['handle'].write("##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(__version__))
-            #             for current_contig in self._reference.get_contigs():
-            #                 matrix_format['handle'].write("##contig=<ID=\"{0}\",length={1}>\n".format(current_contig,
-            #                                                                                           self._reference.get_contig_length(
-            #                                                                                               current_contig)))
-            #             for genome in self._genomes:
-            #                 matrix_format['handle'].write(
-            #                     "##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>\n".format(genome.identifier()))
-            #             matrix_format['handle'].write(
-            #                 "##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">\n")
-            #             matrix_format['handle'].write(
-            #                 "##FILTER=<ID=NoCall,Description=\"No call for this sample at this position\">\n")
-            #             matrix_format['handle'].write(
-            #                 "##FILTER=<ID=CovFail,Description=\"Insufficient depth of coverage for this sample at this position\">\n")
-            #             matrix_format['handle'].write(
-            #                 "##FILTER=<ID=PropFail,Description=\"Insufficient proportion of reads were variant for this sample at this position\">\n")
-            #             matrix_format['handle'].write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
-            #             matrix_format['handle'].write(
-            #                 "##FORMAT=<ID=FT,Number=1,Type=String,Description=\"Filters that failed for this sample at this position\">\n")
-            #             matrix_format['handle'].write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
-            #             for genome in self._genomes:
-            #                 matrix_format['handle'].write("\t" + genome.identifier())
-            #             matrix_format['handle'].write("\n")
-            #     # Key None stores next unused
-            #     pattern_data = {None: 1}
-            #     for current_contig in self.get_contigs():
-            #         for current_pos in range(1, self._reference.get_contig_length(current_contig) + 1):
-            #             self._format_matrix_line(current_contig, current_pos, matrix_formats, pattern_data)
-            #             for matrix_format in matrix_formats:
-            #                 if matrix_format['dataformat'] == 'matrix' and matrix_format['linetowrite'] is not None:
-            #                     matrix_format['handle'].write(matrix_format['linetowrite'])
-            #                     matrix_format['linetowrite'] = ''
-            #                 if matrix_format['dataformat'] == 'vcf' and matrix_format['linetowrite'] is not None:
-            #                     matrix_format['handle'].write(matrix_format['linetowrite'])
-            #                     matrix_format['linetowrite'] = ''
-            #     for matrix_format in matrix_formats:
-            #         if matrix_format['dataformat'] == 'fasta':
-            #             matrix_format['fastadata'].send_to_fasta_handle(matrix_format['handle'])

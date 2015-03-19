@@ -10,15 +10,13 @@ Created on April 3, 2014
 @author: dlemmer
 '''
 from xml.etree import ElementTree
-from concurrent.futures import ProcessPoolExecutor
 from collections import namedtuple
-import itertools
-
-from nasp2.parse import Vcf, Fasta
 
 
 MatrixParameters = namedtuple('MatrixParameters', ['reference_fasta', 'reference_dups', 'minimum_coverage', 'minimum_proportion', 'matrix_folder', 'stats_folder', 'parameters', 'filter_matrix_format'])
 MatrixParameters.__new__.__defaults__ = ("", "", "", "", "", "", "")
+
+NaspFile = namedtuple('NaspFile', ['path', 'name', 'aligner', 'snpcaller'])
 
 
 def _write_parameters(node, data):
@@ -49,9 +47,8 @@ def write_dto(matrix_parms, franken_fastas, vcf_files, xml_file):
         attributes = {'name': name, 'aligner': aligner, 'snpcaller': snpcaller}
         _add_input_file(files_node, "vcf", attributes, file)
     dom = minidom.parseString(ElementTree.tostring(root, 'utf-8'))
-    output = open(xml_file, 'w')
-    output.write(dom.toprettyxml(indent="    "))
-    output.close()
+    with open(xml_file, 'w') as output:
+        output.write(dom.toprettyxml(indent=" " * 5))
     return xml_file
 
 
@@ -66,31 +63,24 @@ def parse_dto(xml_file):
     xmltree = ElementTree.parse(xml_file)
     root = xmltree.getroot()
 
-    futures = []
-    with ProcessPoolExecutor() as executor:
-        # Parse matrix parameters indexing the reference and duplicates file in parallel.
-        matrix_params = {element.tag.replace('-', '_'): element.text for element in root.find("parameters").iter()}
-        matrix_params['reference_fasta'] = executor.submit(Fasta, matrix_params['reference_fasta'], 'reference', None, True)
-        # TODO: handle undefined reference_dups
-        matrix_params['reference_dups'] = executor.submit(Fasta, matrix_params['reference_dups'], 'reference', None)
-        matrix_params['minimum_coverage'] = float(matrix_params['minimum_coverage'])
-        matrix_params['minimum_proportion'] = float(matrix_params['minimum_proportion'])
-
-        # Index Vcf and Frankenfastas in parallel.
-        for frankenfasta in root.find("files").iter("frankenfasta"):
-            futures.append(executor.submit(Fasta, frankenfasta.text, frankenfasta.get("name"), frankenfasta.get("aligner")))
-        for vcf in root.find("files").iter("vcf"):
-            futures.append(executor.submit(Vcf, vcf.text, vcf.get("name"), vcf.get("aligner"), vcf.get("snpcaller")))
-
-        # Return when the indexing processes complete.
-        matrix_params['reference_fasta'] = matrix_params['reference_fasta'].result()
-        matrix_params['reference_dups'] = matrix_params['reference_dups'].result()
-        # TODO: try/catch futures exception to return a failed genome object and write the error to the parse log.
-        # Group the analyses by sample name in order to collect sample-level statistics.
-        # The SampleAnalyses are sorted before grouping because groups are determined by when the key changes.
-        # See analyse.sample_positions() for more details regarding the structure of sample_groups
-        sample_analyses = tuple(tuple(v) for _, v in itertools.groupby(sorted(future.result() for future in futures), lambda x: x.name))
-        return MatrixParameters(**matrix_params), sample_analyses
+    matrix_params = {element.tag.replace('-', '_'): element.text for element in root.find("parameters").iter()}
+    matrix_params['frankenfasta'] = tuple(
+        NaspFile(
+            path=frankenfasta.text,
+            name=frankenfasta.get("name"),
+            aligner=frankenfasta.get("aligner"),
+            snpcaller=None
+        ) for frankenfasta in root.find("files").iter("frankenfasta")
+    )
+    matrix_params['vcf'] = tuple(
+        NaspFile(
+            path=vcf.text,
+            name=vcf.get("name"),
+            aligner=vcf.get("aligner"),
+            snpcaller=vcf.get("snpcaller")
+        ) for vcf in root.find("files").iter("vcf")
+    )
+    return matrix_params
 
 
 def main():
