@@ -7,9 +7,11 @@ __author__ = 'jtravis'
 from collections import namedtuple, Counter
 from concurrent.futures import ProcessPoolExecutor
 import os
+import itertools
 
 from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
     write_includeref_matrix, \
+    write_missingdata_vcf, \
     write_missingdata_snpfasta, write_bestsnp_snpfasta, \
     write_general_stats, write_sample_stats
 
@@ -48,8 +50,9 @@ PositionInfo = namedtuple('PositionInfo', [
     'num_T',
     'num_N',
 
-    #
+    # Used in master / bestsnp matrix
     'call_str',
+    # Used in missingdata matrix
     'masked_call_str',
     'CallWasMade',
     'PassedDepthFilter',
@@ -474,6 +477,7 @@ def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, referen
         write_bestsnp_matrix(tempdirname, reference_contig.name, '_bestsnp_matrix.tsv', sample_groups),
         write_missingdata_matrix(tempdirname, reference_contig.name, '_missingdata_matrix.tsv', identifiers),
         write_includeref_matrix(tempdirname, reference_contig.name, '_withallrefpos.tsv', identifiers),
+        write_missingdata_vcf('./', reference_contig.name, '_withallrefpos.tsv', identifiers),
         write_missingdata_snpfasta(tempdirname, reference_contig.name, '_missingdata.snpfasta', identifiers),
         write_bestsnp_snpfasta(tempdirname, reference_contig.name, '_bestsnp.snpfasta', identifiers)
     )
@@ -504,9 +508,8 @@ def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, referen
         if sample_stats is None:
             sample_stats = position.all_sample_stats
         else:
-            for i, sample in enumerate(position.all_sample_stats):
-                for j, analysis in enumerate(sample):
-                    sample_stats[i][j].update(analysis)
+            for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(position.all_sample_stats)):
+                sum.update(analysis)
 
         for coroutine in coroutines:
             coroutine.send(position)
@@ -607,10 +610,8 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
             if sample_stats is None:
                 sample_stats = sample_stat
             else:
-                # (a + b for x, y in zip(sample_stats, sample_stat) for a, b in zip(x, y))
-                for i, sample in enumerate(sample_stat):
-                    for j, analysis in enumerate(sample):
-                        sample_stats[i][j].update(analysis)
+                for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(sample_stat)):
+                    sum.update(analysis)
 
         _concat_snpfasta(output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
         _concat_snpfasta(output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
