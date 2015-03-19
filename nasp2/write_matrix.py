@@ -8,7 +8,6 @@ __author__ = 'jtravis'
 
 import os
 import csv
-import functools
 from collections import Counter
 from contextlib import ExitStack
 
@@ -253,7 +252,10 @@ def write_missingdata_snpfasta(directory, contig_name, suffix, identifiers):
                 continue
 
             for file, call in zip(files, row.masked_call_str):
-                file.write(call)
+                if call != 'X':
+                    file.write(call)
+                else:
+                    file.write('N')
 
 
 def write_missingdata_matrix(directory, contig_name, suffix, identifiers):
@@ -301,27 +303,65 @@ def write_missingdata_matrix(directory, contig_name, suffix, identifiers):
             line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
             writer.writerow(line)
 
+import itertools
+# def write_missingdata_vcf(directory, contig_name, identifiers, contigs, version):
+def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
+    coverage_threshold = 10
+    proportion_threshold = 0.9
 
-# def write_missingdata_vcf(filepath, identifiers, contigs, version):
-#     with open(filepath, 'w') as handle:
-#         handle.write(get_vcf_metadata(version, identifiers, contigs))
-#         writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
-#         writer.writeheader()
-#         position = 0
-#         while True:
-#             row = yield
-#             position += 1
-#             writer.writerow({
-#                 '#CHROM': '',
-#                 'POS': position,
-#                 'ID': '',
-#                 'REF': '',
-#                 'ALT': '',
-#                 'QUAL': '',
-#                 'FILTER': '',
-#                 'INFO': '',
-#                 'FORMAT': ''
-#             })
+    def _vcf_filter(is_all_pass_coverage, is_all_pass_proportion):
+        filter = []
+        if not is_all_pass_coverage:
+            filter.append('c{0}'.format(coverage_threshold))
+        if not is_all_pass_proportion:
+            filter.append('p{0}'.format(proportion_threshold))
+
+        if filter:
+            return ';'.join(filter)
+
+        return 'PASS'
+
+    def foo(analysis_stats):
+        for analysis_stat in itertools.chain.from_iterable(analysis_stats):
+            if not analysis_stat['was_called']:
+                yield "NoCall"
+            elif not analysis_stat['passed_coverage_filter']:
+                yield "CovFail"
+            elif not analysis_stat['passed_proportion_filter']:
+                yield "PropFail"
+            else:
+                yield "PASS"
+
+
+
+    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
+        # handle.write(get_vcf_metadata(version, identifiers, contigs))
+        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
+        writer.writeheader()
+        position = 0
+        while True:
+            row = yield
+            position += 1
+
+            if not row.is_missing_matrix:
+                continue
+
+            line = {
+                '#CHROM': contig_name,
+                'POS': position,
+                'ID': '.',
+                'REF': row.call_str[0],
+                'ALT': 'TODO',
+                'QUAL': '.',
+                'FILTER': _vcf_filter(row.is_all_passed_consensus, row.is_all_passed_proportion),
+                # TODO: AN is the number of snps + 1 for the reference.
+                # TODO: Add #indel to NS
+                'INFO': 'AN={0};NS={1}'.format(-1, row.called_reference + row.called_snp),
+                'FORMAT': 'GT:FT'
+            }
+            line.update({k: v for k, v in zip(identifiers, foo(row.all_sample_stats))})
+            writer.writerow(line)
+
 
 
 def write_bestsnp_snpfasta(directory, contig_name, suffix, identifiers):
