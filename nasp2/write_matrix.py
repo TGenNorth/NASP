@@ -309,7 +309,16 @@ def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
     coverage_threshold = 10
     proportion_threshold = 0.9
 
-    def _vcf_filter(is_all_pass_coverage, is_all_pass_proportion):
+    def _filter(is_all_pass_coverage, is_all_pass_proportion):
+        """
+        Returns:
+            str: 'PASS' if all filters passed, or an error code.
+
+        Example:
+            c10 means the coverage was below the user defined threshold of 10 for at least one analysis.
+            p0.9 means the proportion was below the user defined threshold of 0.9 for at least one analysis.
+            c10;p0.9 means at least one analysis was below either the coverage or proportion threshold.
+        """
         filter = []
         if not is_all_pass_coverage:
             filter.append('c{0}'.format(coverage_threshold))
@@ -321,16 +330,23 @@ def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
 
         return 'PASS'
 
-    def foo(analysis_stats):
-        for analysis_stat in itertools.chain.from_iterable(analysis_stats):
+    def foo(pattern, analysis_stats):
+        for pattern_num, analysis_stat in zip(pattern, itertools.chain.from_iterable(analysis_stats)):
+            gt = '.'
+            ft = '.'
+            try:
+                gt = int(pattern_num) - 1
+            except ValueError:
+                pass
             if not analysis_stat['was_called']:
-                yield "NoCall"
+                ft = "NoCall"
             elif not analysis_stat['passed_coverage_filter']:
-                yield "CovFail"
+                ft = "CovFail"
             elif not analysis_stat['passed_proportion_filter']:
-                yield "PropFail"
+                ft = "PropFail"
             else:
-                yield "PASS"
+                ft = "PASS"
+            yield '{0}:{1}'.format(gt, ft)
 
 
 
@@ -346,20 +362,24 @@ def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
             if not row.is_missing_matrix:
                 continue
 
+            ref = row.call_str[0]
+            alts = set(row.call_str[1:])
+            alts.difference_update(('X', 'N', ref))
+
             line = {
                 '#CHROM': contig_name,
                 'POS': position,
                 'ID': '.',
-                'REF': row.call_str[0],
-                'ALT': 'TODO',
+                'REF': ref,
+                'ALT': ','.join(alts) or '.',
                 'QUAL': '.',
-                'FILTER': _vcf_filter(row.is_all_passed_consensus, row.is_all_passed_proportion),
+                'FILTER': _filter(row.is_all_passed_consensus, row.is_all_passed_proportion),
                 # TODO: AN is the number of snps + 1 for the reference.
-                # TODO: Add #indel to NS
-                'INFO': 'AN={0};NS={1}'.format(-1, row.called_reference + row.called_snp),
+                # TODO: Add #indel stat to NS
+                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
                 'FORMAT': 'GT:FT'
             }
-            line.update({k: v for k, v in zip(identifiers, foo(row.all_sample_stats))})
+            line.update({k: v for k, v in zip(identifiers, foo(row.Pattern, row.all_sample_stats))})
             writer.writerow(line)
 
 
