@@ -5,7 +5,7 @@ The analyze module takes a collection of SampleAnalyses.
 __author__ = 'jtravis'
 
 from collections import namedtuple, Counter
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, Future
 import os
 import itertools
 
@@ -578,6 +578,7 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
     identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
 
     matrices = ('master_matrix.tsv', 'bestsnp_matrix.tsv', 'missingdata_matrix.tsv', 'withallrefpos.tsv')
+    futures = [Future()] * len(matrices)
 
     # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
     # temporary directory which is deleted automatically.
@@ -589,7 +590,7 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
             contig_name = contig_stat['Contig']
 
             # Concatenate the contig matrices.
-            for matrix in matrices:
+            for future, matrix in zip(futures, matrices):
                 # Path to a contig matrix.
                 partial = os.path.join(tempdirname, '{0}_{1}'.format(contig_name, matrix))
                 # Path to the matrix where all the contigs will be concatenated.
@@ -599,8 +600,10 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                 if is_first_contig:
                     # TODO: Replace with shutil.move which can handle cross-filesystem moves.
                     os.rename(partial, complete)
+                    future.set_result(None)
                 else:
-                    _concat_matrix('{0}_{1}'.format(contig_name, matrix), matrix)
+                    # Schedule a process to append the next contig as soon as the previous contig is done.
+                    future.add_done_callback(functools.partial(executor.submit, _concat_matrix, '{0}_{1}'.format(contig_name, matrix), matrix))
             is_first_contig = False
 
             _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_missingdata.snpfasta')
@@ -613,8 +616,9 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                 for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(sample_stat)):
                     sum.update(analysis)
 
-        _concat_snpfasta(output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
-        _concat_snpfasta(output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
+        executor.submit(_concat_snpfasta, output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
+        executor.submit(_concat_snpfasta, output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
 
+    # TODO: If reference length is returned by matrix_dto, the stats files can be written in parallel
     reference_length = write_general_stats(os.path.join(output_dir, 'general_stats.tsv'), contig_stats)
     write_sample_stats(os.path.join(output_dir, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
