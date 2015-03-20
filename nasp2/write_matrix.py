@@ -304,12 +304,8 @@ def write_missingdata_matrix(directory, contig_name, suffix, identifiers):
             writer.writerow(line)
 
 import itertools
-# def write_missingdata_vcf(directory, contig_name, identifiers, contigs, version):
-def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
-    coverage_threshold = 10
-    proportion_threshold = 0.9
 
-    def _filter(is_all_pass_coverage, is_all_pass_proportion):
+def _vcf_filter_column(coverage_threshold, proportion_threshold, is_all_pass_coverage, is_all_pass_proportion):
         """
         Returns:
             str: 'PASS' if all filters passed, or an error code.
@@ -330,7 +326,7 @@ def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
 
         return 'PASS'
 
-    def foo(pattern, analysis_stats):
+def _vcf_analysis_column(pattern, analysis_stats):
         for pattern_num, analysis_stat in zip(pattern, itertools.chain.from_iterable(analysis_stats)):
             gt = '.'
             ft = '.'
@@ -348,7 +344,10 @@ def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
                 ft = "PASS"
             yield '{0}:{1}'.format(gt, ft)
 
-
+# def write_missingdata_vcf(directory, contig_name, identifiers, contigs, version):
+def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
+    coverage_threshold = 10
+    proportion_threshold = 0.9
 
     with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
         # handle.write(get_vcf_metadata(version, identifiers, contigs))
@@ -373,15 +372,53 @@ def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
                 'REF': ref,
                 'ALT': ','.join(alts) or '.',
                 'QUAL': '.',
-                'FILTER': _filter(row.is_all_passed_consensus, row.is_all_passed_proportion),
+                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
                 # TODO: AN is the number of snps + 1 for the reference.
                 # TODO: Add #indel stat to NS
                 'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
                 'FORMAT': 'GT:FT'
             }
-            line.update({k: v for k, v in zip(identifiers, foo(row.Pattern, row.all_sample_stats))})
+            # Match each analysis with its analysis column.
+            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
             writer.writerow(line)
 
+
+def write_bestsnp_vcf(directory, contig_name, suffix, identifiers):
+    coverage_threshold = 10
+    proportion_threshold = 0.9
+
+    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
+        # handle.write(get_vcf_metadata(version, identifiers, contigs))
+        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
+        writer.writeheader()
+        position = 0
+        while True:
+            row = yield
+            position += 1
+
+            if not row.is_best_snp:
+                continue
+
+            ref = row.call_str[0]
+            alts = set(row.call_str[1:])
+            alts.remove(ref)
+
+            line = {
+                '#CHROM': contig_name,
+                'POS': position,
+                'ID': '.',
+                'REF': ref,
+                'ALT': ','.join(alts) or '.',
+                'QUAL': '.',
+                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
+                # TODO: AN is the number of snps + 1 for the reference.
+                # TODO: Add #indel stat to NS
+                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
+                'FORMAT': 'GT:FT'
+            }
+            # Match each analysis with its analysis column.
+            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
+            writer.writerow(line)
 
 
 def write_bestsnp_snpfasta(directory, contig_name, suffix, identifiers):
