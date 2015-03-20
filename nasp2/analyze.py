@@ -11,7 +11,7 @@ import itertools
 
 from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
     write_includeref_matrix, \
-    write_missingdata_vcf, \
+    write_missingdata_vcf, write_bestsnp_vcf, \
     write_missingdata_snpfasta, write_bestsnp_snpfasta, \
     write_general_stats, write_sample_stats
 
@@ -477,7 +477,8 @@ def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, referen
         write_bestsnp_matrix(tempdirname, reference_contig.name, '_bestsnp_matrix.tsv', sample_groups),
         write_missingdata_matrix(tempdirname, reference_contig.name, '_missingdata_matrix.tsv', identifiers),
         write_includeref_matrix(tempdirname, reference_contig.name, '_withallrefpos.tsv', identifiers),
-        write_missingdata_vcf('./', reference_contig.name, '_withallrefpos.tsv', identifiers),
+        write_bestsnp_vcf('./', reference_contig.name, '_bestsnp.vcf', identifiers),
+        write_missingdata_vcf('./', reference_contig.name, '_missingdata.vcf', identifiers),
         write_missingdata_snpfasta(tempdirname, reference_contig.name, '_missingdata.snpfasta', identifiers),
         write_bestsnp_snpfasta(tempdirname, reference_contig.name, '_bestsnp.snpfasta', identifiers)
     )
@@ -616,6 +617,7 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                 for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(sample_stat)):
                     sum.update(analysis)
 
+        # There is no join for these concats because they only need to complete. It doesn't matter when.
         executor.submit(_concat_snpfasta, output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
         executor.submit(_concat_snpfasta, output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
 
