@@ -394,7 +394,7 @@ class Contig(metaclass=ABCMeta):
         pass
 
     def __repr__(self):
-        return "{0}({1!r})".format(self.__class__.__name__, self.name)
+        return "{0}(name={1!r})".format(self.__class__.__name__, self.name)
 
 
 class EmptyContig(Contig):
@@ -423,7 +423,7 @@ class EmptyContig(Contig):
                 yield self.VCF_EMPTY_POSITION
 
     def __repr__(self):
-        return "{0}(name={1!r}, is_fasta={2!r})".format(self.__class__.__name__, self.name, self.is_fasta)
+        return "{0}(name={1!r}, is_fasta={2!r})".format(self.__class__.__name__, self._name, self._is_fasta)
 
 
 class FastaContig(Contig):
@@ -516,7 +516,7 @@ class VcfContig(Contig):
         self._file_position = file_position
 
     def __repr__(self):
-        return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self._name, self._sample_name, self._filepath, self._file_position)
+        return "{0}(contig_name={1!r}, sample_name={2!r}, filepath={3!r}, file_position={4!r})".format(self.__class__.__name__, self._name, self._sample_name, self._filepath, self._file_position)
 
     def _get_sample_call(self, record):
         """
@@ -540,8 +540,7 @@ class VcfContig(Contig):
             return_value = record['ALT'][0]
         if 'GT' in record[self._sample_name] and record[self._sample_name]['GT'] != '.':
             return_value = record['ALT'][int(record[self._sample_name]['GT'])]
-            # OMG varscan
-            # Handles a scenerio such as this:
+            # Handles a scenerio such as this from a Varscan output:
             # +-----+-----+
             # | REF | ALT |
             # +-----+-----+

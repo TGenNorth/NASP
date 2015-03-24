@@ -58,7 +58,7 @@ def parse_dto(xml_file):
         xml_file:
 
     Returns:
-        MatrixParameters, tuple of Analyses
+        dict: The xml file as a dictionary.
     """
     xmltree = ElementTree.parse(xml_file)
     root = xmltree.getroot()

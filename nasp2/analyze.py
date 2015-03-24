@@ -10,7 +10,7 @@ import os
 import itertools
 
 from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
-    write_includeref_matrix, \
+    write_withallrefpos_matrix, \
     write_missingdata_vcf, write_bestsnp_vcf, \
     write_missingdata_snpfasta, write_bestsnp_snpfasta, \
     write_general_stats, write_sample_stats
@@ -473,14 +473,14 @@ def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, referen
     contig_stats = Counter({'Contig': reference_contig.name})
 
     coroutines = (
-        write_master_matrix(tempdirname, reference_contig.name, '_master_matrix.tsv', identifiers),
-        write_bestsnp_matrix(tempdirname, reference_contig.name, '_bestsnp_matrix.tsv', sample_groups),
-        write_missingdata_matrix(tempdirname, reference_contig.name, '_missingdata_matrix.tsv', identifiers),
-        write_includeref_matrix(tempdirname, reference_contig.name, '_withallrefpos.tsv', identifiers),
-        write_bestsnp_vcf(tempdirname, reference_contig.name, '_bestsnp_matrix.vcf', identifiers),
-        write_missingdata_vcf(tempdirname, reference_contig.name, '_missingdata_matrix.vcf', identifiers),
-        write_missingdata_snpfasta(tempdirname, reference_contig.name, '_missingdata.snpfasta', identifiers),
-        write_bestsnp_snpfasta(tempdirname, reference_contig.name, '_bestsnp.snpfasta', identifiers)
+        write_master_matrix(tempdirname, reference_contig.name, identifiers[1:]),
+        write_bestsnp_matrix(tempdirname, reference_contig.name, sample_groups),
+        write_missingdata_matrix(tempdirname, reference_contig.name, identifiers[1:]),
+        write_withallrefpos_matrix(tempdirname, reference_contig.name, identifiers[1:]),
+        write_bestsnp_vcf(tempdirname, reference_contig.name, identifiers[1:]),
+        write_missingdata_vcf(tempdirname, reference_contig.name, identifiers[1:]),
+        write_missingdata_snpfasta(tempdirname, reference_contig.name, identifiers),
+        write_bestsnp_snpfasta(tempdirname, reference_contig.name, identifiers)
     )
     # Initialize outfile coroutines. This will create the file, write the header, and wait for each line of data.
     for coroutine in coroutines:
@@ -520,43 +520,89 @@ def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, referen
 
 def _concat_matrix(src, dest):
     """
-    Append src to dest file.
-
-    Assumes both files are TSV matrices
+    Concat the contig matrix to the final file.
 
     Args:
-        dest (str):
         src (str):
+        dest (str):
     """
     with open(src) as partial, open(dest, 'a') as complete:
+        # Discard the header
         partial.readline()
-        complete.write(partial.read())
+        complete.writelines(partial)
 
 from contextlib import ExitStack
-def _concat_snpfasta_contig(directory, contig_name, identifiers, suffix):
-    print('concat', contig_name)
+def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
+    """
+    Concat the snpfasta contigs for each analysis into a file.
+
+    Args:
+        src_dir (str):
+        contig_name (str):
+        identifiers (tuple):
+        suffix (str):
+
+    Example:
+        Concat sampleA contigs:
+          src_dir/contigA_sampleA::snpcaller,aligner_bestsnp_matrix.fasta: GATC
+        + ...
+        + src_dir/contigZ_sampleA::snpcaller,aligner_bestsnp_matrix.fasta: CTAG
+        --------------------------------------------------------
+        directory/sampleA::snpcaller,aligner_bestsnp_matrix.fasta: GATCCTAG
+
+        Concat sampleB contigs:
+          src_dir/contigA_sampleB::snpcaller,aligner_bestsnp_matrix.fasta: ATCG
+        + ...
+        + src_dir/contigZ_sampleB::snpcaller,aligner_bestsnp_matrix.fasta: TAGC
+        --------------------------------------------------------
+        src_dir/sampleB::snpcaller,aligner_bestsnp_matrix.fasta: ATCGTAGC
+
+    """
     with ExitStack() as stack:
-        #analyses = tuple(stack.enter_context(open(os.path.join(directory, identifier + suffix), 'a+')) for identifier in identifiers)
-        #analysis_contigs = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
-        analyses = (stack.enter_context(open(os.path.join(directory, identifier + suffix), 'a+')) for identifier in identifiers)
-        analysis_contigs = (stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
+        analyses = (stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'a+')) for identifier in identifiers)
+        analysis_contigs = (stack.enter_context(open(os.path.join(src_dir, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
 
         for analysis, analysis_contig in zip(analyses, analysis_contigs):
-            print('concat_contig', contig_name)
             analysis.writelines(analysis_contig)
             
 
 def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
-    print('concat', dest)
+    """
+    Concat the snpfastas for each analysis into the final file.
+    Each analysis is preceded with a description line and the base calls wrap every 80 characters.
+
+    It assumes the partial results are files with a single line of base calls.
+
+    Args:
+        dest_dir (str):
+        src_dir (str):
+        dest (str):
+        identifiers (tuple of str):
+        suffix (str):
+
+    Example:
+        Concat analysis into the final file:
+          src_dir/reference_bestsnp_matrix.fasta:GATCGATC
+          src_dir/sampleA::snpcaller,aligner_bestsnp_matrix.fasta: GATCCTAG
+          ...
+        + src_dir/sampleZ::snpcaller,aligner_bestsnp_matrix.fasta: ATCGTAGC
+        -------------------------------------------------------------------
+        dest_dir/bestsnp_matrix.fasta:
+          >Reference
+          GATCGATC
+          >sampleZ::snpcaller,aligner
+          GATCCTAG
+          ...
+          >sampleZ::snpcaller,aligner.fasta
+          ATCGTAGC
+    """
     with ExitStack() as stack, open(os.path.join(dest_dir, dest), 'w') as dest:
         for identifier in identifiers:
-            print('identifier', identifier)
             analysis = stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'r'))
             dest.write('>{0}\n'.format(identifier))
             # Wrap lines every 80 characters.
             while True:
                 line = analysis.read(80)
-                print(identifier, line)
                 if not line:
                     break
                 dest.write('{0}\n'.format(line))
@@ -587,13 +633,18 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
     sample_stats = None
     is_first_contig = True
     # An identifier is a sample_name::aligner,snpcaller header to identify each analysis file.
-    identifiers = tuple(analysis.identifier for sample in sample_groups for analysis in sample)
+    # The Reference identifier is used by the snpfasta writers/concat methods, but skipped by the contig analysis.
+    identifiers = ('Reference',) + tuple(analysis.identifier for analysis in itertools.chain.from_iterable(sample_groups))
 
-    matrices = ('master_matrix.tsv', 'bestsnp_matrix.tsv', 'missingdata_matrix.tsv', 'withallrefpos.tsv', 'bestsnp_matrix.vcf', 'missingdata_matrix.vcf')
+    matrices = ('master.tsv', 'bestsnp.tsv', 'missingdata.tsv', 'withallrefpos.tsv', 'bestsnp.vcf', 'missingdata.vcf')
     futures = [Future()] * len(matrices)
 
     def swap_future(executor, task):
         """
+        swap_future is a helper to create callback chains of serialized tasks running in parallel.
+        As each future resolves the callback launches the next task in the series and replaces the reference to the
+        completed task with the newly started task so that tasks that follow can be attached in sequence.
+
         Args:
             executor (concurrent.futures.Executor):
             task (callable):
@@ -601,7 +652,20 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
         Return:
             callable: A function that replaces the completed future with a new future. The argument is a future that
             resolves to an array and index.
+
+        Example:
+            In addition to concatenating the partial files in parallel:
+            1 |-----------------------> 2 |------------>        3 |-------->
+            1 |------->                 2 |------->             3 |------->
+            1 |------------------->     2 |-------------------> 3 |-------->
+
+            The done callback chain allows the next section to begin as each section completes.
+            1 |-----------------------> 2 |------------> 3 |-------->
+            1 |-------> 2 |-------> 3 |------->
+            1 |-------------------> 2 |-------------------> 3 |-------->
         """
+        # FIXME: This method of chaining futures is a hack that is probably incorrectly implementing the intended design
+        # pattern of the futures done callback.
         def callback(future):
             result = future.result()
             result[0][result[1]] = executor.submit(task)
@@ -618,29 +682,26 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
             contig_name = contig_stat['Contig']
 
             # Concatenate the contig matrices.
-            #for index, (future, matrix) in enumerate(zip(futures, matrices)):
             for index, matrix in enumerate(matrices):
                 # Path to a contig matrix.
                 partial = os.path.join(tempdirname, '{0}_{1}'.format(contig_name, matrix))
-                # Path to the matrix where all the contigs will be concatenated.
+                # Path to the final matrix where all the contigs will be concatenated.
                 complete = os.path.join(output_dir, matrix)
 
-                # The first contig is simply renamed to avoid unnecessary copies and the remaining contigs are appended.
+                # The first contig is simply renamed to avoid unnecessary copies with the remaining contigs appended.
                 if is_first_contig:
                     # TODO: Replace with shutil.move which can handle cross-filesystem moves.
-                    #print('rename', partial, complete)
                     os.rename(partial, complete)
                     futures[index].set_result((futures, index))
                 else:
                     # Schedule a process to append the next contig as soon as the previous contig is done.
-                    #print('Concat', partial, complete)
                     task = functools.partial(_concat_matrix, partial, complete)
                     futures[index].add_done_callback(swap_future(executor, task))
-                    #_concat_matrix(partial, complete)
             is_first_contig = False
 
-            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_missingdata.snpfasta')
-            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_bestsnp.snpfasta')
+            # TODO: Is there enough work here to run in a separate process?
+            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_missingdata.fasta')
+            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_bestsnp.fasta')
 
             # Sum the SampleAnalysis stats preserving the sample_groups order.
             if sample_stats is None:
@@ -650,10 +711,8 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                     sum.update(analysis)
 
         # There is no join for these concats because they only need to complete; it doesn't matter when.
-        executor.submit(_concat_snpfasta, output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
-        executor.submit(_concat_snpfasta, output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
-        #_concat_snpfasta(output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
-        #_concat_snpfasta(output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
+        executor.submit(_concat_snpfasta, output_dir, tempdirname, 'missingdata.fasta', identifiers, '_missingdata.fasta')
+        executor.submit(_concat_snpfasta, output_dir, tempdirname, 'bestsnp.fasta', identifiers, '_bestsnp.fasta')
 
     # TODO: If reference length is returned by matrix_dto, the stats files can be written in parallel
     reference_length = write_general_stats(os.path.join(output_dir, 'general_stats.tsv'), contig_stats)
