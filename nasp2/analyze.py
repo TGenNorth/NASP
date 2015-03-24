@@ -3,6 +3,7 @@ The analyze module takes a collection of SampleAnalyses.
 """
 
 __author__ = 'jtravis'
+__version__ = "0.9.8"
 
 from collections import namedtuple, Counter
 from concurrent.futures import ProcessPoolExecutor, Future
@@ -451,8 +452,7 @@ def analyze_position(reference_position, dups_position, samples):
     )
 
 
-# @profile
-def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, reference_contig):
+def analyze_contig(tempdirname, identifiers, sample_groups, vcf_metadata, dups_contig, reference_contig):
     """
     analyze_contig expects reference_contig, dups_contig, and sample_analyses to represent the same contig from
     different sources.
@@ -477,8 +477,8 @@ def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, referen
         write_bestsnp_matrix(tempdirname, reference_contig.name, sample_groups),
         write_missingdata_matrix(tempdirname, reference_contig.name, identifiers[1:]),
         write_withallrefpos_matrix(tempdirname, reference_contig.name, identifiers[1:]),
-        write_bestsnp_vcf(tempdirname, reference_contig.name, identifiers[1:]),
-        write_missingdata_vcf(tempdirname, reference_contig.name, identifiers[1:]),
+        write_bestsnp_vcf(tempdirname, reference_contig.name, identifiers[1:], vcf_metadata),
+        write_missingdata_vcf(tempdirname, reference_contig.name, identifiers[1:], vcf_metadata),
         write_missingdata_snpfasta(tempdirname, reference_contig.name, identifiers),
         write_bestsnp_snpfasta(tempdirname, reference_contig.name, identifiers)
     )
@@ -518,7 +518,23 @@ def analyze_contig(tempdirname, identifiers, sample_groups, dups_contig, referen
     return sample_stats, contig_stats
 
 
-def _concat_matrix(src, dest):
+def _concat_vcf(src, dest, offset):
+    """
+    Concat the contig matrix to the final file.
+
+    Args:
+        src (str):
+        dest (str):
+    """
+    with open(src) as partial, open(dest, 'a') as complete:
+        # Discard the metadata
+        partial.seek(offset)
+        # Discard the header
+        partial.readline()
+        complete.writelines(partial)
+
+
+def _concat_tsv(src, dest):
     """
     Concat the contig matrix to the final file.
 
@@ -611,7 +627,6 @@ from tempfile import TemporaryDirectory
 import functools
 
 # TODO: Move to write_matrix.py
-# @profile
 def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, max_workers=None):
     """
     analyze_samples uses a ProcessPool to read contigs across all the sample analyses in parallel,
@@ -675,9 +690,15 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
     # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
     # temporary directory which is deleted automatically.
     with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=output_dir) as tempdirname:
+
+        # TODO: Remove
+        from nasp2.write_matrix import get_vcf_metadata
+        vcf_metadata = get_vcf_metadata(__version__, identifiers, reference_fasta.contigs)
+        vcf_metadata_len = len(vcf_metadata)
+
         # Only the reference contig is changing, bind the other parameters to the function.
-        analyze = functools.partial(analyze_contig, tempdirname, identifiers, sample_groups, reference_dups)
-        for sample_stat, contig_stat in executor.map(analyze, reference_fasta.contigs):
+        analyze = functools.partial(analyze_contig, tempdirname, identifiers, sample_groups, vcf_metadata, reference_dups)
+        for sample_stat, contig_stat in map(analyze, reference_fasta.contigs):
             contig_stats.append(contig_stat)
             contig_name = contig_stat['Contig']
 
@@ -695,7 +716,10 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                     futures[index].set_result((futures, index))
                 else:
                     # Schedule a process to append the next contig as soon as the previous contig is done.
-                    task = functools.partial(_concat_matrix, partial, complete)
+                    if matrix.endswith('.vcf'):
+                        task = functools.partial(_concat_vcf, partial, complete, vcf_metadata_len)
+                    else:
+                        task = functools.partial(_concat_tsv, partial, complete)
                     futures[index].add_done_callback(swap_future(executor, task))
             is_first_contig = False
 
@@ -710,10 +734,14 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                 for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(sample_stat)):
                     sum.update(analysis)
 
-        # There is no join for these concats because they only need to complete; it doesn't matter when.
         executor.submit(_concat_snpfasta, output_dir, tempdirname, 'missingdata.fasta', identifiers, '_missingdata.fasta')
         executor.submit(_concat_snpfasta, output_dir, tempdirname, 'bestsnp.fasta', identifiers, '_bestsnp.fasta')
 
-    # TODO: If reference length is returned by matrix_dto, the stats files can be written in parallel
-    reference_length = write_general_stats(os.path.join(output_dir, 'general_stats.tsv'), contig_stats)
-    write_sample_stats(os.path.join(output_dir, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
+        # TODO: If reference length is returned by matrix_dto, the stats files can be written in parallel
+        reference_length = write_general_stats(os.path.join(output_dir, 'general_stats.tsv'), contig_stats)
+        write_sample_stats(os.path.join(output_dir, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
+
+        # The Python documentation says shutdown() is not explicitly needed inside a context manager, but the snpfasta
+        # files were not always complete.
+        # https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown
+        executor.shutdown()

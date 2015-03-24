@@ -24,9 +24,9 @@ def get_vcf_metadata(nasp_version, identifiers, contigs):
     """
     vcf_metadata = "##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(nasp_version)
     vcf_metadata += "\n".join(
-        "##contig=<ID=\"{0}\",length={1}>\n".format(contig['name'], contig['length']) for contig in contigs)
+        "##contig=<ID=\"{0}\",length={1}>\n".format(contig.name, len(contig)) for contig in contigs)
     vcf_metadata += "\n".join(
-        "##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>\n".format(identifier) for identifier in identifiers)
+        "##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>".format(identifier) for identifier in identifiers)
     vcf_metadata += ("##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">\n"
                      "##FILTER=<ID=NoCall,Description=\"No call for this sample at this position\">\n"
                      "##FILTER=<ID=CovFail,Description=\"Insufficient depth of coverage for this sample at this position\">\n"
@@ -119,7 +119,7 @@ def _vcf_analysis_column(pattern, analysis_stats):
         yield '{0}:{1}'.format(gt, ft)
 
 
-def write_missingdata_vcf(directory, contig_name, identifiers):
+def write_missingdata_vcf(directory, contig_name, identifiers, metadata):
     """
     Args:
         directory (str):
@@ -130,7 +130,7 @@ def write_missingdata_vcf(directory, contig_name, identifiers):
     proportion_threshold = 0.9
 
     with open('{0}_missingdata.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        # handle.write(get_vcf_metadata(version, identifiers, contigs))
+        handle.write(metadata)
         writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
         writer.writeheader()
         position = 0
@@ -153,7 +153,6 @@ def write_missingdata_vcf(directory, contig_name, identifiers):
                 'ALT': ','.join(alts) or '.',
                 'QUAL': '.',
                 'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
-                # TODO: AN is the number of snps + 1 for the reference.
                 # TODO: Add #indel stat to NS
                 'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
                 'FORMAT': 'GT:FT'
@@ -163,7 +162,7 @@ def write_missingdata_vcf(directory, contig_name, identifiers):
             writer.writerow(line)
 
 
-def write_bestsnp_vcf(directory, contig_name, identifiers):
+def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
     """
     Args:
         directory (str):
@@ -174,7 +173,7 @@ def write_bestsnp_vcf(directory, contig_name, identifiers):
     proportion_threshold = 0.9
 
     with open('{0}_bestsnp.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        # handle.write(get_vcf_metadata(version, identifiers, contigs))
+        handle.write(metadata)
         writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
         writer.writeheader()
         position = 0
