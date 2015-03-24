@@ -280,8 +280,8 @@ class Fasta(SampleAnalysis):
         Return
             FastaContig generator: Yields contigs sorted by length, longest to shortest.
         """
-        # return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in self._index.items())
-        return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in sorted(self._index.items(), key=lambda x: x[1].length, reverse=True))
+        return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in self._index.items())
+        #return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in sorted(self._index.items(), key=lambda x: x[1].length, reverse=True))
 
     def get_contig(self, contig_name):
         """

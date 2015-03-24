@@ -528,35 +528,38 @@ def _concat_matrix(src, dest):
         dest (str):
         src (str):
     """
-    print('_concat_matrix', src, dest)
     with open(src) as partial, open(dest, 'a') as complete:
         partial.readline()
         complete.write(partial.read())
 
 from contextlib import ExitStack
 def _concat_snpfasta_contig(directory, contig_name, identifiers, suffix):
+    print('concat', contig_name)
     with ExitStack() as stack:
-        analyses = tuple(stack.enter_context(open(os.path.join(directory, identifier + suffix), 'a+')) for identifier in identifiers)
-        analysis_contigs = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
+        #analyses = tuple(stack.enter_context(open(os.path.join(directory, identifier + suffix), 'a+')) for identifier in identifiers)
+        #analysis_contigs = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
+        analyses = (stack.enter_context(open(os.path.join(directory, identifier + suffix), 'a+')) for identifier in identifiers)
+        analysis_contigs = (stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
 
-        for identifier, analysis, analysis_contig in zip(identifiers, analyses, analysis_contigs):
-            line_length = 0
-            analysis.write('>{0}\n'.format(identifier))
-            for call in analysis_contig.read():
-                line_length += 1
-                # Wrap lines every 80 characters.
-                if line_length >= 80:
-                    line_length = 0
-                    analysis.write('{0}\n'.format(call))
-                else:
-                    analysis.write(call)
-
+        for analysis, analysis_contig in zip(analyses, analysis_contigs):
+            print('concat_contig', contig_name)
+            analysis.writelines(analysis_contig)
+            
 
 def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
+    print('concat', dest)
     with ExitStack() as stack, open(os.path.join(dest_dir, dest), 'w') as dest:
-        for analysis in (stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'r')) for identifier in identifiers):
-            dest.write(analysis.read())
-            dest.write('\n')
+        for identifier in identifiers:
+            print('identifier', identifier)
+            analysis = stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'r'))
+            dest.write('>{0}\n'.format(identifier))
+            # Wrap lines every 80 characters.
+            while True:
+                line = analysis.read(80)
+                print(identifier, line)
+                if not line:
+                    break
+                dest.write('{0}\n'.format(line))
 
 from tempfile import TemporaryDirectory
 import functools
@@ -602,6 +605,7 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
         def callback(future):
             result = future.result()
             result[0][result[1]] = executor.submit(task)
+            return result
         return callback
 
     # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
@@ -615,7 +619,7 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
 
             # Concatenate the contig matrices.
             #for index, (future, matrix) in enumerate(zip(futures, matrices)):
-            for matrix in matrices:
+            for index, matrix in enumerate(matrices):
                 # Path to a contig matrix.
                 partial = os.path.join(tempdirname, '{0}_{1}'.format(contig_name, matrix))
                 # Path to the matrix where all the contigs will be concatenated.
@@ -624,15 +628,15 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                 # The first contig is simply renamed to avoid unnecessary copies and the remaining contigs are appended.
                 if is_first_contig:
                     # TODO: Replace with shutil.move which can handle cross-filesystem moves.
-                    print('rename', partial, complete)
+                    #print('rename', partial, complete)
                     os.rename(partial, complete)
-                    #future.set_result((futures, index))
+                    futures[index].set_result((futures, index))
                 else:
                     # Schedule a process to append the next contig as soon as the previous contig is done.
-                    print('Concat', partial, complete)
-                    #task = functools.partial(_concat_matrix, partial, complete)
-                    #future.add_done_callback(swap_future(executor, task))
-                    _concat_matrix(partial, complete)
+                    #print('Concat', partial, complete)
+                    task = functools.partial(_concat_matrix, partial, complete)
+                    futures[index].add_done_callback(swap_future(executor, task))
+                    #_concat_matrix(partial, complete)
             is_first_contig = False
 
             _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_missingdata.snpfasta')
@@ -648,6 +652,8 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
         # There is no join for these concats because they only need to complete; it doesn't matter when.
         executor.submit(_concat_snpfasta, output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
         executor.submit(_concat_snpfasta, output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
+        #_concat_snpfasta(output_dir, tempdirname, 'missingdata_matrix.snpfasta', identifiers, '_missingdata.snpfasta')
+        #_concat_snpfasta(output_dir, tempdirname, 'bestsnp_matrix.snpfasta', identifiers, '_bestsnp.snpfasta')
 
     # TODO: If reference length is returned by matrix_dto, the stats files can be written in parallel
     reference_length = write_general_stats(os.path.join(output_dir, 'general_stats.tsv'), contig_stats)
