@@ -18,6 +18,9 @@ def get_vcf_metadata(nasp_version, identifiers, contigs):
         nasp_version (str): v1.0.0
         identifiers (tuple): contig_name::aligner,snpcaller
         contigs (tuple of Contig):
+
+    Return:
+        str: VCF file metadata
     """
     vcf_metadata = "##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(nasp_version)
     vcf_metadata += "\n".join(
@@ -66,22 +69,142 @@ def get_header(type, identifiers):
     return matrix_header
 
 
-# def write_sample_stats(filepath):
-# sample_stats = None
-#
-# try:
-# while True:
-# all_sample_stats = yield
-#
-# if sample_stats is None:
-# sample_stats = all_sample_stats
-#             for i, sample in enumerate(all_sample_stats):
-#                 for j, analysis in enumerate(sample):
-#                     sample_stats[i][j].update(analysis)
-#
-#     finally:
-#         print(sample_stats)
-#         pass
+def _vcf_filter_column(coverage_threshold, proportion_threshold, is_all_pass_coverage, is_all_pass_proportion):
+    """
+    Return:
+        str: 'PASS' if all filters passed, or an error code.
+
+    Example:
+        'PASS' means all filters passed.
+        'c10' means the coverage was below the user defined threshold of 10 for at least one analysis.
+        'p0.9' means the proportion was below the user defined threshold of 0.9 for at least one analysis.
+        'c10;p0.9' means at least one analysis was below either the coverage or proportion threshold.
+    """
+    filter = []
+    if not is_all_pass_coverage:
+        filter.append('c{0}'.format(coverage_threshold))
+    if not is_all_pass_proportion:
+        filter.append('p{0}'.format(proportion_threshold))
+
+    if filter:
+        return ';'.join(filter)
+
+    return 'PASS'
+
+
+def _vcf_analysis_column(pattern, analysis_stats):
+    """
+    Args:
+        pattern (str):
+        analysis_stats:
+
+    Return:
+        str: The format string for each analysis column.
+    """
+    import itertools
+    for pattern_num, analysis_stat in zip(pattern, itertools.chain.from_iterable(analysis_stats)):
+        try:
+            gt = int(pattern_num) - 1
+        except ValueError:
+            # pattern_num for the analysis was 'N'
+            gt = '.'
+        if not analysis_stat['was_called']:
+            ft = "NoCall"
+        elif not analysis_stat['passed_coverage_filter']:
+            ft = "CovFail"
+        elif not analysis_stat['passed_proportion_filter']:
+            ft = "PropFail"
+        else:
+            ft = "PASS"
+        yield '{0}:{1}'.format(gt, ft)
+
+
+def write_missingdata_vcf(directory, contig_name, identifiers):
+    """
+    Args:
+        directory (str):
+        contig_name (str):
+        identifiers:
+    """
+    coverage_threshold = 10
+    proportion_threshold = 0.9
+
+    with open('{0}_missingdata.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
+        # handle.write(get_vcf_metadata(version, identifiers, contigs))
+        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
+        writer.writeheader()
+        position = 0
+        while True:
+            row = yield
+            position += 1
+
+            if not row.is_missing_matrix:
+                continue
+
+            ref = row.call_str[0]
+            alts = set(row.call_str[1:])
+            alts.difference_update(('X', 'N', ref))
+
+            line = {
+                '#CHROM': contig_name,
+                'POS': position,
+                'ID': '.',
+                'REF': ref,
+                'ALT': ','.join(alts) or '.',
+                'QUAL': '.',
+                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
+                # TODO: AN is the number of snps + 1 for the reference.
+                # TODO: Add #indel stat to NS
+                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
+                'FORMAT': 'GT:FT'
+            }
+            # Match each analysis with its analysis column.
+            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
+            writer.writerow(line)
+
+
+def write_bestsnp_vcf(directory, contig_name, identifiers):
+    """
+    Args:
+        directory (str):
+        contig_name (str):
+        identifiers:
+    """
+    coverage_threshold = 10
+    proportion_threshold = 0.9
+
+    with open('{0}_bestsnp.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
+        # handle.write(get_vcf_metadata(version, identifiers, contigs))
+        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
+        writer.writeheader()
+        position = 0
+        while True:
+            row = yield
+            position += 1
+
+            if not row.is_best_snp:
+                continue
+
+            ref = row.call_str[0]
+            alts = set(row.call_str[1:])
+            alts.discard(ref)
+
+            line = {
+                '#CHROM': contig_name,
+                'POS': position,
+                'ID': '.',
+                'REF': ref,
+                'ALT': ','.join(alts) or '.',
+                'QUAL': '.',
+                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
+                # TODO: AN is the number of snps + 1 for the reference.
+                # TODO: Add #indel stat to NS
+                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
+                'FORMAT': 'GT:FT'
+            }
+            # Match each analysis with its analysis column.
+            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
+            writer.writerow(line)
 
 
 def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
@@ -185,14 +308,14 @@ def write_general_stats(filepath, contig_stats):
     return reference_length
 
 
-def write_master_matrix(directory, contig_name, suffix, identifiers):
+def write_master_matrix(directory, contig_name, identifiers):
     """
     Args:
         filepath (str): Path to the output file.
         contig_name (str): Name
         identifiers (tuple of
     """
-    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
+    with open('{0}_master.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('all_callable', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -233,33 +356,14 @@ def write_master_matrix(directory, contig_name, suffix, identifiers):
             writer.writerow(line)
 
 
-def write_missingdata_snpfasta(directory, contig_name, suffix, identifiers):
+def write_missingdata_matrix(directory, contig_name, identifiers):
     """
     Args:
+        directory(str):
         contig_name (str):
-        identifiers (tuple of Strings):
+        identifiers:
     """
-    # All opened files will automatically be closed at the end of
-    # the with statement, even if attempts to open files later
-    # in the list raise an exception
-    with ExitStack() as stack:
-        files = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix), 'w')) for identifier in identifiers)
-
-        while True:
-            row = yield
-
-            if not row.is_missing_matrix:
-                continue
-
-            for file, call in zip(files, row.masked_call_str):
-                if call != 'X':
-                    file.write(call)
-                else:
-                    file.write('N')
-
-
-def write_missingdata_matrix(directory, contig_name, suffix, identifiers):
-    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
+    with open('{0}_missingdata.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('missing_data', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -303,147 +407,14 @@ def write_missingdata_matrix(directory, contig_name, suffix, identifiers):
             line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
             writer.writerow(line)
 
-import itertools
 
-def _vcf_filter_column(coverage_threshold, proportion_threshold, is_all_pass_coverage, is_all_pass_proportion):
-        """
-        Returns:
-            str: 'PASS' if all filters passed, or an error code.
-
-        Example:
-            c10 means the coverage was below the user defined threshold of 10 for at least one analysis.
-            p0.9 means the proportion was below the user defined threshold of 0.9 for at least one analysis.
-            c10;p0.9 means at least one analysis was below either the coverage or proportion threshold.
-        """
-        filter = []
-        if not is_all_pass_coverage:
-            filter.append('c{0}'.format(coverage_threshold))
-        if not is_all_pass_proportion:
-            filter.append('p{0}'.format(proportion_threshold))
-
-        if filter:
-            return ';'.join(filter)
-
-        return 'PASS'
-
-def _vcf_analysis_column(pattern, analysis_stats):
-        for pattern_num, analysis_stat in zip(pattern, itertools.chain.from_iterable(analysis_stats)):
-            gt = '.'
-            ft = '.'
-            try:
-                gt = int(pattern_num) - 1
-            except ValueError:
-                pass
-            if not analysis_stat['was_called']:
-                ft = "NoCall"
-            elif not analysis_stat['passed_coverage_filter']:
-                ft = "CovFail"
-            elif not analysis_stat['passed_proportion_filter']:
-                ft = "PropFail"
-            else:
-                ft = "PASS"
-            yield '{0}:{1}'.format(gt, ft)
-
-# def write_missingdata_vcf(directory, contig_name, identifiers, contigs, version):
-def write_missingdata_vcf(directory, contig_name, suffix, identifiers):
-    coverage_threshold = 10
-    proportion_threshold = 0.9
-
-    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
-        # handle.write(get_vcf_metadata(version, identifiers, contigs))
-        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
-        writer.writeheader()
-        position = 0
-        while True:
-            row = yield
-            position += 1
-
-            if not row.is_missing_matrix:
-                continue
-
-            ref = row.call_str[0]
-            alts = set(row.call_str[1:])
-            alts.difference_update(('X', 'N', ref))
-
-            line = {
-                '#CHROM': contig_name,
-                'POS': position,
-                'ID': '.',
-                'REF': ref,
-                'ALT': ','.join(alts) or '.',
-                'QUAL': '.',
-                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
-                # TODO: AN is the number of snps + 1 for the reference.
-                # TODO: Add #indel stat to NS
-                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
-                'FORMAT': 'GT:FT'
-            }
-            # Match each analysis with its analysis column.
-            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
-            writer.writerow(line)
-
-
-def write_bestsnp_vcf(directory, contig_name, suffix, identifiers):
-    coverage_threshold = 10
-    proportion_threshold = 0.9
-
-    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
-        # handle.write(get_vcf_metadata(version, identifiers, contigs))
-        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
-        writer.writeheader()
-        position = 0
-        while True:
-            row = yield
-            position += 1
-
-            if not row.is_best_snp:
-                continue
-
-            ref = row.call_str[0]
-            alts = set(row.call_str[1:])
-            alts.remove(ref)
-
-            line = {
-                '#CHROM': contig_name,
-                'POS': position,
-                'ID': '.',
-                'REF': ref,
-                'ALT': ','.join(alts) or '.',
-                'QUAL': '.',
-                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
-                # TODO: AN is the number of snps + 1 for the reference.
-                # TODO: Add #indel stat to NS
-                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
-                'FORMAT': 'GT:FT'
-            }
-            # Match each analysis with its analysis column.
-            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
-            writer.writerow(line)
-
-
-def write_bestsnp_snpfasta(directory, contig_name, suffix, identifiers):
+def write_bestsnp_matrix(directory, contig_name, sample_groups):
     """
     Args:
+        directory (str):
         contig_name (str):
-        identifiers (tuple of Strings):
+        sample_groups
     """
-    # All opened files will automatically be closed at the end of
-    # the with statement, even if attempts to open files later
-    # in the list raise an exception
-    with ExitStack() as stack:
-        files = tuple(stack.enter_context(open(os.path.join(directory, contig_name + '_' + identifier + suffix), 'w')) for identifier in identifiers)
-
-        while True:
-            row = yield
-
-            if not row.is_best_snp:
-                continue
-
-            for file, call in zip(files, row.call_str):
-                file.write(call)
-
-
-def write_bestsnp_matrix(directory, contig_name, suffix, sample_groups):
     sample_names = tuple(sample[0].name for sample in sample_groups)
 
     # first_analysis_index is a list of the index of the first analysis for each sample in the call string
@@ -455,7 +426,7 @@ def write_bestsnp_matrix(directory, contig_name, suffix, sample_groups):
         first_analysis_index.append(num_analyses)
         num_analyses += len(sample)
 
-    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
+    with open('{0}_bestsnp.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -499,8 +470,17 @@ def write_bestsnp_matrix(directory, contig_name, suffix, sample_groups):
             writer.writerow(line)
 
 
-def write_includeref_matrix(directory, contig_name, suffix, identifiers):
-    with open(os.path.join(directory, contig_name + suffix), 'w') as handle:
+def write_withallrefpos_matrix(directory, contig_name, identifiers):
+    """
+    includeref_matrix is identical to the master matrix except it uses the same call masking as the missingdata matrix
+    for low quality positions.
+
+    Args:
+        directory (str):
+        contig_name (str):
+        identifiers (tuple):
+    """
+    with open('{0}_withallrefpos.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
         writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
@@ -508,8 +488,8 @@ def write_includeref_matrix(directory, contig_name, suffix, identifiers):
             row = yield
             position += 1
 
-            if not row.is_all_quality_breadth:
-                continue
+            # if not row.is_all_quality_breadth:
+            #     continue
 
             # num_samples is the number of analyses not including the reference.
             num_samples = len(row.call_str) - 1
@@ -541,3 +521,60 @@ def write_includeref_matrix(directory, contig_name, suffix, identifiers):
             line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
 
             writer.writerow(line)
+
+
+def write_bestsnp_snpfasta(directory, contig_name, identifiers):
+    """
+    Args:
+        directory (str):
+        contig_name (str):
+        identifiers (tuple of Strings):
+
+    Example:
+        directory/contig_sample::aligner,snpcaller_bestsnp.fasta
+    """
+    # All opened files will automatically be closed at the end of
+    # the with statement, even if attempts to open files later
+    # in the list raise an exception
+    with ExitStack() as stack:
+        files = tuple(stack.enter_context(open('{0}_{1}_bestsnp.fasta'.format(os.path.join(directory, contig_name), identifier), 'w')) for identifier in identifiers)
+
+        while True:
+            row = yield
+
+            if not row.is_best_snp:
+                continue
+
+            for file, call in zip(files, row.call_str):
+                file.write(call)
+
+
+def write_missingdata_snpfasta(directory, contig_name, identifiers):
+    """
+    Write the calls
+
+    Args:
+        directory (str):
+        contig_name (str):
+        identifiers (tuple of Strings):
+
+    Example:
+        directory/contig_sample::aligner,snpcaller_missingdata.fasta
+    """
+    # All opened files will automatically be closed at the end of
+    # the with statement, even if attempts to open files later
+    # in the list raise an exception
+    with ExitStack() as stack:
+        files = tuple(stack.enter_context(open('{0}_{1}_missingdata.fasta'.format(os.path.join(directory, contig_name), identifier), 'w')) for identifier in identifiers)
+
+        while True:
+            row = yield
+
+            if not row.is_missing_matrix:
+                continue
+
+            for file, call in zip(files, row.masked_call_str):
+                if call != 'X':
+                    file.write(call)
+                else:
+                    file.write('N')
