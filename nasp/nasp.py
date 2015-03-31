@@ -521,11 +521,11 @@ def _get_user_input(reference, output_folder):
     if not os.path.exists(matrix_path):
         matrix_path = "vcf_to_matrix"
     print();
-    matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'12', 'mem_requested':'45', 'walltime':'48', 'queue':queue, 'args':args})
+    matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'8', 'mem_requested':'8', 'walltime':'48', 'queue':queue, 'args':args})
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
-    include_allref_pos = input("\nDo you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]? ")
+    include_allref_pos = input("\nDo you want to create a matrix that includes all reference positions, but with low-quality calls masked [N]? ")
     if re.match('^[Yy]', include_allref_pos):
         configuration["filter_matrix_format"] = "include_allref_pos"
         logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])

@@ -14,6 +14,7 @@ def _parse_args():
     parser.add_argument("--nucmerpath", default="nucmer", help="Path to the 'nucmer' executable.")
     parser.add_argument("--nucmerargs", default="", help="Optional arguments to pass to the 'nucmer' executable.")
     parser.add_argument("--deltafilterpath", default="delta-filter", help="Path to the 'delta-filter' executable.")
+    parser.add_argument("--deltafilterargs", default="", help="Optional arguments to pass to the 'delta-filter' executable.")
     parser.add_argument("--reference", required=True, help="Path to the reference fasta file.")
     parser.add_argument("--external", required=True, help="Path to the external genome fasta file.")
     parser.add_argument("--name", default="", help="Name of this external genome.")
@@ -21,7 +22,7 @@ def _parse_args():
 
 
 # This should eventually be moved to the main job manager section
-def generate_delta_file(nucmer_path, nucmer_args, delta_filter_path, external_nickname, reference_path, external_path):
+def generate_delta_file(nucmer_path, nucmer_args, delta_filter_path, delta_filter_args, external_nickname, reference_path, external_path):
     import subprocess
     import sys
 
@@ -31,7 +32,7 @@ def generate_delta_file(nucmer_path, nucmer_args, delta_filter_path, external_ni
         sys.stderr.write(
             "NASP WARNING: nucmer may have encountered errors while processing external genome '" + external_nickname + "', proceeding anyway\n")
     filtered_delta_handle = open(( external_nickname + ".filtered.delta" ), "w")
-    return_code = subprocess.call([delta_filter_path, "-q", "-r", "-o", "100", ( external_nickname + ".delta" )],
+    return_code = subprocess.call([delta_filter_path, "-q", "-r", "-o", "100", delta_filter_args.split(), ( external_nickname + ".delta" )],
                                   stdout=filtered_delta_handle)
     if return_code > 0:
         sys.stderr.write(
@@ -112,7 +113,8 @@ def main():
     external_genome = Genome()
     external_genome.import_fasta_file(commandline_args.external)
     generate_delta_file(commandline_args.nucmerpath, commandline_args.nucmerargs, commandline_args.deltafilterpath,
-                        external_nickname, commandline_args.reference, commandline_args.external)
+                        commandline_args.deltafilterargs, external_nickname, commandline_args.reference, 
+                        commandline_args.external)
     franken_genome = Genome()
     parse_delta_file(( external_nickname + ".filtered.delta" ), franken_genome, external_genome)
     franken_genome.write_to_fasta_file(external_nickname + ".frankenfasta", "franken::")

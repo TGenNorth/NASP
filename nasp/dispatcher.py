@@ -67,9 +67,9 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             args += " -H"
         if notify:
             args += " --mail-type=END"
-        submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --mail-type=FAIL -J \'%s\' %s %s %s" % (
-            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['name'], waitfor, queue,
-            args)
+        submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --time=$s:00:00 --mail-type=FAIL -J \'%s\' %s %s %s" % (
+            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], 
+            job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
         logging.debug("output = %s" % output)
@@ -482,14 +482,13 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     (tool, path, args, job_parms) = configuration["assembly_importer"]
     (nucmer_path, nucmer_args) = configuration["dup_finder"][1:3]
     (name, fasta) = assembly
-    extraargs = "\'%s\'" % args
     work_dir = os.path.join(configuration["output_folder"], "external")
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
     new_fasta = os.path.join(work_dir, os.path.basename(fasta))
     command_parts = ["format_fasta --inputfasta %s --outputfasta %s" % (fasta, new_fasta),
-                     "convert_external_genome --nucmerpath %s --nucmerargs %s --deltafilterpath %s --reference %s --external %s --name %s" % (
-                         nucmer_path, extraargs, path, reference, fasta, name)]
+                     "convert_external_genome --nucmerpath %s --nucmerargs \'%s\' --deltafilterpath %s --deltafilterargs \'%s\' --reference %s --external %s --name %s" % (
+                         nucmer_path, nucmer_args, args, path, reference, fasta, name)]
     command = "\n".join(command_parts)
     final_file = os.path.join(work_dir, "%s.frankenfasta" % name)
     job_parms['name'] = "nasp_%s_%s" % (tool, name)
