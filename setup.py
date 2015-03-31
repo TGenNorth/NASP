@@ -57,7 +57,7 @@ setup(
             'find_duplicates = nasp.find_duplicates:main',
             'convert_external_genome = nasp.convert_external_genome:main',
             'vcf_to_matrix = nasp.vcf_to_matrix:main',
-            'vtm = nasp2.vtm:main'
+            'vtm = nasp.vtm.vtm:main'
         ]
     },
     scripts = [

@@ -4,9 +4,15 @@ __author__ = 'jtravis'
 
 import itertools
 from concurrent.futures import ProcessPoolExecutor
-from nasp2.matrix_DTO import parse_dto
-from nasp2.parse import Vcf, Fasta
-from nasp2.analyze import analyze_samples
+
+from nasp.vtm.matrix_DTO import parse_dto
+from nasp.vtm.parse import Vcf, Fasta
+from nasp.vtm.analyze import analyze_samples
+
+
+
+
+
 
 
 # def explain(matrix_parameters, sample_groups):
