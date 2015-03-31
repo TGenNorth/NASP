@@ -518,31 +518,17 @@ def analyze_contig(tempdirname, identifiers, sample_groups, vcf_metadata, dups_c
     return sample_stats, contig_stats
 
 
-def _concat_vcf(src, dest, offset):
+def _concat_matrix(src, dest, offset=0):
     """
     Concat the contig matrix to the final file.
 
     Args:
         src (str):
         dest (str):
+        offset (int): Seek past the metadata
     """
     with open(src) as partial, open(dest, 'a') as complete:
-        # Discard the metadata
         partial.seek(offset)
-        # Discard the header
-        partial.readline()
-        complete.writelines(partial)
-
-
-def _concat_tsv(src, dest):
-    """
-    Concat the contig matrix to the final file.
-
-    Args:
-        src (str):
-        dest (str):
-    """
-    with open(src) as partial, open(dest, 'a') as complete:
         # Discard the header
         partial.readline()
         complete.writelines(partial)
@@ -698,7 +684,7 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
 
         # Only the reference contig is changing, bind the other parameters to the function.
         analyze = functools.partial(analyze_contig, tempdirname, identifiers, sample_groups, vcf_metadata, reference_dups)
-        for sample_stat, contig_stat in map(analyze, reference_fasta.contigs):
+        for sample_stat, contig_stat in executor.map(analyze, reference_fasta.contigs):
             contig_stats.append(contig_stat)
             contig_name = contig_stat['Contig']
 
@@ -717,9 +703,9 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
                 else:
                     # Schedule a process to append the next contig as soon as the previous contig is done.
                     if matrix.endswith('.vcf'):
-                        task = functools.partial(_concat_vcf, partial, complete, vcf_metadata_len)
+                        task = functools.partial(_concat_matrix, partial, complete, vcf_metadata_len)
                     else:
-                        task = functools.partial(_concat_tsv, partial, complete)
+                        task = functools.partial(_concat_matrix, partial, complete, 0)
                     futures[index].add_done_callback(swap_future(executor, task))
             is_first_contig = False
 

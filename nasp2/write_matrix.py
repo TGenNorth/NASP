@@ -24,7 +24,7 @@ def get_vcf_metadata(nasp_version, identifiers, contigs):
     """
     vcf_metadata = "##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(nasp_version)
     vcf_metadata += "\n".join(
-        "##contig=<ID=\"{0}\",length={1}>\n".format(contig.name, len(contig)) for contig in contigs)
+        "##contig=<ID=\"{0}\",length={1}>".format(contig.name, len(contig)) for contig in contigs)
     vcf_metadata += "\n".join(
         "##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>".format(identifier) for identifier in identifiers)
     vcf_metadata += ("##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">\n"
