@@ -10,11 +10,12 @@ from concurrent.futures import ProcessPoolExecutor, Future
 import os
 import itertools
 
-from nasp2.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
+from nasp.vtm.write_matrix import write_master_matrix, write_bestsnp_matrix, write_missingdata_matrix, \
     write_withallrefpos_matrix, \
     write_missingdata_vcf, write_bestsnp_vcf, \
     write_missingdata_snpfasta, write_bestsnp_snpfasta, \
     write_general_stats, write_sample_stats
+
 
 
 # TODO: Remove profile. It is a dummy wrapper to leave @profile decorators in place when not profiling.
@@ -678,7 +679,7 @@ def analyze_samples(output_dir, reference_fasta, reference_dups, sample_groups, 
     with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=output_dir) as tempdirname:
 
         # TODO: Remove
-        from nasp2.write_matrix import get_vcf_metadata
+        from nasp.vtm.write_matrix import get_vcf_metadata
         vcf_metadata = get_vcf_metadata(__version__, identifiers, reference_fasta.contigs)
         vcf_metadata_len = len(vcf_metadata)
 
