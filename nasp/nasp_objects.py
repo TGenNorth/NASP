@@ -7,7 +7,7 @@ __email__ = "dsmith@tgen.org"
 import logging
 
 
-class GenomeStatus:
+class GenomeStatus(object):
     """
     Contains and manipulates any generic data that is per-contig-position.
     This could be any single type of data, like actual bases, filter data,
@@ -52,16 +52,18 @@ class GenomeStatus:
     # Arrays are zero-indexed, genome positions are one-indexed. Off-by-one errors? Never heard of 'em.
     def __init__(self):
         """
-        _status_data is the dictionary of lists that stores the actual genome
-        data.  The keys of the dictionary are the contig names.  The lists
-        correspond to the position data on that contig.  Genome position is
-        list position + 1.
-        _current_contig tracks the most recently-referenced contig, for
-        convenience EG reading in fastas line-by-line.
+        Attributes:
+            _status_data: The dictionary of lists that stores the actual genome.
+            data. The keys of the dictionary are the contig names.  The lists
+            correspond to the position data on that contig.  Genome position is
+            list position + 1.
+            _current_contig: Tracks the most recently-referenced contig, for
+            convenience EG reading in fastas line-by-line.
         """
         self._status_data = {}
         self._current_contig = None
 
+    # NOTE(jtravis): Does not raise exception if contig name is None or the empty string as documented
     def add_contig(self, contig_name):
         """
         Defines a new empty contig in the genome.
@@ -69,19 +71,36 @@ class GenomeStatus:
         contig will be created and then acted upon.
         Otherwise, add_contig must be called on a new contig first, or an
         InvalidContigName will be thrown.
+
+        Args:
+            contig_name (str): Unique contig description.
+
+        Raises:
+            InvalidContigName: If contig_name is undefined.
         """
         if contig_name not in self._status_data:
             self._status_data[contig_name] = []
         self._current_contig = contig_name
 
+    # NOTE(jtravis): unused parameter create_contig
     def set_current_contig(self, contig_name, create_contig=True):
         """
         Sets the most-recently-referenced contig without actually performing
-        any action on the data.  Returns the current contig.
+        any action on the data.
         Can be called to return the current contig without changing it if
         given a contig_name of None.
         Will create the contig if it has not been encountered yet by
         default, or throw an InvalidContigName otherwise.
+
+        Args:
+            contig_name (str): Unique contig description or None to query the current contig name.
+            create_contig (bool): If True and the contig does not exist, an empty contig will be created.
+
+        Returns:
+            str: Name of the last accessed contig or None.
+
+        Raises:
+            InvalidContigName: If create_contig is False and the contig does not exist.
         """
         if contig_name is None:
             contig_name = self._current_contig
@@ -94,7 +113,10 @@ class GenomeStatus:
         return contig_name
 
     def get_contigs(self):
-        """ Returns the list of contigs """
+        """
+        Returns:
+            list: Sorted list of contig names.
+        """
         return sorted(self._status_data.keys())
 
     def append_contig(self, genome_data, contig_name=None):
@@ -102,15 +124,22 @@ class GenomeStatus:
         Places the passed-in data at the position following the last
         defined position on the contig.  If passed a list, will give each
         item in the list its own position.
+
+        Args:
+            genome_data (list): List of nucleotide symbols.
+            contig_name (str): Unique contig description.
         """
         contig_name = self.set_current_contig(contig_name)
         self._status_data[contig_name].extend(genome_data)
 
     def extend_contig(self, new_length, missing_range_filler, contig_name=None):
         """
-        Ensures that the contig is at least new_length positions long.
-        Undefined areas (which will only be found at the end) will be filled
-        with missing_range_filler in each position.
+        Ensures the contig is at least new_length positions long
+
+        Args:
+            new_length (int): Minimum contig length.
+            missing_range_filler (str): Placeholder character for undefined areas at the end of the contig.
+            contig_name (str): Unique contig description.
         """
         contig_name = self.set_current_contig(contig_name)
         if len(self._status_data[contig_name]) < new_length:
@@ -124,6 +153,12 @@ class GenomeStatus:
         starting at position_number, one position per list item.
         Will extend the contig with missing_range_filler filling undefined
         values if the position to set is beyond the end of the contig.
+
+        Args:
+            new_data (str or list): Single or list of nucleotide symbols.
+            position_number (int): 1-indexed contig position number.
+            missing_range_filler (str): Filler for undefined regions before the set value. Modifies the data.
+            contig_name (str): Unique contig description
         """
         contig_name = self.set_current_contig(contig_name)
         self.extend_contig(position_number, missing_range_filler, contig_name)
@@ -134,11 +169,15 @@ class GenomeStatus:
 
     def get_value(self, first_position, last_position=None, contig_name=None, filler_value=None):
         """
-        Returns the value at first_position, or list of values from
-        first_position to last_position inclusive.  If last_position is -1,
-        goes to the end of the contig.  If filler_value is not none, undefined
-        regions will be filled with it when returned, but the genome data will
-        not be modified.
+        Args:
+            contig_name (str): Unique contig description.
+            first_position (int): 1-indexed first position number.
+            last_position (int): Optional last position to select a range or -1 to specify the end of the contig.
+            filler_value (str): Optional filler for undefined regions beyond the genome data. Does not modify the data.
+
+        Returns:
+            Returns the nucleotide at first_position, list of values from
+            first_position to last_position inclusive, or None.
         """
         contig_name = self.set_current_contig(contig_name)
         queried_value = filler_value
@@ -156,7 +195,13 @@ class GenomeStatus:
         return queried_value
 
     def get_contig_length(self, contig_name=None):
-        """ Returns the number of positions defined in the contig """
+        """
+        Args:
+            contig_name (str): Unique contig description.
+
+        Returns:
+            int: Number of positions defined in the contig
+        """
         contig_name = self.set_current_contig(contig_name)
         return len(self._status_data[contig_name])
 
@@ -166,6 +211,13 @@ class GenomeStatus:
         character per position, and then writes it in to the handle open for
         writing.  The file format is like a typical fasta were the genome
         data to be base calls (but no checks are performed).
+
+        The contigs are sorted by name, not the order they were created.
+
+        Args:
+            output_handle (file object): File to append FASTA string.
+            contig_prefix (str): Prefix for all contig names.
+            max_chars_per_line (int): A positive value will limit the max chars per line.
         """
         for current_contig in self.get_contigs():
             output_handle.write(">" + contig_prefix + current_contig + "\n")
@@ -183,10 +235,14 @@ class GenomeStatus:
         Opens the passed filename and passes to send_to_fasta_handle.
         This is a separate function so that unit testing is easier, and
         file names or open file handles can be used as destinations.
+
+        Args:
+            output_filename (str): Output filename.
+            contig_prefix (str): Prefix for all contig names.
+            max_chars_per_line (int): A positive value will limit the max contig chars per line.
         """
-        output_handle = open(output_filename, 'w')
-        self.send_to_fasta_handle(output_handle, contig_prefix, max_chars_per_line)
-        output_handle.close()
+        with open(output_filename, 'w') as output_handle:
+            self.send_to_fasta_handle(output_handle, contig_prefix, max_chars_per_line)
 
 
 class Genome(GenomeStatus):
@@ -197,8 +253,9 @@ class Genome(GenomeStatus):
 
     def __init__(self):
         """
-        _genome is an alias of _status_data, provided for code clarity
-        when working with an actual genome
+        Attributes:
+            _genome is an alias of _status_data, provided for code clarity
+            when working with an actual genome
         """
         GenomeStatus.__init__(self)
         self._genome = self._status_data
@@ -209,7 +266,7 @@ class Genome(GenomeStatus):
 
     def get_call(self, first_position, last_position=None, contig_name=None, filler_value="X"):
         """ Alias of get_value, for code clarity """
-        return self.get_value(first_position, last_position, contig_name, filler_value)
+        return self.get_value( first_position, last_position, contig_name, filler_value)
 
     def _import_fasta_line(self, line_from_fasta, contig_prefix=""):
         """
@@ -217,44 +274,66 @@ class Genome(GenomeStatus):
         populates the genome with the information contained.  Not meant
         to be called on any data except a full fasta file in order by
         line top to bottom.
+
+        Args:
+            line_from_fasta (str): the current line to parse
+            contig_prefix (str): the prefix will be removed from the parsed contig name
         """
         import re
 
+        # Parse the contig name discarding the prefix and surrounding whitespace characters
         contig_match = re.match(r'^>' + re.escape(contig_prefix) + r'([^\s]+)(?:\s|$)', line_from_fasta)
         if contig_match:
             self.add_contig(contig_match.group(1))
         else:
+            # Parse the contig sequence discarding trailing whitespace characters
             data_match = re.match(r'^([A-Za-z.-]+)\s*$', line_from_fasta)
             if data_match:
                 self.append_contig(list(data_match.group(1)))
 
     def import_fasta_file(self, fasta_filename, contig_prefix=""):
-        """ Read in a fasta file. """
-        fasta_handle = open(fasta_filename, 'r')
-        for line_from_fasta in fasta_handle:
-            self._import_fasta_line(line_from_fasta, contig_prefix)
-        fasta_handle.close()
+        """ Read in a fasta file.
+
+        Args:
+            fasta_filename (str): fasta file to import
+            contig_prefix (str): the prefix will be removed from the parsed contig names
+        """
+        with open(fasta_filename, 'r') as fasta_handle:
+            for line_from_fasta in fasta_handle:
+                self._import_fasta_line(line_from_fasta, contig_prefix)
 
     @staticmethod
     def reverse_complement(dna_string):
+        """
+        Args:
+            dna_string (str): nucleotide sequence to reverse complement
+
+        Returns:
+            string: nucleotide sequence reverse complement
+        """
         return dna_string.translate(
             ''.maketrans('ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr'))[::-1]
 
     @staticmethod
     def simple_call(dna_string, allow_x=False, allow_del=False):
         """
-        Standardizes the DNA call assumed to be the base at one position.
-        Only returns exactly 'A', 'C', 'G', 'T', 'N', or optionally 'X' or '.'
-        Discards insertion data, uppercases the call, changes 'U' to 'T',
-        and changes degeneracies to 'N'.  'X' and deletes are changed to 'N'
-        by default.
+        Standardizes the DNA call assumed to be the base at position one.
+        Discards insertion data, changes 'U' to 'T', and changes degeneracies to 'N'.
+        'X' and deletes are changed to 'N' by default.
+
+        Args:
+            dna_string (str): only the first position is considered
+            allow_x (bool):
+            allow_del (bool):
+
+        Returns:
+            string: 'A', 'C', 'G', 'T', or 'N' with optional 'X' and '.'
         """
         simple_base = 'N'
         if len(dna_string) > 0:
-            simple_base = dna_string[0:1]
+            simple_base = dna_string[0].upper()
         elif allow_del:
             simple_base = '.'
-        simple_base = simple_base.upper()
         if simple_base == 'U':
             simple_base = 'T'
         if simple_base not in ['A', 'C', 'G', 'T', 'X', '.']:
@@ -266,29 +345,44 @@ class Genome(GenomeStatus):
         return simple_base
 
 
-class GenomeMeta:
+class GenomeMeta(object):
     """ Stores the metadata associated with a genome.  """
 
     def __init__(self):
         """
-        _nickname is our best guess at the name information as supplied by the
-        input files.  Its determination depends on filetype.  For example, the
-        nickname of a genome from a fasta file is the filename minus the
-        extension.  There is no expectation that this value is unique.  A 
-        ( _file_path, _nickname ) tuple or the like would stand a much higher
-        chance of being unique.
+        Attributes:
+            _nickname: is our best guess at the name information as supplied by the
+            input files.  Its determination depends on filetype.  For example, the
+            nickname of a genome from a fasta file is the filename minus the
+            extension.  There is no expectation that this value is unique.  A
+            ( _file_path, _nickname ) tuple or the like would stand a much higher
+            chance of being unique.
+            _filepath:
+            _file_type:
+            _generators: A list of analysis tools that have been run on input files to produce
+            this data, from earliest to latest.
         """
         self._nickname = None
         self._file_path = None
         self._file_type = None
-        self._generators = []  # This should probably be a dictionary someday
+        self._generators = []  # TODO: This should probably be a dictionary someday
 
+    # NOTE(jtravis): side effect alters nickname
     def set_file_path(self, file_path):
+        """
+        Args:
+            file_path (str):
+        """
         self._file_path = file_path
+        # TODO: merge and replace if-statement with set_nickname()
         if self._nickname is None:
             self._nickname = GenomeMeta.generate_nickname_from_filename(file_path)
 
     def set_file_type(self, type_string):
+        """
+        Args:
+            type_string (str):
+        """
         self._file_type = type_string
 
     def set_nickname(self, nickname):
@@ -296,37 +390,54 @@ class GenomeMeta:
         This value should be unique per-file, for multi-sample input files,
         but there is no expectation that this would be unique per run, and
         nothing to enforce even per-file uniqueness.
+
+        Args:
+            nickname (str):
         """
         self._nickname = nickname
 
     def add_generators(self, generator_array):
         """
-        A list of analysis tools that have been run on input files to produce
-        this data, from earliest to latest.
+        Args:
+            generator_array: A list of analysis tools that have been run on input files to produce
+            this data, from earliest to latest.
         """
         self._generators.extend(generator_array)
 
     def file_path(self):
+        """
+        Returns:
+            string:
+        """
         return self._file_path
 
     def file_type(self):
+        """
+        Returns:
+            string:
+        """
         return self._file_type
 
     def nickname(self):
+        """
+        Returns:
+            string:
+        """
         return self._nickname
 
     def identifier(self):
         """
-        Returns a string meant to be recognizable to the user to differentiate
-        their sample-analyses.  There can be no assumption that this value is
-        unique, because the nickname is often not unique.  As a result, this
-        should not be used in-code (EG dictionary keys) to differentiate
-        samples.  The best we can do is a ( _file_path, _nickname ) tuple, and
-        even that may not be guaranteed to be unique.
+        Returns:
+            string: meant to be recognizable to the user to differentiate
+            their sample-analyses.  There can be no assumption that this value is
+            unique, because the nickname is often not unique.  As a result, this
+            should not be used in-code (EG dictionary keys) to differentiate
+            samples.  The best we can do is a ( _file_path, _nickname ) tuple, and
+            even that may not be guaranteed to be unique.
         """
         identifier = self._nickname
         if len(self._generators) > 0:
-            identifier = '' + identifier + "::" + ( ','.join(self._generators) )
+            identifier = "{0}::{1}".format(identifier, ','.join(self._generators))
         return identifier
 
     @staticmethod
@@ -336,12 +447,17 @@ class GenomeMeta:
         metadata within the file, generate a nickname for the sample by
         removing the extension.  If this fails, generate a random name in the
         format "file_XXXXXXXX" where X is an 8-digit random integer.
+
+        Args:
+            filename (str):
+
+        Returns:
+            string: filename sans extension or "file_XXXXXXXX" where X is an 8-digit random integer.
         """
         import re
         import random
-        filename_match = re.match(
-            r'^(?:.*\/)?([^\/]+?)(?:\.(?:[Ff][Rr][Aa][Nn][Kk][Ee][Nn])?[Ff][Aa](?:[Ss](?:[Tt][Aa])?)?|\.[Vv][Cc][Ff])?$',
-            filename)
+        # Parse basename from fasta or vcf file
+        filename_match = re.match(r'^(?:.*/)?([^/]+?)\.(?:(?:franken)?fas?(?:ta)?|vcf)?$', filename, re.IGNORECASE)
         if filename_match:
             nickname = filename_match.group(1)
         else:
@@ -355,7 +471,7 @@ class GenomeMeta:
             ''.maketrans('ABCDGHMNRSTUVWXYabcdghmnrstuvwxy', 'TVGHCDKNYSAABWXRtvghcdknysaabwxr'))[::-1]
 
 
-class IndelList:
+class IndelList(object):
     """
     For storing indel data separately from the reference-indexed position
     data.  Mostly a relic from when calls were stored as a long string with
@@ -363,6 +479,10 @@ class IndelList:
     implementation, but might be no longer useful.
     """
     def __init__(self):
+        """
+        Attributes:
+            _indels (dict):
+        """
         self._indels = {}
 
 
@@ -375,20 +495,34 @@ class ReferenceGenome(Genome):
 
     def __init__(self):
         """
-        _dups is a GenomeStatus that carries data about whether a particular
-        region of the reference was found to be very similar to another region
-        in the same reference.
+        Attributes:
+            _dups (GenomeStatus): carries data about whether a particular
+            region of the reference was found to be very similar to another region
+            in the same reference.
         """
         Genome.__init__(self)
         self._dups = GenomeStatus()
 
     def get_dups_call(self, first_position, last_position=None, contig_name=None):
+        """
+        Args:
+            first_position (int):
+            last_position (int):
+            contig_name (str):
+
+        Returns:
+            list:
+        """
         return self._dups.get_value(first_position, last_position, contig_name, "?")
 
     def _import_dups_line(self, line_from_dups_file, contig_prefix=""):
         """
         Just like importing any other fasta-like file line-by-line, but
         specific to duplicate region data.
+
+        Args:
+            line_from_dups_file (str):
+            contig_prefix (str):
         """
         import re
         contig_match = re.match(r'^>' + re.escape(contig_prefix) + r'([^\s]+)(?:\s|$)', line_from_dups_file)
@@ -401,12 +535,15 @@ class ReferenceGenome(Genome):
                 self._dups.append_contig(list(data_match.group(1)))
 
     def import_dups_file(self, dups_filename, contig_prefix=""):
-        """ Wrapper for _import_dups_line for flexibility and testing. """
-        dups_handle = open(dups_filename, 'r')
-        for line_from_dups_file in dups_handle:
-            self._import_dups_line(line_from_dups_file, contig_prefix)
-        dups_handle.close()
+        """ Wrapper for _import_dups_line for flexibility and testing.
 
+        Args:
+            dups_filename (str):
+            contig_prefix (str):
+        """
+        with open(dups_filename, 'r') as dups_handle:
+            for line_from_dups_file in dups_handle:
+                self._import_dups_line(line_from_dups_file, contig_prefix)
 
 class FastaGenome(Genome, GenomeMeta):
     """
@@ -443,7 +580,7 @@ class FastaGenome(Genome, GenomeMeta):
 
 class VCFGenome(Genome, GenomeMeta):
     """
-    A standard sample for analysis.  Has geome data, metadata, and data for
+    A standard sample for analysis.  Has genome data, metadata, and data for
     the three filters.
     """
 
@@ -474,7 +611,7 @@ class VCFGenome(Genome, GenomeMeta):
         return self._passed_proportion.get_value(current_pos, None, contig_name, "?")
 
 
-class CollectionStatistics:
+class CollectionStatistics(object):
     """
     Stores a running tally for the statistics for the run.
     Stats are in two categories: per-contig and per-sample.
@@ -651,9 +788,8 @@ class GenomeCollection(CollectionStatistics):
         This function contains a large portion of the ultimate NASP logic that
         goes into generating a matrix, like filter application and consensus
         checking.
-        A section of this function must be performed linearly and
-        single-threaded for all contig-position-sample-analyses.  This is the
-        "expensive loop".
+        A section below must be executed linearly and single-threaded for all
+        contig-position-sample-analyses.  This is the "expensive loop".
         The monolithic nature of this function, its massive size, and the fact
         that it makes little distinction between calculating something and
         writing something to a file, are all problems that will probably need
@@ -662,29 +798,36 @@ class GenomeCollection(CollectionStatistics):
         develop / it's easily maintained / it's beautiful.
         """
         all_matrices = []
+        all_vcfs = []
         allcallable_matrices = []
         snp_matrices_best = []
         snp_matrices_md = []
         fasta_pending_data = {}
+        vcf_pending_data = []
         current_pattern = ''
         # Key None stores next unused, value 1 reserved for reference
         current_pattern_legend = {None: 2}
+        encountered_calls = []
         for matrix_format in matrix_formats:
             if matrix_format['dataformat'] == 'matrix':
                 all_matrices.append(matrix_format)
                 if matrix_format['filter'] == 'allcallable':
                     allcallable_matrices.append(matrix_format)
-                elif matrix_format['filter'] == 'bestsnp':
+                elif matrix_format['filter'] == 'bestsnp' or matrix_format['filter'] == 'includeref':
                     snp_matrices_best.append(matrix_format)
                 elif matrix_format['filter'] == 'missingdata':
                     snp_matrices_md.append(matrix_format)
+            elif matrix_format['dataformat'] == 'vcf':
+                all_vcfs.append(matrix_format)
         genome_count = len(self._genomes)
         failed_genome_count = len(self._failed_genomes)
         for matrix_format in all_matrices:
-            matrix_format['linetowrite'] = '' + current_contig + "::" + str(current_pos) + "\t"
+            matrix_format['linetowrite'] = "{0}::{1}\t".format(current_contig, str(current_pos))
+        for matrix_format in all_vcfs:
+            matrix_format['linetowrite'] = "{0}\t{1}\t.\t".format(current_contig, str(current_pos))
         reference_call = self._reference.get_call(current_pos, None, current_contig)
         simplified_refcall = Genome.simple_call(reference_call)
-        fasta_pending_data['(Reference)'] = simplified_refcall
+        fasta_pending_data['Reference'] = simplified_refcall
         if simplified_refcall == 'N':
             current_pattern += 'N'
         else:
@@ -693,8 +836,8 @@ class GenomeCollection(CollectionStatistics):
         self.increment_contig_stat('reference_length', current_contig)
         if simplified_refcall != 'N':
             self.increment_contig_stat('reference_clean', current_contig)
-        for matrix_format in all_matrices:
-            matrix_format['linetowrite'] += '' + reference_call + "\t"
+        for matrix_format in ( all_matrices + all_vcfs ):
+            matrix_format['linetowrite'] += "{0}\t".format(reference_call)
         dups_call = self._reference.get_dups_call(current_pos, None, current_contig)
         if dups_call == "1":
             dups_call = True
@@ -713,7 +856,7 @@ class GenomeCollection(CollectionStatistics):
             genome_identifier = genome.identifier()
             genome_path = genome.file_path()
             was_called = genome.get_was_called(current_pos, current_contig)
-            call_data['callstring'] += '' + was_called
+            call_data['callstring'] += was_called
             if was_called == 'Y':
                 was_called = True
                 call_data['called'] += 1
@@ -721,7 +864,7 @@ class GenomeCollection(CollectionStatistics):
                 was_called = False
             self.record_sample_stat('was_called', genome_nickname, genome_identifier, genome_path, was_called)
             passed_coverage = genome.get_coverage_pass(current_pos, current_contig)
-            call_data['covstring'] += '' + passed_coverage
+            call_data['covstring'] += passed_coverage
             if passed_coverage == 'Y' or passed_coverage == '-':
                 passed_coverage = True
                 call_data['passcov'] += 1
@@ -730,7 +873,7 @@ class GenomeCollection(CollectionStatistics):
             self.record_sample_stat('passed_coverage_filter', genome_nickname, genome_identifier, genome_path,
                                     passed_coverage)
             passed_proportion = genome.get_proportion_pass(current_pos, current_contig)
-            call_data['propstring'] += '' + passed_proportion
+            call_data['propstring'] += passed_proportion
             if passed_proportion == 'Y' or passed_proportion == '-':
                 passed_proportion = True
                 call_data['passprop'] += 1
@@ -777,15 +920,19 @@ class GenomeCollection(CollectionStatistics):
                 if not dups_call:
                     self.record_sample_stat('quality_breadth', genome_nickname, genome_identifier, genome_path, False)
             for matrix_format in ( allcallable_matrices + snp_matrices_best ):
-                matrix_format['linetowrite'] += '' + sample_call + "\t"
+                matrix_format['linetowrite'] += "{0}\t".format(sample_call)
             fasta_pending_data[genome_identifier] = simplified_sample_call
+            vcf_current_data = { 'GT': '.', 'was_called': was_called, 'passed_coverage': passed_coverage, 'passed_proportion': passed_proportion }
             if was_called and passed_coverage and passed_proportion and simplified_sample_call != 'N':
                 if simplified_sample_call not in current_pattern_legend:
                     current_pattern_legend[simplified_sample_call] = current_pattern_legend[None]
                     current_pattern_legend[None] += 1
-                current_pattern += '' + str(current_pattern_legend[simplified_sample_call])
+                    # FIXME indels
+                    encountered_calls.append(simplified_sample_call)
+                current_pattern += str(current_pattern_legend[simplified_sample_call])
+                vcf_current_data['GT'] = current_pattern_legend[simplified_sample_call] - 1
                 for matrix_format in snp_matrices_md:
-                    matrix_format['linetowrite'] += '' + sample_call + "\t"
+                    matrix_format['linetowrite'] += "{0}\t".format(sample_call)
             elif not was_called:
                 current_pattern += 'N'
                 fasta_pending_data[genome_identifier] = 'N'
@@ -796,8 +943,9 @@ class GenomeCollection(CollectionStatistics):
                 fasta_pending_data[genome_identifier] = 'N'
                 for matrix_format in snp_matrices_md:
                     matrix_format['linetowrite'] += "N\t"
+            vcf_pending_data.append(vcf_current_data)
         for matrix_format in all_matrices:
-            matrix_format['linetowrite'] += '' + '\t' * failed_genome_count
+            matrix_format['linetowrite'] += "\t" * failed_genome_count
         for genome_nickname in consensus_check:
             if consensus_check[genome_nickname] != 'N':
                 self.record_sample_stat('consensus', genome_nickname, None, None, True)
@@ -837,39 +985,73 @@ class GenomeCollection(CollectionStatistics):
         if not dups_call and call_data['snpcall'] > 0:
             self.increment_contig_stat('any_snps', current_contig)
         for matrix_format in all_matrices:
-            matrix_format['linetowrite'] += '' + str(dups_call) + "\t" + str(consensus_check) + "\t"
+            matrix_format['linetowrite'] += "{0}\t{1}\t".format(str(dups_call), str(consensus_check))
         for matrix_format in ( allcallable_matrices + snp_matrices_md ):
-            matrix_format['linetowrite'] += '' + str(call_data['callstring']) + "\t" + str(
-                call_data['covstring']) + "\t" + str(call_data['propstring']) + "\t"
+            matrix_format['linetowrite'] += "{0}\t{1}\t{2}\t".format(str(call_data['callstring']), str(call_data['covstring']), str(call_data['propstring']))
         for matrix_format in all_matrices:
             if current_pattern not in pattern_data:
                 pattern_data[current_pattern] = pattern_data[None]
                 pattern_data[None] += 1
-            matrix_format['linetowrite'] += "'" + current_pattern + "'\t" + str(pattern_data[current_pattern]) + "\n"
+            matrix_format['linetowrite'] += "'{0}'\t{1}\n".format(current_pattern, str(pattern_data[current_pattern]))
+        for matrix_format in all_vcfs:
+            if len(encountered_calls) > 0:
+                matrix_format['linetowrite'] += ",".join(encountered_calls)
+            else:
+                matrix_format['linetowrite'] += "."
+            matrix_format['linetowrite'] += "\t.\tPASS\tAN={0};NS={1}\tGT:FT".format(len(encountered_calls)+1, str(call_data['snpcall']+call_data['indelcall']+call_data['refcall']))
+            for vcf_current_data in vcf_pending_data:
+                matrix_format['linetowrite'] += "\t{0}:".format(str(vcf_current_data['GT']))
+                if not vcf_current_data['was_called']:
+                    matrix_format['linetowrite'] += "NoCall"
+                elif not vcf_current_data['passed_coverage']:
+                    matrix_format['linetowrite'] += "CovFail"
+                elif not vcf_current_data['passed_proportion']:
+                    matrix_format['linetowrite'] += "PropFail"
+                else:
+                    matrix_format['linetowrite'] += "PASS"
+            matrix_format['linetowrite'] += "\n"
         # Determine if a line should be present in a particular matrix
+        # bestsnp outputs
         if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or call_data['snpcall'] + call_data[
             'refcall'] < genome_count or dups_call or not consensus_check:
             for matrix_format in matrix_formats:
-                if matrix_format['dataformat'] == 'matrix' and matrix_format['filter'] == 'bestsnp':
-                    matrix_format['linetowrite'] = None
+                if matrix_format['filter'] == 'bestsnp':
+                    if matrix_format['dataformat'] == 'matrix' or matrix_format['dataformat'] == 'vcf':
+                        matrix_format['linetowrite'] = None
         else:
             for matrix_format in matrix_formats:
                 if matrix_format['dataformat'] == 'fasta' and matrix_format['filter'] == 'bestsnp':
                     for genome_identifier in fasta_pending_data:
                         matrix_format['fastadata'].append_contig(fasta_pending_data[genome_identifier],
                                                                  genome_identifier)
+        # missing data outputs
         if call_data['snpcall'] == 0 or call_data['indelcall'] > 0 or dups_call:
             for matrix_format in matrix_formats:
-                if matrix_format['dataformat'] == 'matrix' and matrix_format['filter'] == "missingdata":
-                    matrix_format['linetowrite'] = None
+                if matrix_format['filter'] == "missingdata":
+                    if matrix_format['dataformat'] == 'matrix' or matrix_format['dataformat'] == 'vcf':
+                        matrix_format['linetowrite'] = None
         else:
             for matrix_format in matrix_formats:
                 if matrix_format['dataformat'] == 'fasta' and matrix_format['filter'] == 'missingdata':
                     for genome_identifier in fasta_pending_data:
                         matrix_format['fastadata'].append_contig(fasta_pending_data[genome_identifier],
                                                                  genome_identifier)
+        # including ref outputs
+        if call_data['indelcall'] > 0 or call_data['snpcall'] + call_data[
+            'refcall'] < genome_count or dups_call or not consensus_check:
+            for matrix_format in matrix_formats:
+                if matrix_format['filter'] == 'includeref':
+                    if matrix_format['dataformat'] == 'matrix' or matrix_format['dataformat'] == 'vcf':
+                        matrix_format['linetowrite'] = None
+        else:
+            for matrix_format in matrix_formats:
+                if matrix_format['dataformat'] == 'fasta' and matrix_format['filter'] == 'includeref':
+                    for genome_identifier in fasta_pending_data:
+                        matrix_format['fastadata'].append_contig(fasta_pending_data[genome_identifier],
+                                                                 genome_identifier)
         self.flush_cumulative_stat_cache()
 
+    # NOTE(jtravis): Fix documentation _write_matrix_line() does not exist
     def send_to_matrix_handles(self, matrix_formats):
         """
         Writes headers and handles per-matrix logic.  Calls _write_matrix_line
@@ -879,21 +1061,38 @@ class GenomeCollection(CollectionStatistics):
             if matrix_format['dataformat'] == 'matrix':
                 matrix_format['handle'].write("LocusID\tReference\t")
                 for genome in self._genomes:
-                    matrix_format['handle'].write('' + genome.identifier() + "\t")
+                    matrix_format['handle'].write("{0}\t".format(genome.identifier()))
                 for genome_path in self._failed_genomes:
-                    matrix_format['handle'].write('' + genome_path + "\t")
-                if matrix_format['filter'] == 'bestsnp':
+                    matrix_format['handle'].write("{0}\t".format(genome_path))
+                if matrix_format['filter'] == 'bestsnp' or matrix_format['filter'] == 'includeref':
                     matrix_format['handle'].write(
                         "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tPattern\tPattern#\n")
                 else:
                     # must be all callable or missing data
                     matrix_format['handle'].write(
-                        "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\n")
+                        "#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\t" +
+                            "Contig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern\tPattern#\n")
                 matrix_format['linetowrite'] = ''
             elif matrix_format['dataformat'] == 'fasta':
                 matrix_format['fastadata'] = GenomeStatus()
                 for genome in self._genomes:
                     matrix_format['fastadata'].add_contig(genome.identifier())
+            elif matrix_format['dataformat'] == 'vcf':
+                matrix_format['handle'].write("##fileFormat=VCFv4.2\n##source=NASPv{0}\n".format(__version__))
+                for current_contig in self._reference.get_contigs():
+                    matrix_format['handle'].write("##contig=<ID=\"{0}\",length={1}>\n".format(current_contig, self._reference.get_contig_length(current_contig)))
+                for genome in self._genomes:
+                    matrix_format['handle'].write("##SAMPLE=<ID=\"{0}\",Genomes=\"{0}\",Mixture=1.0>\n".format(genome.identifier()))
+                matrix_format['handle'].write("##INFO=<ID=NS,Number=1,Type=Integer,Description=\"Number of Samples With Data\">\n")
+                matrix_format['handle'].write("##FILTER=<ID=NoCall,Description=\"No call for this sample at this position\">\n")
+                matrix_format['handle'].write("##FILTER=<ID=CovFail,Description=\"Insufficient depth of coverage for this sample at this position\">\n")
+                matrix_format['handle'].write("##FILTER=<ID=PropFail,Description=\"Insufficient proportion of reads were variant for this sample at this position\">\n")
+                matrix_format['handle'].write("##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n")
+                matrix_format['handle'].write("##FORMAT=<ID=FT,Number=1,Type=String,Description=\"Filters that failed for this sample at this position\">\n")
+                matrix_format['handle'].write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT")
+                for genome in self._genomes:
+                    matrix_format['handle'].write("\t" + genome.identifier())
+                matrix_format['handle'].write("\n")
         # Key None stores next unused
         pattern_data = {None: 1}
         for current_contig in self.get_contigs():
@@ -901,6 +1100,9 @@ class GenomeCollection(CollectionStatistics):
                 self._format_matrix_line(current_contig, current_pos, matrix_formats, pattern_data)
                 for matrix_format in matrix_formats:
                     if matrix_format['dataformat'] == 'matrix' and matrix_format['linetowrite'] is not None:
+                        matrix_format['handle'].write(matrix_format['linetowrite'])
+                        matrix_format['linetowrite'] = ''
+                    if matrix_format['dataformat'] == 'vcf' and matrix_format['linetowrite'] is not None:
                         matrix_format['handle'].write(matrix_format['linetowrite'])
                         matrix_format['linetowrite'] = ''
         for matrix_format in matrix_formats:
@@ -923,19 +1125,19 @@ class GenomeCollection(CollectionStatistics):
         denominator_stat = 'reference_length'
         general_handle.write("Contig\t")
         for current_stat in general_stat_array:
-            general_handle.write('' + current_stat + "\t")
+            general_handle.write("{0}\t".format(current_stat))
             if current_stat != denominator_stat:
-                general_handle.write('' + current_stat + " (%)\t")
+                general_handle.write("{0} (%)\t".format(current_stat))
         general_handle.write("\n")
-        general_handle.write("\tstat descriptions go here\n")
+        general_handle.write("\tstat descriptions go here\n") # FIXME
         for current_contig in ( [None] + self.get_contigs() ):
             denominator_value = self.get_contig_stat(denominator_stat, current_contig)
             if current_contig is None:
                 general_handle.write("Whole Genome\t")
             else:
-                general_handle.write('' + current_contig + "\t")
+                general_handle.write("{0}\t".format(current_contig))
             for current_stat in general_stat_array:
-                general_handle.write('' + str(self.get_contig_stat(current_stat, current_contig)) + "\t")
+                general_handle.write("{0}\t".format(str(self.get_contig_stat(current_stat, current_contig))))
                 if current_stat != denominator_stat:
                     general_handle.write(
                         "%.2f%%\t" % ( self.get_contig_stat(current_stat, current_contig) / denominator_value * 100 ))
@@ -953,10 +1155,10 @@ class GenomeCollection(CollectionStatistics):
         denominator_value = self.get_contig_stat(denominator_stat)
         sample_handle.write("Sample\tSample::Analysis\t")
         for current_stat in sample_stat_array:
-            sample_handle.write('' + current_stat + "\t")
-            sample_handle.write('' + current_stat + " (%)\t")
+            sample_handle.write("{0}\t".format(current_stat))
+            sample_handle.write("{0} (%)\t".format(current_stat))
         sample_handle.write("\n")
-        sample_handle.write("\tstat descriptions go here\n\n")
+        sample_handle.write("\tstat descriptions go here\n\n") # FIXME
         for current_sample in ( [None] + sorted(self._genome_identifiers.keys()) ):
             for current_analysis in ['any', 'all']:
                 if current_sample is not None:
@@ -965,8 +1167,7 @@ class GenomeCollection(CollectionStatistics):
                 if current_sample is None:
                     sample_handle.write("\t")
                 for current_stat in sample_stat_array:
-                    sample_handle.write(
-                        '' + str(self.get_cumulative_stat(current_stat, current_analysis, current_sample)) + "\t")
+                    sample_handle.write("{0}\t".format(str(self.get_cumulative_stat(current_stat, current_analysis, current_sample))))
                     if current_stat != denominator_stat:
                         sample_handle.write("%.2f%%\t" % (self.get_cumulative_stat(current_stat, current_analysis, current_sample) / denominator_value * 100))
                 sample_handle.write("\n")
@@ -975,8 +1176,7 @@ class GenomeCollection(CollectionStatistics):
                     ( sample_identifier, sample_path ) = current_analysis
                     sample_handle.write("{0}\t{1}\t".format(current_sample, sample_identifier))
                     for current_stat in sample_stat_array:
-                        sample_handle.write('' + str(
-                            self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path)) + "\t")
+                        sample_handle.write("{0}\t".format(str(self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path))))
                         if current_stat != denominator_stat:
                             sample_handle.write("%.2f%%\t" % (self.get_sample_stat(current_stat, current_sample, sample_identifier, sample_path) / denominator_value * 100))
                     sample_handle.write("\n")
@@ -984,17 +1184,14 @@ class GenomeCollection(CollectionStatistics):
 
     def write_to_stats_files(self, general_filename, sample_filename):
         """ Opens files for writing; abstracted for flexibility/testing. """
-        general_handle = open(general_filename, 'w')
-        sample_handle = open(sample_filename, 'w')
-        self._write_general_stats(general_handle)
-        self._write_sample_stats(sample_handle)
-        general_handle.close()
-        sample_handle.close()
+        with open(general_filename, 'w') as general_handle, open(sample_filename, 'w') as sample_handle:
+            self._write_general_stats(general_handle)
+            self._write_sample_stats(sample_handle)
         # print( self._stats._contig_stats )
         # print( self._stats._sample_stats )
 
 
-class VCFRecord:
+class VCFRecord(object):
     """ VCF parser, object representing an input VCF being read. """
 
     def __init__(self, file_path):
@@ -1104,8 +1301,8 @@ class VCFRecord:
                                     self._current_record['global']['REF'][:len(return_value)] != return_value and \
                                     self._current_record['global']['REF'][-len(return_value):] == return_value:
                         return_value = self._current_record['alts'][0]
-        elif len(self._current_record['alts']) > 1:
-            return_value = self._current_record['alts'][1]
+        #elif len(self._current_record['alts']) > 1:
+        #    return_value = self._current_record['alts'][1]
         return return_value
 
     def get_coverage(self, current_sample):
@@ -1120,6 +1317,13 @@ class VCFRecord:
         elif 'ADP' in self._current_record['info'] and self._current_record['info']['ADP'] is not None and \
                 self._current_record['info']['ADP'].isdigit():
             sample_coverage = int(self._current_record['info']['ADP']) / len(self._sample_list)
+        # NASP output
+        elif 'FORMAT' in self._current_record['global'] and 'FT' in self._current_record['samples'][current_sample]:
+            failed_filters = self._current_record['samples'][current_sample]['FT'].split(',')
+            if 'CovFail' in failed_filters:
+                sample_coverage = -1
+            elif 'PASS' in failed_filters or 'PropFail' in failed_filters:
+                sample_coverage = 'PASS'
         return sample_coverage
 
     def get_proportion(self, current_sample, sample_coverage, is_a_snp):
@@ -1150,6 +1354,13 @@ class VCFRecord:
             else:
                 sample_proportion = ( int(call_depths[0]) + int(call_depths[1]) ) / (
                     sample_coverage * len(self._sample_list) )
+        # NASP output
+        elif 'FORMAT' in self._current_record['global'] and 'FT' in self._current_record['samples'][current_sample]:
+            failed_filters = self._current_record['samples'][current_sample]['FT'].split(',')
+            if 'PropFail' in failed_filters:
+                sample_proportion = -1
+            elif 'PASS' in failed_filters:
+                sample_proportion = 'PASS'
         return sample_proportion
 
     def get_sample_info(self, current_sample):

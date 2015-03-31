@@ -48,7 +48,7 @@ def _parse_input_config(commandline_args):
 
     (matrix_parms, input_files) = matrix_DTO.parse_dto(commandline_args.dto_file)
     commandline_args.reference_fasta = matrix_parms['reference-fasta']
-    commandline_args.reference_dups = matrix_parms['reference-dups']
+    commandline_args.reference_dups = matrix_parms.get('reference-dups')
     commandline_args.matrix_folder = matrix_parms['matrix-folder']
     commandline_args.stats_folder = matrix_parms['stats-folder']
     commandline_args.minimum_coverage = int(
@@ -132,12 +132,12 @@ def read_vcf_file(reference, min_coverage, min_proportion, input_file):
                     if sample_info['was_called']:
                         genomes[vcf_sample].set_was_called('Y', current_pos, current_contig)
                     if sample_info['coverage'] is not None:
-                        if sample_info['coverage'] >= min_coverage:
+                        if sample_info['coverage'] == 'PASS' or sample_info['coverage'] >= min_coverage:
                             genomes[vcf_sample].set_coverage_pass('Y', current_pos, current_contig)
                         else:
                             genomes[vcf_sample].set_coverage_pass('N', current_pos, current_contig)
                     if sample_info['proportion'] is not None:
-                        if sample_info['proportion'] >= min_proportion:
+                        if sample_info['proportion'] == 'PASS' or sample_info['proportion'] >= min_proportion:
                             genomes[vcf_sample].set_proportion_pass('Y', current_pos, current_contig)
                         else:
                             genomes[vcf_sample].set_proportion_pass('N', current_pos, current_contig)
@@ -279,8 +279,7 @@ def write_output_matrices(genomes, matrix_folder, matrix_format_choices):
     Defines the matrix types for future expansion of custom matrix options.
     This information eventually should come from the user interface and be
     included in the XML configuration file, rather than hardcoded here.
-    The matrix_format_choices option comes from the XML to here, and then
-    is currently discarded.
+    The matrix_format_choices option comes from the XML to here.
     """
     matrix_formats = [
         {
@@ -299,6 +298,11 @@ def write_output_matrices(genomes, matrix_folder, matrix_format_choices):
             'filter': 'bestsnp'
         },
         {
+            'filename': '' + matrix_folder + '/bestsnp_matrix.vcf',
+            'dataformat': 'vcf',
+            'filter': 'bestsnp'
+        },
+        {
             'filename': '' + matrix_folder + '/missingdata_matrix.tsv',
             'dataformat': 'matrix',
             'filter': 'missingdata'
@@ -307,7 +311,30 @@ def write_output_matrices(genomes, matrix_folder, matrix_format_choices):
             'filename': '' + matrix_folder + '/missingdata_matrix.snpfasta',
             'dataformat': 'fasta',
             'filter': 'missingdata'
+        },
+        {
+            'filename': '' + matrix_folder + '/missingdata_matrix.vcf',
+            'dataformat': 'vcf',
+            'filter': 'missingdata'
         }]
+    # The XML format transferring this information should be more elaborate someday.
+    if matrix_format_choices is not None and matrix_format_choices == "include_allref_pos":
+        matrix_formats.extend( [
+            {
+                'filename': '' + matrix_folder + '/withallrefpos_matrix.tsv',
+                'dataformat': 'matrix',
+                'filter': 'includeref'
+            },
+            {
+                'filename': '' + matrix_folder + '/withallrefpos_matrix.snpfasta',
+                'dataformat': 'fasta',
+                'filter': 'includeref'
+            },
+            {
+                'filename': '' + matrix_folder + '/withallrefpos_matrix.vcf',
+                'dataformat': 'vcf',
+                'filter': 'includeref'
+            }] )
     genomes.write_to_matrices(matrix_formats)
 
 

@@ -2,10 +2,11 @@
 """convert matrix to fasta and fasta filtered for "N" and ".", version 2"""
 
 from __future__ import print_function
+from __future__ import division
 from optparse import OptionParser
 import fileinput
-import subprocess
 import sys
+import re
 try:
     import collections
 except:
@@ -51,7 +52,7 @@ def matrix_to_fasta(matrix_in, prefix, type, last):
         out_fasta.write("".join(x[1:])+"\n")
     out_fasta.close()
    
-def filter_matrix(matrix_in, last):
+def filter_matrix(matrix_in, last, filter_frequency):
     """filter an ISG matrix position if it contains either missing
     or ambiguous data.  Also removes positions if they are monomorphic"""
     matrix = open(matrix_in, "rU")
@@ -60,21 +61,46 @@ def filter_matrix(matrix_in, last):
     file_out.write(firstLine,)
     lines = [ ]
     for line in matrix:
-        doubles=[ ]
-        fields = line.split("\t")
-        for field in fields[1:last]:
-            if len(field)>=2:
-	            doubles.append("1")
-        if len(doubles)>=1:
+        if line.startswith("LocusID"):
             pass
         else:
-            counter=collections.Counter(fields[1:last])
-            values=counter.values()
-            sorted(values, key=int)
-            """print line if the calls for a given SNP do not include N or X or is not polymorphic"""
-            if "X" not in fields[1:last] and "N" not in fields[1:last] and "." not in fields[1:last] and len(values)>1: file_out.write(line,)
-            if "X" not in fields[1:last] and "N" not in fields[1:last] and "." not in fields[1:last] and len(values)>1: lines.append(line)
-        doubles=[]
+            doubles=[ ]
+            fields = line.split("\t")
+            for field in fields[1:last]:
+                if len(field)>=2:
+	                doubles.append("1")
+            #Skips lines if they contain multiple calls per field
+            if len(doubles)>=1:
+                pass
+            else:
+                all_counts = len(fields[1:last])
+                missing_counts = []
+                fixed_fields = []
+                for field in fields:
+                    fixed_fields.append(field.upper())
+                counter=collections.Counter(fixed_fields[1:last])
+                values=counter.values()
+                sorted(values, key=int)
+                """replace missing elements with a gap character"""
+                new_fields=[]
+                for fixed_field in fixed_fields:
+                    if fixed_field == "X":
+                        gap_field = re.sub(r"X","-",fixed_field)
+                    elif fixed_field == "N":
+                        gap_field = re.sub(r"N","-",fixed_field)
+                    else:
+                        gap_field = fixed_field
+                    new_fields.append(gap_field)
+                """count the number of missing elements"""
+                for fixed_field in new_fields[1:last]:
+                    if fixed_field == "-":
+                        missing_counts.append("1")
+                totals_missing = int(all_counts)-int(len(missing_counts))
+                #print(totals_missing,all_counts,totals_missing/all_counts)
+                if (totals_missing/all_counts)>=float(filter_frequency): file_out.write("\t".join(new_fields))
+                if (totals_missing/all_counts)>=float(filter_frequency): lines.append(line)
+                #if "X" not in fields[1:last] and "N" not in fields[1:last] and "." not in fields[1:last] and len(values)>1: file_out.write(line,)
+                #if "X" not in fields[1:last] and "N" not in fields[1:last] and "." not in fields[1:last] and len(values)>1: lines.append(line)
     print("number of SNPs after filtering:", len(lines))
     matrix.close()
     file_out.close()
@@ -110,11 +136,11 @@ def test_file(option, opt_str, value, parser):
         print('%s file cannot be opened' % option)
         sys.exit()
 
-def main(matrix_in, prefix):
+def main(matrix_in,prefix,filter_frequency):
     last=get_field_index(matrix_in)
     raw_matrix(matrix_in)
     matrix_to_fasta(matrix_in, prefix, "raw", last)
-    filter_matrix(matrix_in, last)
+    filter_matrix(matrix_in, last, filter_frequency)
     matrix_to_fasta("tmp.matrix", prefix, "filtered", last)
     filter_singletons(last, "tmp.matrix")
     matrix_to_fasta("tmp2.matrix", prefix, "filtered_PI_snps_only", last)
@@ -130,6 +156,9 @@ if __name__ == "__main__":
     parser.add_option("-p", "--output_prefix", dest="prefix",
                       help="prefix for outfiles [REQUIRED]",
                       action="store", type="string")
+    parser.add_option("-f", "--filter_frequency", dest="filter_frequency",
+                      help="filter out missing data if missing is greater than or equal to given frequency, defaults to 1",
+                      action="store", type="float", default="1.0")
     options, args = parser.parse_args()
     mandatories = ["matrix_in", "prefix"]
     for m in mandatories:
@@ -138,4 +167,4 @@ if __name__ == "__main__":
             parser.print_help()
             exit(-1)
 
-    main(options.matrix_in, options.prefix)
+    main(options.matrix_in,options.prefix,options.filter_frequency)
