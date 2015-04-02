@@ -29,11 +29,9 @@ setup(
     url='https://github.com/TGenNorth/nasp',
     packages=[
         'nasp',
-        'nasp2',
     ],
     package_dir={
         'nasp': 'nasp',
-        'nasp2': 'nasp2'
     },
     include_package_data=True,
     install_requires=requirements,
