@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.8"
+__version__ = "0.9.9"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -463,11 +463,11 @@ def _get_user_input(reference, output_folder):
                 deltafilter_args = input(
                     "  What additional arguments would you like to pass to 'delta-filter' while importing external genomes? ")
             configuration["assembly_importer"] = ("AssemblyImporter", deltafilter_path, deltafilter_args,
-                                                  {'num_cpus': '1', 'mem_requested': '2', 'walltime': '1',
+                                                  {'num_cpus': '1', 'mem_requested': '4', 'walltime': '4',
                                                    'queue': queue, 'args': args})
             logging.info("AssemblyImporter = %s", configuration["assembly_importer"])
         configuration["dup_finder"] = ("DupFinder", nucmer_path, nucmer_args,
-                                       {'num_cpus': '1', 'mem_requested': '2', 'walltime': '1', 'queue': queue,
+                                       {'num_cpus': '1', 'mem_requested': '4', 'walltime': '4', 'queue': queue,
                                         'args': args})
         logging.info("DupFinder = %s", configuration["dup_finder"])
 

@@ -1,11 +1,19 @@
  NASP Changelog
 ================
 
- Pending:
+ 0.9.9:
+----------
+ * Fixes to nucmer: properly pass additional arguments, increase walltime and memory allocation
+ * Set time allocation for SLURM
+ * Tab autocomplete support in UI prompts
+ * Added filtered all position matrix
+ * Output multi-sample VCF files of the matrices
+
+ 0.9.8:
 ----------
  * Support for bowtie2 aligner
- * Remove requirement for Python 3.1+
- *
+ * Support for SGE job manager
+ * PyPI module support, setup script
 
  0.9.6:
 --------

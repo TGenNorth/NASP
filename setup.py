@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='nasp',
-    version='0.9.8',
+    version='0.9.9',
     description='Northern Arizona SNP Pipeline',
     long_description=readme + '\n\n' + history,
     author='Darrin Lemmer',
