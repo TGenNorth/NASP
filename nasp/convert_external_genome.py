@@ -32,7 +32,8 @@ def generate_delta_file(nucmer_path, nucmer_args, delta_filter_path, delta_filte
         sys.stderr.write(
             "NASP WARNING: nucmer may have encountered errors while processing external genome '" + external_nickname + "', proceeding anyway\n")
     filtered_delta_handle = open(( external_nickname + ".filtered.delta" ), "w")
-    return_code = subprocess.call([delta_filter_path, "-q", "-r", "-o", "100", delta_filter_args.split(), ( external_nickname + ".delta" )],
+
+    return_code = subprocess.call([delta_filter_path, "-q", "-r", "-o", "100"] + delta_filter_args.split() + [(external_nickname + ".delta")],
                                   stdout=filtered_delta_handle)
     if return_code > 0:
         sys.stderr.write(
