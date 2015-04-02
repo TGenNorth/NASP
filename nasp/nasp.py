@@ -517,9 +517,9 @@ def _get_user_input(reference, output_folder):
         configuration["proportion_filter"] = str(proportion_filter)
         logging.info("ProportionFilter = %s", configuration["proportion_filter"])
 
-    matrix_path = os.path.join(run_path, "vcf_to_matrix")
+    matrix_path = os.path.join(run_path, "vtm")
     if not os.path.exists(matrix_path):
-        matrix_path = "vcf_to_matrix"
+        matrix_path = "vtm"
     print();
     matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'8', 'mem_requested':'8', 'walltime':'48', 'queue':queue, 'args':args})
     configuration["matrix_generator"] = matrix_settings
