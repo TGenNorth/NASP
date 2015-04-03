@@ -12,7 +12,6 @@ Created on Mar 4, 2014
 
 import logging
 
-
 def _parse_args():
     import argparse
 
@@ -42,7 +41,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             args += " -h"
         if notify:
             args += " -m e"
-        submit_command = "qsub -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s %s %s" % (
+        submit_command = "qsub -V -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s %s %s" % (
             job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'],
             job_parms['walltime'], job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s", submit_command)
@@ -93,7 +92,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             args += " -m e"
         mem_needed = float(job_parms['mem_requested']) * 1024 * 1024
         # Apparently the number of processors a job uses is controlled by the queue it is running on in SGE, so there is no way to request a specific number of CPUs??
-        submit_command = "qsub -cwd \'%s\' -wd \'%s\' -l h_data=%sgb,h_rt=%s:00:00 -m a -N \'%s\' %s %s %s" % (
+        submit_command = "qsub -V -cwd \'%s\' -wd \'%s\' -l h_data=%sgb,h_rt=%s:00:00 -m a -N \'%s\' %s %s %s" % (
             job_parms["work_dir"], job_parms["work_dir"], mem_needed, job_parms['walltime'], job_parms['name'], waitfor,
             queue, args)
         logging.debug("submit_command = %s", submit_command)
@@ -488,7 +487,7 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     new_fasta = os.path.join(work_dir, os.path.basename(fasta))
     command_parts = ["format_fasta --inputfasta %s --outputfasta %s" % (fasta, new_fasta),
                      "convert_external_genome --nucmerpath %s --nucmerargs \'%s\' --deltafilterpath %s --deltafilterargs \'%s\' --reference %s --external %s --name %s" % (
-                         nucmer_path, nucmer_args, args, path, reference, fasta, name)]
+                         nucmer_path, nucmer_args, path, args, reference, fasta, name)]
     command = "\n".join(command_parts)
     final_file = os.path.join(work_dir, "%s.frankenfasta" % name)
     job_parms['name'] = "nasp_%s_%s" % (tool, name)
