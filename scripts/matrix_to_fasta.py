@@ -81,9 +81,6 @@ def filter_matrix(matrix_in, last, filter_frequency):
                     fixed_fields.append(field.upper())
                 for field in fields[last+1:-1]:
                     fixed_fields.append(field)
-                #counter=collections.Counter(fixed_fields[1:last])
-                #values=counter.values()
-                #sorted(values, key=int)
                 """replace missing elements with a gap character"""
                 new_fields=[]
                 for fixed_field in fixed_fields:
