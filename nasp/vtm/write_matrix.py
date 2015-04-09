@@ -5,17 +5,26 @@ TODO: Most of the functions are written as coroutines that could be used improve
 continue processing instead of waiting for data to be read/written to/from disk.
 """
 __author__ = 'jtravis'
+__version__ = "0.9.8"
+
+from nasp import __version__ as nasp_version
 
 import os
 import csv
 from collections import Counter
 from contextlib import ExitStack
+from concurrent.futures import ProcessPoolExecutor, Future
+from tempfile import TemporaryDirectory
+import itertools
+import functools
+
+from nasp.vtm.analyze import GenomeAnalysis
 
 
 def get_vcf_metadata(nasp_version, identifiers, contigs):
     """
     Args:
-        nasp_version (str): v1.0.0
+        nasp_version (str): The current nasp release version.
         identifiers (tuple): contig_name::aligner,snpcaller
         contigs (tuple of Contig):
 
@@ -415,11 +424,9 @@ def write_bestsnp_matrix(directory, contig_name, sample_groups):
         sample_groups
     """
     sample_names = tuple(sample[0].name for sample in sample_groups)
-
     # first_analysis_index is a list of the index of the first analysis for each sample in the call string
-    # Unlike the
     first_analysis_index = []
-    # num_analyses starts at 1 to skip the index call
+    # num_analyses starts at 1 to skip the reference call
     num_analyses = 1
     for sample in sample_groups:
         first_analysis_index.append(num_analyses)
@@ -577,3 +584,244 @@ def write_missingdata_snpfasta(directory, contig_name, identifiers):
                     file.write(call)
                 else:
                     file.write('N')
+
+
+def _concat_matrix(src, dest, offset=0):
+    """
+    Concat the contig matrix to the final file.
+
+    Args:
+        src (str):
+        dest (str):
+        offset (int): Seek past the metadata
+    """
+    with open(src) as partial, open(dest, 'a') as complete:
+        partial.seek(offset)
+        # Discard the header
+        partial.readline()
+        complete.writelines(partial)
+
+
+def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
+    """
+    Concat the snpfasta contigs for each analysis into a file.
+
+    Args:
+        src_dir (str):
+        contig_name (str):
+        identifiers (tuple):
+        suffix (str):
+
+    Example:
+        Concat sampleA contigs:
+          src_dir/contigA_sampleA::snpcaller,aligner_bestsnp_matrix.fasta: GATC
+        + ...
+        + src_dir/contigZ_sampleA::snpcaller,aligner_bestsnp_matrix.fasta: CTAG
+        --------------------------------------------------------
+        directory/sampleA::snpcaller,aligner_bestsnp_matrix.fasta: GATCCTAG
+
+        Concat sampleB contigs:
+          src_dir/contigA_sampleB::snpcaller,aligner_bestsnp_matrix.fasta: ATCG
+        + ...
+        + src_dir/contigZ_sampleB::snpcaller,aligner_bestsnp_matrix.fasta: TAGC
+        --------------------------------------------------------
+        src_dir/sampleB::snpcaller,aligner_bestsnp_matrix.fasta: ATCGTAGC
+
+    """
+    with ExitStack() as stack:
+        analyses = (stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'a+')) for identifier in identifiers)
+        analysis_contigs = (stack.enter_context(open(os.path.join(src_dir, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
+
+        for analysis, analysis_contig in zip(analyses, analysis_contigs):
+            analysis.writelines(analysis_contig)
+
+
+def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
+    """
+    Concat the snpfastas for each analysis into the final file.
+    Each analysis is preceded with a description line and the base calls wrap every 80 characters.
+
+    It assumes the partial results are files with a single line of base calls.
+
+    Args:
+        dest_dir (str):
+        src_dir (str):
+        dest (str):
+        identifiers (tuple of str):
+        suffix (str):
+
+    Example:
+        Concat analysis into the final file:
+          src_dir/reference_bestsnp_matrix.fasta:GATCGATC
+          src_dir/sampleA::snpcaller,aligner_bestsnp_matrix.fasta: GATCCTAG
+          ...
+        + src_dir/sampleZ::snpcaller,aligner_bestsnp_matrix.fasta: ATCGTAGC
+        -------------------------------------------------------------------
+        dest_dir/bestsnp_matrix.fasta:
+          >Reference
+          GATCGATC
+          >sampleZ::snpcaller,aligner
+          GATCCTAG
+          ...
+          >sampleZ::snpcaller,aligner.fasta
+          ATCGTAGC
+    """
+    with ExitStack() as stack, open(os.path.join(dest_dir, dest), 'w') as dest:
+        for identifier in identifiers:
+            analysis = stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'r'))
+            dest.write('>{0}\n'.format(identifier))
+            # Wrap lines every 80 characters.
+            while True:
+                line = analysis.read(80)
+                if not line:
+                    break
+                dest.write('{0}\n'.format(line))
+
+
+def _swap_future(executor, task):
+    """
+    swap_future is a helper to create callback chains of serialized tasks running in parallel.
+    As each future resolves the callback launches the next task in the series and replaces the reference to the
+    completed task with the newly started task so that tasks that follow can be attached in sequence.
+
+    Args:
+        executor (concurrent.futures.Executor):
+        task (callable):
+
+    Return:
+        callable: A function that replaces the completed future with a new future. The argument is a future that
+        resolves to an array and index.
+
+    Example:
+        In addition to concatenating the partial files in parallel:
+        1 |-----------------------> 2 |------------>        3 |-------->
+        1 |------->                 2 |------->             3 |------->
+        1 |------------------->     2 |-------------------> 3 |-------->
+
+        The done callback chain allows the next section to begin as each section completes.
+        1 |-----------------------> 2 |------------> 3 |-------->
+        1 |-------> 2 |-------> 3 |------->
+        1 |-------------------> 2 |-------------------> 3 |-------->
+    """
+    # FIXME: This method of chaining futures is a hack that is probably incorrectly implementing the intended design
+    # pattern of the futures done callback.
+    def callback(future):
+        result = future.result()
+        result[0][result[1]] = executor.submit(task)
+        return result
+    return callback
+
+
+def _get_write_coroutines(tempdirname, identifiers, sample_groups, vcf_metadata, contig_name):
+    """
+    Args:
+        tempdirname (str):
+        identifiers (tuple):
+        sample_groups (tuple of SampleAnalysis tuples):
+        vcf_metadata (str):
+        contig_name (str):
+    Return:
+        tuple of coroutines: Each coroutine receives Position tuples
+    """
+    # Exclude the reference identifier
+    sample_identifiers = identifiers[1:]
+
+    return (
+        write_master_matrix(tempdirname, contig_name, sample_identifiers),
+        write_bestsnp_matrix(tempdirname, contig_name, sample_groups),
+        write_missingdata_matrix(tempdirname, contig_name, sample_identifiers),
+        write_withallrefpos_matrix(tempdirname, contig_name, sample_identifiers),
+        write_bestsnp_vcf(tempdirname, contig_name, sample_identifiers, vcf_metadata),
+        write_missingdata_vcf(tempdirname, contig_name, sample_identifiers, vcf_metadata),
+        write_missingdata_snpfasta(tempdirname, contig_name, identifiers),
+        write_bestsnp_snpfasta(tempdirname, contig_name, identifiers)
+    )
+
+
+def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, reference_dups, sample_groups, max_workers=None):
+    """
+    analyze_samples uses a ProcessPool to read contigs across all the sample analyses in parallel,
+    write the partial results to a temporary directory, aggregate the results for each final file
+    in parallel, and cleanup the temporary directory.
+
+    Note:
+        It is assumed the reference has at least one contig.
+
+    Args:
+        matrix_dir (str):
+        stats_dir (str):
+        reference_fasta (Fasta):
+        reference_dups (Fasta):
+        sample_groups (tuple of tuple of SampleAnalysis): The sample analysis grouped by Sample.
+        max_workers (int or None):
+    """
+    # TODO: Use consistent ordering with what is passed to analyze contig.
+    contig_stats = []
+    # NOTE: if the analysis loop does not run, None will be passed to write_general_stats.
+    # Sample stats
+    sample_stats = None
+    is_first_contig = True
+    # An identifier is a sample_name::aligner,snpcaller header to identify each analysis file.
+    # The Reference identifier is used by the snpfasta writers/concat methods, but skipped by the contig analysis.
+    identifiers = ('Reference',) + tuple(analysis.identifier for analysis in itertools.chain.from_iterable(sample_groups))
+
+    matrices = ('master.tsv', 'bestsnp.tsv', 'missingdata.tsv', 'withallrefpos.tsv', 'bestsnp.vcf', 'missingdata.vcf')
+    futures = [Future()] * len(matrices)
+
+    # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
+    # temporary directory which is deleted automatically.
+    with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=matrix_dir) as tempdirname:
+
+        vcf_metadata = get_vcf_metadata(nasp_version, identifiers, reference_fasta.contigs)
+        vcf_metadata_len = len(vcf_metadata)
+        coroutine_partial = functools.partial(_get_write_coroutines, tempdirname, identifiers, sample_groups, vcf_metadata)
+
+        # Only the reference contig is changing, bind the other parameters to the function.
+        analyze = functools.partial(genome_analysis.analyze_contig, coroutine_partial, sample_groups, reference_dups)
+        for sample_stat, contig_stat in executor.map(analyze, reference_fasta.contigs):
+            contig_stats.append(contig_stat)
+            contig_name = contig_stat['Contig']
+
+            # Concatenate the contig matrices.
+            for index, matrix in enumerate(matrices):
+                # Path to a contig matrix.
+                partial = os.path.join(tempdirname, '{0}_{1}'.format(contig_name, matrix))
+                # Path to the final matrix where all the contigs will be concatenated.
+                complete = os.path.join(matrix_dir, matrix)
+
+                # The first contig is simply renamed to avoid unnecessary copies with the remaining contigs appended.
+                if is_first_contig:
+                    # TODO: Replace with shutil.move which can handle cross-filesystem moves.
+                    os.rename(partial, complete)
+                    futures[index].set_result((futures, index))
+                else:
+                    # Schedule a process to append the next contig as soon as the previous contig is done.
+                    if matrix.endswith('.vcf'):
+                        task = functools.partial(_concat_matrix, partial, complete, vcf_metadata_len)
+                    else:
+                        task = functools.partial(_concat_matrix, partial, complete, 0)
+                    futures[index].add_done_callback(_swap_future(executor, task))
+            is_first_contig = False
+
+            # TODO: Is there enough work here to run in a separate process?
+            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_missingdata.fasta')
+            _concat_snpfasta_contig(tempdirname, contig_name, identifiers, '_bestsnp.fasta')
+
+            # Sum the SampleAnalysis stats preserving the sample_groups order.
+            if sample_stats is None:
+                sample_stats = sample_stat
+            else:
+                for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(sample_stat)):
+                    sum.update(analysis)
+
+        executor.submit(_concat_snpfasta, matrix_dir, tempdirname, 'missingdata.fasta', identifiers, '_missingdata.fasta')
+        executor.submit(_concat_snpfasta, matrix_dir, tempdirname, 'bestsnp.fasta', identifiers, '_bestsnp.fasta')
+
+        # TODO: If reference length is returned by matrix_dto, the stats files can be written in parallel
+        reference_length = write_general_stats(os.path.join(stats_dir, 'general_stats.tsv'), contig_stats)
+        write_sample_stats(os.path.join(stats_dir, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
+
+        # The Python documentation says shutdown() is not explicitly needed inside a context manager, but the snpfasta
+        # files were not always complete.
+        # https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown
+        executor.shutdown()

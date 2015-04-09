@@ -10,7 +10,7 @@ Created on Jun 11, 2014
 @author: dlemmer
 '''
 
-nasp_version = __version__
+from nasp import __version__ as nasp_version
 import logging
 import os
 
