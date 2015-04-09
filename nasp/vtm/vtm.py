@@ -7,44 +7,8 @@ from concurrent.futures import ProcessPoolExecutor
 
 from nasp.vtm.matrix_DTO import parse_dto
 from nasp.vtm.parse import Vcf, Fasta
-from nasp.vtm.analyze import analyze_samples
-
-
-
-
-
-
-
-# def explain(matrix_parameters, sample_groups):
-#     from nasp2.analyze import sample_positions, analyze_position
-#
-#     while True:
-#         try:
-#             print('\a')
-#             contig_name, _, position = input("Enter LocusID: ").partition('::')
-#             index = int(position) - 1
-#         except ValueError:
-#             print('LocusID is <contig name>::<position number> such as 500WT1::42')
-#             continue
-#         reference_contig = matrix_parameters.reference_fasta.get_contig(contig_name)
-#         dups_contig = matrix_parameters.reference_dups.get_contig(contig_name)
-#         print("Contig Objects:")
-#         print(reference_contig)
-#         print(dups_contig)
-#         for sample in sample_groups:
-#             print(sample[0].name)
-#             for analysis in sample:
-#                 print('\t', analysis.get_contig(reference_contig.name))
-#
-#         print("Scanning files...")
-#         for idx, row in enumerate(zip(reference_contig.positions, dups_contig.positions, sample_positions(reference_contig.name, sample_groups))):
-#             if index == idx:
-#                 print('\a')
-#                 #print('Positions:', "\n".join(str(row)), '\n')
-#                 print('Position Analysis:')
-#                 print(analyze_position(row[0], row[1], row[2]))
-#                 break
-
+from nasp.vtm.analyze import GenomeAnalysis
+from nasp.vtm.write_matrix import analyze_samples
 
 def _parse_args():
     """
@@ -82,27 +46,27 @@ def _parse_args():
 
 
 def main():
-    # TODO: remove
-    OUTPUT_DIR = './'
 
     arguments = _parse_args()
     matrix_params = parse_dto(arguments.dto_file)
 
-    matrix_params['reference_fasta'] = matrix_params.get('reference_fasta', arguments.reference_fasta)
-    matrix_params['reference_dups'] = matrix_params.get('reference_dups', arguments.reference_dups)
-    matrix_params['matrix_folder'] = matrix_params.get('matrix_folder', arguments.matrix_folder)
-    matrix_params['stats_folder'] = matrix_params.get('stats_folder', arguments.stats_folder)
-    matrix_params['minimum_coverage'] = float(matrix_params.get('minimum_coverage', arguments.minimum_coverage))
-    matrix_params['minimum_proportion'] = float(matrix_params.get('minimum_proportion', arguments.minimum_proportion))
+    reference_fasta = matrix_params.get('reference_fasta', arguments.reference_fasta)
+    reference_dups = matrix_params.get('reference_dups', arguments.reference_dups)
+    matrix_dir = matrix_params.get('matrix_folder', arguments.matrix_folder)
+    stats_dir = matrix_params.get('stats_folder', arguments.stats_folder)
+    # TODO: handle cast to float exception
+    coverage_threshold = float(matrix_params.get('minimum_coverage', arguments.minimum_coverage))
+    proportion_threshold = float(matrix_params.get('minimum_proportion', arguments.minimum_proportion))
 
     futures = []
     with ProcessPoolExecutor() as executor:
         print("Building contig indices...")
 
-        reference_fasta = executor.submit(Fasta, matrix_params['reference_fasta'], 'reference', None, True)
+        reference_fasta = executor.submit(Fasta, reference_fasta, 'reference', None, True)
         # TODO: handle undefined reference_dups
-        reference_dups = executor.submit(Fasta, matrix_params['reference_dups'], 'reference', None)
+        reference_dups = executor.submit(Fasta, reference_dups, 'reference', None)
 
+        # TODO: frankenfasta and vcfs are not read from the commandline
         # Index Vcf and Frankenfastas in parallel.
         for frankenfasta in matrix_params['frankenfasta']:
             futures.append(executor.submit(Fasta, frankenfasta.path, frankenfasta.name, frankenfasta.aligner))
@@ -115,13 +79,10 @@ def main():
         # The SampleAnalyses are sorted before grouping because groups are determined by when the key changes.
         # See analyse.sample_positions() for more details regarding the structure of sample_groups
         sample_groups = tuple(tuple(v) for _, v in itertools.groupby(sorted(future.result() for future in futures), lambda x: x.name))
-        # return MatrixParameters(**matrix_params), sample_analyses
-
-        # if len(sys.argv) > 2 and sys.argv[2] == "explain":
-        #     return explain(matrix_parameters, sample_groups)
 
         print("Starting analysis...")
-        analyze_samples(OUTPUT_DIR, reference_fasta.result(), reference_dups.result(), sample_groups, arguments.num_threads)
+        genome_analysis = GenomeAnalysis(coverage_threshold, proportion_threshold)
+        analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta.result(), reference_dups.result(), sample_groups, arguments.num_threads)
 
 
 if __name__ == '__main__':
