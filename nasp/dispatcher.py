@@ -594,7 +594,7 @@ def _index_bams(configuration, index_job_id):
 
 
 def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids):
-    import nasp.matrix_DTO as matrix_DTO
+    import nasp.vtm.matrix_DTO as matrix_DTO
     import os
 
     output_dir = configuration['output_folder']

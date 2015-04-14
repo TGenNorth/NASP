@@ -34,16 +34,20 @@ def _add_input_file(node, filetype, attributes, file):
 
 def write_dto(matrix_parms, franken_fastas, vcf_files, xml_file):
     from xml.dom import minidom
+    import re
 
     root = ElementTree.Element("matrix_data")
     parm_node = ElementTree.SubElement(root, "parameters")
     _write_parameters(parm_node, matrix_parms)
     files_node = ElementTree.SubElement(root, "files")
-    # TODO: Can 'name' be redefined to be just the sample name instead of the filename without the extension?
     for (name, aligner, file) in franken_fastas:
         attributes = {'name': name, 'aligner': aligner}
         _add_input_file(files_node, "frankenfasta", attributes, file)
     for (name, aligner, snpcaller, file) in vcf_files:
+        pattern = re.compile('^(.*?)(?:-(pre-aligned|bwa(mem)?|novo|bowtie2|snap]))?(?:-(pre-called|gatk|solsnp|varscan|samtools]))?$')
+        match = pattern.match(name)
+        if match:
+            name = match.group(1)
         attributes = {'name': name, 'aligner': aligner, 'snpcaller': snpcaller}
         _add_input_file(files_node, "vcf", attributes, file)
     dom = minidom.parseString(ElementTree.tostring(root, 'utf-8'))
