@@ -97,9 +97,6 @@ class SampleAnalysis(metaclass=ABCMeta):
             snpcaller (str): Name of the snpcaller program used to create this analysis.
         """
         self._filepath = filepath
-        # TODO: Remove rsplit if the name property in the matrix_dto.xml no longer includes the suffix.
-        # Strip the '-aligner-snpcaller' suffix if it exists.
-        self._name = name.rsplit('-', 2)[0]
         self._aligner = aligner
         self._snpcaller = snpcaller
         self._index = self._index_contigs()
