@@ -97,6 +97,7 @@ class SampleAnalysis(metaclass=ABCMeta):
             snpcaller (str): Name of the snpcaller program used to create this analysis.
         """
         self._filepath = filepath
+        self._name = name
         self._aligner = aligner
         self._snpcaller = snpcaller
         self._index = self._index_contigs()
