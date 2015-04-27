@@ -28,7 +28,7 @@ setup(
     author_email='dlemmer@tgen.org',
     url='https://github.com/TGenNorth/nasp',
     packages=[
-        'nasp',
+        'nasp', 'nasp.vtm'
     ],
     package_dir={
         'nasp': 'nasp',
