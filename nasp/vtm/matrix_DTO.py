@@ -13,7 +13,16 @@ from xml.etree import ElementTree
 from collections import namedtuple
 
 
-# MatrixParameters = namedtuple('MatrixParameters', ['reference_fasta', 'reference_dups', 'minimum_coverage', 'minimum_proportion', 'matrix_folder', 'stats_folder', 'parameters', 'filter_matrix_format'])
+# MatrixParameters = namedtuple('MatrixParameters', [
+#     'reference_fasta',
+#     'reference_dups',
+#     'minimum_coverage',
+#     'minimum_proportion',
+#     'matrix_folder',
+#     'stats_folder',
+#     'parameters',
+#     'filter_matrix_format'
+# ])
 # MatrixParameters.__new__.__defaults__ = ("", "", "", "", "", "", "")
 
 NaspFile = namedtuple('NaspFile', ['path', 'name', 'aligner', 'snpcaller'])
@@ -26,9 +35,9 @@ def _write_parameters(node, data):
     return node
 
 
-def _add_input_file(node, filetype, attributes, file):
+def _add_input_file(node, filetype, attributes, filepath):
     subnode = ElementTree.SubElement(node, filetype, attributes)
-    subnode.text = file
+    subnode.text = filepath
     return subnode
 
 
@@ -40,16 +49,16 @@ def write_dto(matrix_parms, franken_fastas, vcf_files, xml_file):
     parm_node = ElementTree.SubElement(root, "parameters")
     _write_parameters(parm_node, matrix_parms)
     files_node = ElementTree.SubElement(root, "files")
-    for (name, aligner, file) in franken_fastas:
+    for (name, aligner, filepath) in franken_fastas:
         attributes = {'name': name, 'aligner': aligner}
-        _add_input_file(files_node, "frankenfasta", attributes, file)
-    for (name, aligner, snpcaller, file) in vcf_files:
+        _add_input_file(files_node, "frankenfasta", attributes, filepath)
+    for (name, aligner, snpcaller, filepath) in vcf_files:
         pattern = re.compile('^(.*?)(?:-(pre-aligned|bwa(mem)?|novo|bowtie2|snap]))?(?:-(pre-called|gatk|solsnp|varscan|samtools]))?$')
         match = pattern.match(name)
         if match:
             name = match.group(1)
         attributes = {'name': name, 'aligner': aligner, 'snpcaller': snpcaller}
-        _add_input_file(files_node, "vcf", attributes, file)
+        _add_input_file(files_node, "vcf", attributes, filepath)
     dom = minidom.parseString(ElementTree.tostring(root, 'utf-8'))
     with open(xml_file, 'w') as output:
         output.write(dom.toprettyxml(indent=" " * 5))
