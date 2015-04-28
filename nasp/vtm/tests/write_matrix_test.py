@@ -482,7 +482,9 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
         expected_files = ['TestContig_withallrefpos.tsv']
         expected_lines = (
             '\t'.join(write_matrix.get_header('withallrefpos', identifiers)) + '\n',
-            '',
+            '\t'.join(('TestContig::1', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0', '9', 'TestContig', '1', 'True', 'True', '','')) + '\n',
+            '\t'.join(('TestContig::2', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0', '9', 'TestContig', '2', 'True', 'True', '','')) + '\n',
+            '\t'.join(('TestContig::3', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0', '9', 'TestContig', '3', 'True', 'True', '','')) + '\n',
         )
 
         with TemporaryDirectory() as tmpdir:
