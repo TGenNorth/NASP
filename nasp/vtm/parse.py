@@ -87,7 +87,10 @@ class Position(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'pro
         return simple_base
 
 
-class SampleAnalysis(metaclass=ABCMeta):
+# class SampleAnalysis(metaclass=ABCMeta):
+class SampleAnalysis(object):
+
+    __metaclass__ = ABCMeta
 
     def __init__(self, filepath, name, aligner, snpcaller=None):
         """
