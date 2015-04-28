@@ -242,16 +242,21 @@ class Vcf(SampleAnalysis):
             for line in handle:
                 file_position += len(line)
                 if line.startswith('#CHROM'):
+                    # FIXME: Assert header is TSV and contains mandatory columns, otherwise the parser may fail with a key error when the fields are accessed.
                     # FIXME: Add support for multiple samples
                     # The sample columns follow the FORMAT column. Here is is assumed there is only one sample.
                     self._sample_name = line.rstrip()[line.index('FORMAT')+len('FORMAT\t'):].split('\t', 1)[0]
                     break
             else:
                 # FIXME: use appropriate error
-                raise Exception('Mandatory header not found in Vcf file:' + self._filepath)
+                raise Exception('Mandatory header not found in Vcf file: ' + self._filepath)
             for line in handle:
                 # The first column, #CHROM, is the contig name.
-                contig_name = line[:line.index('\t')]
+                try:
+                    contig_name = line[:line.index('\t')]
+                except ValueError:
+                    # FIXME: use appropriate error
+                    raise Exception('Expected TSV columns in Vcf file: ' + self._filepath)
                 if contig_name not in index:
                     index[contig_name] = file_position
                 file_position += len(line)
@@ -447,7 +452,13 @@ class FastaContig(Contig):
         self._is_reference = is_reference
 
     def __repr__(self):
-        return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self.name, self._length, self._file_position, self._file_path)
+        return "{0}(name={1!r}, length={2!r}, file_position={3!r}, file_path={4!r}, is_reference={5!r})".format(
+            self.__class__.__name__,
+            self.name, self._length,
+            self._file_position,
+            self._file_path,
+            self._is_reference
+        )
 
     def __len__(self):
         return self._length
@@ -479,7 +490,7 @@ class FastaContig(Contig):
                 line = line.rstrip()
                 # Stop iterating at EOF, blank line, or the start of the next contig
                 if line == "" or line.startswith('>'):
-                    return
+                    break
                 for call in line:
                     # FIXME: Will having "infinite" values create problems later on?
                     yield Position(
@@ -682,89 +693,86 @@ class VcfContig(Contig):
                 "500WT1_test","320",".","GTT","G","900848.97",".","AC=1;AF=1.00;AN=1;BaseQRankSum=1.732;DP=18490;FS=0.000;MLEAC=1;MLEAF=1.00;MQ=59.72;MQ0=0;MQRankSum=0.013;QD=24.36;ReadPosRankSum=0.538","GT:AD:DP:GQ:MLPSAC:MLPSAF:PL","1:1,16410:18355:99:1:1.00:900888,0"
         """
         with open(self._filepath, 'r') as handle:
-            position = 1
-            fieldnames = []
-            # Skip past the metadata to the header
-            for line in handle:
-                if line.startswith('#CHROM'):
-                    # Fieldnames are parsed here instead of by the DictReader because the file pointer has already moved
-                    # passed them.
-                    fieldnames = line.strip().split('\t')
-                    break
-            else:
-                # TODO: Raise an appropriate exception for a missing header.
-                raise Exception('VCF missing required header.')
-
-            handle.seek(self._file_position)
-
-            for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
-
-                # Stop iterating if a new contig has started.
-                if row['#CHROM'] != self._name:
-                    # print('\t', position, row['POS'], 'NEWCONTIG', self._filepath, row)
-                    break
-
-                row['POS'] = int(row['POS'])
-
-                # TODO: Collect indel statistics instead of skipping them.
-                # Skip past duplicate positions from indels.
-                if row['POS'] < position:
-                    # print('\t', position, row['POS'], 'INDEL', self._filepath, row)
-                    continue
-
-                # Yield empty rows to bridge position gaps.
-                while row['POS'] > position:
-                    position += 1
-                    # TODO: Remove
-                    # print('\t', position, row['POS'], 'GAP', self._filepath, row)
-                    yield self.VCF_EMPTY_POSITION
-
-                # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
-                # { 'NS': '3', 'DP': '4', 'AF': '0.5', 'DB': None, 'H2': None }
-                # The list comprehension splits the string by the ';' delimiter and each key=value pair by '='.
-                # If the element is not a key=value pair, the if condition assigns it the value None to guard against
-                # IndexErrors. Finally, the dictionary comprehension assembles the final result.
-                row['INFO'] = {elem[0]: elem[1] if len(elem) == 2 else None for elem in
-                               [key_value.split('=', 1) for key_value in row['INFO'].split(';')]}
-
-                # Join the FORMAT column vector with the sample column value vector as a dictionary.
-                # If the FORMAT column and a sample column named 'NA00001' contained the following vectors:
-                #
-                # +--------------+-----------------+
-                # | FORMAT       |  NA00001        |
-                # | ===========  +  ============== |
-                # | GT:GQ:DP:HQ  |  0|0:48:1:51,51 |
-                # +--------------+-----------------+
-                #
-                # The row key 'NA00001' would have the following value:
-                # { 'GT': 0|0, 'GQ': 48, 'DP': 1, 'HQ': 51,51 }
-                row[self._sample_name] = dict(zip(row['FORMAT'].split(':'), row[self._sample_name].split(':')))
-
-                # The genotype (GT) is an index to lookup the ALT allele for the sample.
-                # It may be phased (|), unphased (/), or neither. If the value is unavailable it is a '.'
-                if 'GT' in row[self._sample_name]:
-                    row[self._sample_name]['GT'] = row[self._sample_name]['GT'].split('|', 1)[0].split('/', 1)[0]
-
-                call = self._get_sample_call(row)
-                coverage = self._get_coverage(row)
-                # call != ref checks if the sample is a SNP. The ref may have more than one position if it's an indel.
-                proportion = self._get_proportion(row, coverage, call != row['REF'][:1])
-
-                position += 1
-                # print('\t', position, row['POS'], 'NORMAL', self._filepath, row)
-                # Yield the position.
-                yield Position(
-                    call=call,
-                    coverage=coverage,
-                    proportion=proportion,
-                )
-
-
-            # print('\t', position, row['POS'], 'EXHAUSTED', self._filepath, row)
-            # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
             while True:
-                position += 1
-                yield self.VCF_EMPTY_POSITION
+                position = 1
+                # TODO: Every contig scans through the metadata just to get the headers. Pass the header as an argument instead.
+                # Skip past the metadata to the header
+                for line in handle:
+                    if line.startswith('#CHROM'):
+                        # Fieldnames are parsed here instead of by the DictReader because the file pointer has already moved
+                        # passed them.
+                        fieldnames = line.strip().split('\t')
+                        break
+                else:
+                    # TODO: Raise an appropriate exception for a missing header.
+                    raise Exception('VCF missing required header.')
+
+                handle.seek(self._file_position)
+
+                for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
+
+                    # Stop iterating if a new contig has started.
+                    if row['#CHROM'] != self._name:
+                        break
+
+                    row['POS'] = int(row['POS'])
+
+                    # TODO: Collect indel statistics instead of skipping them.
+                    # Skip past duplicate positions from indels.
+                    if row['POS'] < position:
+                        continue
+
+                    # Yield empty rows to bridge position gaps.
+                    while row['POS'] > position:
+                        position += 1
+                        yield self.VCF_EMPTY_POSITION
+
+                    # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
+                    # { 'NS': '3', 'DP': '4', 'AF': '0.5', 'DB': None, 'H2': None }
+                    # The list comprehension splits the string by the ';' delimiter and each key=value pair by '='.
+                    # If the element is not a key=value pair, the if condition assigns it the value None to guard against
+                    # IndexErrors. Finally, the dictionary comprehension assembles the final result.
+                    row['INFO'] = {elem[0]: elem[1] if len(elem) == 2 else None for elem in
+                                   [key_value.split('=', 1) for key_value in row['INFO'].split(';')]}
+
+                    # Join the FORMAT column vector with the sample column value vector as a dictionary.
+                    # If the FORMAT column and a sample column named 'NA00001' contained the following vectors:
+                    #
+                    # +--------------+-----------------+
+                    # | FORMAT       |  NA00001        |
+                    # | ===========  +  ============== |
+                    # | GT:GQ:DP:HQ  |  0|0:48:1:51,51 |
+                    # +--------------+-----------------+
+                    #
+                    # The row key 'NA00001' would have the following value:
+                    # { 'GT': 0|0, 'GQ': 48, 'DP': 1, 'HQ': 51,51 }
+                    row[self._sample_name] = dict(zip(row['FORMAT'].split(':'), row[self._sample_name].split(':')))
+
+                    # The genotype (GT) is an index to lookup the ALT allele for the sample.
+                    # It may be phased (|), unphased (/), or neither. If the value is unavailable it is a '.'
+                    if 'GT' in row[self._sample_name]:
+                        row[self._sample_name]['GT'] = row[self._sample_name]['GT'].split('|', 1)[0].split('/', 1)[0]
+
+                    call = self._get_sample_call(row)
+                    coverage = self._get_coverage(row)
+                    # call != ref checks if the sample is a SNP. The ref may have more than one position if it's an indel.
+                    proportion = self._get_proportion(row, coverage, call != row['REF'][:1])
+
+                    position += 1
+                    # print('\t', position, row['POS'], 'NORMAL', self._filepath, row)
+                    # Yield the position.
+                    yield Position(
+                        call=call,
+                        coverage=coverage,
+                        proportion=proportion,
+                    )
+
+
+                # print('\t', position, row['POS'], 'EXHAUSTED', self._filepath, row)
+                # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
+                while True:
+                    position += 1
+                    yield self.VCF_EMPTY_POSITION
 
 
 class MalformedInputFile(Exception):

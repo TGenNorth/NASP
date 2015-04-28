@@ -13,6 +13,7 @@ Created on Jun 11, 2014
 from nasp import __version__ as nasp_version
 import logging
 import os
+import re
 
 
 try:
@@ -53,9 +54,6 @@ def _parse_args():
 
 
 def _expand_path(path):
-    import os
-    import re
-
     user_match = re.match('^(~)(.*)$', path)
     if user_match:
         path = os.path.expanduser(path)
@@ -63,16 +61,11 @@ def _expand_path(path):
 
 
 def _create_file_tuple(path):
-    import os
-
     name = os.path.splitext(os.path.basename(path))[0]
     return name, path
 
 
 def _find_files(path, extension):
-    import os
-    import re
-
     file_list = []
     for file in os.listdir(path):
         is_type = re.search('(.*)(\.%s)$' % extension, file, re.IGNORECASE)
@@ -84,7 +77,6 @@ def _find_files(path, extension):
 
 
 def _find_executable(application):  # This method is not OS-independent. Should work on a better way
-    import re
     import subprocess
 
     executable = ""
@@ -102,9 +94,6 @@ def _find_executable(application):  # This method is not OS-independent. Should 
 
 
 def _find_reads(path):
-    import os
-    import re
-
     read_list = []
     for file in os.listdir(path):
         is_read = re.search('(.*)(\.fastq(?:\.gz)?)$', file, re.IGNORECASE)
@@ -130,8 +119,6 @@ def _find_reads(path):
 
 
 def _get_bams(cwd):
-    import re
-
     bam_list = []
     response = input("\nDo you have pre-aligned SAM/BAM files you wish to include [N]? ")
     if re.match('^[Yy]', response):
@@ -144,8 +131,6 @@ def _get_bams(cwd):
 
 
 def _get_vcfs(cwd):
-    import re
-
     vcf_list = []
     response = input("\nDo you have pre-called VCFfiles you wish to include [N]? ")
     if re.match('^[Yy]', response):
@@ -157,8 +142,6 @@ def _get_vcfs(cwd):
 
 
 def _get_external_fastas(cwd, exclude):
-    import re
-
     fasta_list = []
     response = input("\nDo you have fasta files for external genomes you wish to include [Y]? ")
     if not re.match('^[Nn]', response):
@@ -175,8 +158,6 @@ def _get_external_fastas(cwd, exclude):
 
 
 def _get_reads(cwd):
-    import re
-
     read_list = []
     response = input("\nDo you have read files you wish to include [Y]? ")
     if not re.match('^[Nn]', response):
@@ -188,8 +169,6 @@ def _get_reads(cwd):
 
 
 def _get_application_path(application):
-    import os
-
     app_path = _find_executable(application)
     if not app_path:
         app_path = input("\nUnable to find '%s', please enter the full path to '%s': " % (application, application))
@@ -202,7 +181,6 @@ def _get_application_path(application):
 
 # TODO(jtravis): search CLASSPATH
 def _get_java_path(jarfile):
-    import os
     import fnmatch
 
     paths = ['/usr/share/java/']
@@ -228,9 +206,6 @@ def _get_java_path(jarfile):
 
 
 def _get_advanced_settings(app_name, app_path, app_args, job_parms):
-    import re
-    import os
-
     response = input("Would you like to set advanced %s settings [N]? " % app_name)
     if re.match('^[Yy]', response):
         alt_version = input("  Would you like to use an alternate %s version [N]? " % app_name)
@@ -261,8 +236,6 @@ def _get_advanced_settings(app_name, app_path, app_args, job_parms):
 
 
 def _get_aligners(queue, args):
-    import re
-
     aligner_list = []
     bwa_path = ""
     print(
@@ -312,8 +285,6 @@ def _get_aligners(queue, args):
 
 
 def _get_snpcallers(queue, args):
-    import re
-
     snpcaller_list = []
     using_gatk = False
     print(
@@ -355,8 +326,6 @@ def _get_snpcallers(queue, args):
 
 
 def _get_job_submitter():
-    import re
-
     job_submitter = "invalid"
     queue = ""
     args = ""
@@ -381,8 +350,6 @@ def _get_job_submitter():
 
 
 def _get_user_input(reference, output_folder):
-    import os
-    import re
     import sys
 
     configuration = {}
@@ -520,7 +487,6 @@ def _get_user_input(reference, output_folder):
     matrix_path = os.path.join(run_path, "vtm")
     if not os.path.exists(matrix_path):
         matrix_path = "vtm"
-    print();
     matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'8', 'mem_requested':'8', 'walltime':'48', 'queue':queue, 'args':args})
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
@@ -536,8 +502,6 @@ def _get_user_input(reference, output_folder):
 def main():
     import nasp.dispatcher as dispatcher
     import nasp.configuration_parser as configuration_parser
-    import os
-    import re
 
     commandline_args = _parse_args()
     if commandline_args.config:

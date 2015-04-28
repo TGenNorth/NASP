@@ -110,7 +110,6 @@ def _vcf_analysis_column(pattern, analysis_stats):
     Return:
         str: The format string for each analysis column.
     """
-    import itertools
     for pattern_num, analysis_stat in zip(pattern, itertools.chain.from_iterable(analysis_stats)):
         try:
             gt = int(pattern_num) - 1
