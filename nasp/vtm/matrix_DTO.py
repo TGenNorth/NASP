@@ -13,8 +13,8 @@ from xml.etree import ElementTree
 from collections import namedtuple
 
 
-MatrixParameters = namedtuple('MatrixParameters', ['reference_fasta', 'reference_dups', 'minimum_coverage', 'minimum_proportion', 'matrix_folder', 'stats_folder', 'parameters', 'filter_matrix_format'])
-MatrixParameters.__new__.__defaults__ = ("", "", "", "", "", "", "")
+# MatrixParameters = namedtuple('MatrixParameters', ['reference_fasta', 'reference_dups', 'minimum_coverage', 'minimum_proportion', 'matrix_folder', 'stats_folder', 'parameters', 'filter_matrix_format'])
+# MatrixParameters.__new__.__defaults__ = ("", "", "", "", "", "", "")
 
 NaspFile = namedtuple('NaspFile', ['path', 'name', 'aligner', 'snpcaller'])
 
