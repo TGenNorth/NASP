@@ -89,7 +89,7 @@ class Position(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'pro
 
 class SampleAnalysis(metaclass=ABCMeta):
 
-    def __init__(self, filepath, name, aligner, snpcaller):
+    def __init__(self, filepath, name, aligner, snpcaller=None):
         """
         A SampleAnalysis represents a file composed of DNA Contigs for a specific aligner and snpcaller combination.
         Multiple SampleAnalyses may be run on the same sample.
@@ -105,7 +105,7 @@ class SampleAnalysis(metaclass=ABCMeta):
         self._aligner = aligner
         self._snpcaller = snpcaller
         self._index = self._index_contigs()
-        logging.debug("{0}._index => {1!r}".format(self.__repr__(), self._index))
+        # logging.debug("{0}._index => {1!r}".format(self.__repr__(), self._index))
 
     def __lt__(self, other):
         """
@@ -139,6 +139,9 @@ class SampleAnalysis(metaclass=ABCMeta):
         Returns:
             str: sample_name::aligner,snpcaller
         """
+        if(self._snpcaller is None):
+             # Do not include the snpcaller if absent, such as a Fasta.
+            return "{0}::{1}".format(self._name, self._aligner)
         return "{0}::{1},{2}".format(self._name, self._aligner, self._snpcaller)
 
     # @property
@@ -278,8 +281,17 @@ class Fasta(SampleAnalysis):
             aligner (str): Name of the aligner used to create this file.
             is_reference (bool): True if the file is the reference genome. All other files will yield empty when the contig is exhausted.
         """
-        super(Fasta, self).__init__(filepath, name, aligner, None)
+        super(Fasta, self).__init__(filepath, name, aligner)
         self._is_reference = is_reference
+
+    def __repr__(self):
+        return "{0}(filepath={1!r}, name={2!r}, aligner={3!r}, is_reference={4!r})".format(
+            self.__class__.__name__,
+            self._filepath,
+            self._name,
+            self._aligner,
+            self._is_reference
+        )
 
     @property
     def contigs(self):
@@ -287,8 +299,8 @@ class Fasta(SampleAnalysis):
         Return
             FastaContig generator: Yields contigs sorted by length, longest to shortest.
         """
-        return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in self._index.items())
-        #return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in sorted(self._index.items(), key=lambda x: x[1].length, reverse=True))
+        #return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in self._index.items())
+        return (FastaContig(name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference) for name, contig_index in sorted(self._index.items(), key=lambda x: x[1].length, reverse=True))
 
     def get_contig(self, contig_name):
         """
@@ -492,7 +504,7 @@ class FastaContig(Contig):
                 if line == "" or line.startswith('>'):
                     break
                 for call in line:
-                    # FIXME: Will having "infinite" values create problems later on?
+                    # TODO: Should coverage and proportion be Infinity or '-'?
                     yield Position(
                         call=call,
                         #coverage=float('Infinity'),
@@ -501,7 +513,6 @@ class FastaContig(Contig):
                         proportion='-',
                     )
 
-        # FIXME: If the FastaContig is the reference, this while loop creates an infinite loop.
         # Yield empty positions when the contig is exhausted.
         while not self._is_reference:
             yield self.FASTA_EMPTY_POSITION
@@ -707,6 +718,7 @@ class VcfContig(Contig):
                     # TODO: Raise an appropriate exception for a missing header.
                     raise Exception('VCF missing required header.')
 
+                # Move to the beginning of the contig.
                 handle.seek(self._file_position)
 
                 for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
@@ -759,7 +771,6 @@ class VcfContig(Contig):
                     proportion = self._get_proportion(row, coverage, call != row['REF'][:1])
 
                     position += 1
-                    # print('\t', position, row['POS'], 'NORMAL', self._filepath, row)
                     # Yield the position.
                     yield Position(
                         call=call,
@@ -767,8 +778,6 @@ class VcfContig(Contig):
                         proportion=proportion,
                     )
 
-
-                # print('\t', position, row['POS'], 'EXHAUSTED', self._filepath, row)
                 # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
                 while True:
                     position += 1

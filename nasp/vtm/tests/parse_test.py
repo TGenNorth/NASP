@@ -5,10 +5,12 @@ import tempfile
 import types
 import os
 
-from nasp.vtm.parse import Contig, EmptyContig, FastaContig, VcfContig, Position
+from nasp.vtm.parse import Contig, EmptyContig, Fasta, FastaContig, VcfContig, Position
 
 
 # TODO: It should handle \n and \r\n line endings
+
+# TODO: Raise exception if Fasta contig sequence is intersperced with numbers and spaces.# See http://www.ncbi.nlm.nih.gov/BLAST/blastcgihelp.shtml
 
 
 class PositionTestCase(unittest.TestCase):
@@ -242,6 +244,51 @@ class FastaContigTestCase(unittest.TestCase):
         # It should yield empty positions after the contig is exhausted.
         self.assertEqual(Contig.FASTA_EMPTY_POSITION, next(observed))
         self.assertEqual(Contig.FASTA_EMPTY_POSITION, next(observed))
+
+
+# TODO: SampleAnalyses are sorted lexically by identifier
+
+class FastaTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUp(self):
+        self.fasta = Fasta('./test_data/example.fasta', 'test_fasta', 'test_aligner', is_reference=False)
+
+    def test_repr(self):
+        expected = "Fasta(filepath='./test_data/example.fasta', name='test_fasta', aligner='test_aligner', is_reference=False)"
+        self.assertEqual(expected, repr(self.fasta))
+
+    def test_identifier(self):
+        expected = 'test_fasta::test_aligner'
+        self.assertEqual(expected, self.fasta.identifier)
+
+    def test_get_contig(self):
+        """
+        The following tests assume FastaContig is working.
+        """
+        # It should return the correct contig at any file position or in any order.
+        contig0 = self.fasta.get_contig('contig0')
+        contig2 = self.fasta.get_contig('contig2')
+        contig1 = self.fasta.get_contig('contig1')
+
+        self.assertEqual('contig0', contig0.name)
+        self.assertEqual('contig1', contig1.name)
+        self.assertEqual('contig2', contig2.name)
+
+    def test_get_contig_empty(self):
+        contig = self.fasta.get_contig('DoesNotExist')
+        self.assertIsInstance(contig, EmptyContig)
+
+    def test_yields_contigs_longest_to_shortest(self):
+        expected = [
+            'gi|129295|sp|P01013|OVAX_CHICK',
+            '100CharacterContig',
+            '90CharacterContig',
+            '90CharacterContigNoBreak',
+            '90CharacterContig2'
+        ]
+        for contig, expect in zip(self.fasta.contigs, expected):
+            self.assertEqual(expect, contig.name)
 
 
 class VcfContigTestCase(unittest.TestCase):
