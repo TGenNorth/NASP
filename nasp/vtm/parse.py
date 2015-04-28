@@ -34,6 +34,7 @@ logging.basicConfig(filename='parse.log', level=logging.DEBUG)
 class Position(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'proportion'])):
     """
     SampleInfo is all the data collected for a single Sample position.
+    It is assumed call is a single base character.
 
     Attributes:
         call (str): Nucleotide call at the current position
@@ -46,11 +47,14 @@ class Position(namedtuple('SampleInfo', ['call', 'simple_call', 'coverage', 'pro
 
     def __new__(cls, call='X', simple_call='X', **sample_info):
         """
-        Set simple_call based on the value of call
+        Set simple_call based on the value of call.
         """
+        # Normalize all nucleotide bases to upper case for comparisons.
+        call = call.upper()
         return super().__new__(cls, call=call, simple_call=cls._simple_call(call), **sample_info)
 
-    # TODO: Remove allow_x and allow_del parameters
+    # TODO: Remove allow_x and allow_del parameters (unused)
+    # TODO: Remove dna_string[0].upper() if statement and raise exception if dna_string is not a single base call
     # NOTE: There are a lot of samples, does attaching this method add a lot of accumulative weight?
     @staticmethod
     def _simple_call(dna_string, allow_x=False, allow_del=False):
@@ -780,87 +784,3 @@ class MalformedInputFile(Exception):
             return_value += ": {0}".format(self._error_message)
         return_value += "!"
         return return_value
-
-
-        # class ReferenceContig(FastaContig):
-        #
-        #     def __init__(self, ref_path, dups_path=None, file_position=0):
-        #         """
-        #         Args:
-        #             ref_path (str): Path to the reference genome fasta.
-        #             dups_path (str): Path to the duplicates file.
-        #             file_position (int): File position of the first contig position after the contig description
-        #         """
-        #         super().__init__(ref_path, file_position)
-        #
-        #         # with open(self.filepath) as reference_handle, open(self.dups_path) if self.dups_path else none_context as dups_handle:
-        #         #     # TODO: handle (multiple) contigs
-        #         #     for line in zip(reference_handle, dups_handle):
-        #         #         # TODO: discard newline character
-        #         #         # Stop iterating at EOF or the start of the next contig
-        #         #         if line[0].startswith('>'):
-        #         #             return
-        #         #         for c in line:
-        #         #             yield ReferenceCalls(line[0], line[1])
-
-
-        # class MatrixContig(Contig):
-        #     # TODO: Raise exception if matrix reference != analysis reference
-        #     # "The reference in Matrix <filename> does not match the analysis reference"
-        #
-        #     def __init__(self, file_path, file_position, contig_name):
-        #         """
-        #         Attributes:
-        #             _file_path (str): Path to the NASP matrix file.
-        #             _file_position (int): File position of the first contig record.
-        #             _filter (list): Samples to filter from the matrix.
-        #             _name (str): Contig description read from the #CHROM column.
-        #         """
-        #         self._file_path = file_path
-        #         self._file_position = file_position
-        #         self._name = None
-        #
-        #     @property
-        #     def name(self):
-        #         """
-        #         Returns:
-        #             str: Contig description read from the #CHROM column.
-        #         """
-        #         if self._name is None:
-        #             with open(self._file_path) as handle:
-        #                 handle.seek(self._file_position)
-        #                 # TODO: Can the read stop at the first tab instead of the entire line?
-        #                 self._name, _, _ = handle.readline().partition('\t')
-        #
-        #         return self._name
-        #
-        #     @property
-        #     def positions(self):
-        #         """
-        #         Returns:
-        #             dict generator: Yields contig records.
-        #         """
-        #         with open(self._file_path) as handle:
-        #             # Parse the headers from the first line.
-        #             headers = handle.readline().rstrip().split('\t')
-        #             try:
-        #                 # Samples are between the Reference and #SNPcall columns in the Master Matrix
-        #                 samples = headers[2:headers.index('#SNPcall')]
-        #             except ValueError:
-        #                 # TODO: Raise exception, is this a master matrix?
-        #                 pass
-        #
-        #             # Move file pointer to the contig
-        #             handle.seek(self._file_position)
-        #             for row in csv.DictReader(handle, fieldnames=headers, delimiter='\t'):
-        #                 # Stop iterating at EOF or the start of the next contig
-        #                 if row['#CHROM'] != self._name:
-        #                     return
-        #                 # TODO: Create a selectors table representing the filtered samples and use the itertools.compress()
-        #                 # function to filter the position strings: CallWasMade, PassedDepthFilter, PassedProportionFilter,
-        #                 # Pattern. How can the other fields, such as the passed filter columns be updated?
-        #                 yield SampleInfo(
-        #                     call=row[self.sample_name],
-        #                     coverage=row['PassedDepthFilter'][self.i],
-        #                     proportion=row['PassedProportionFilter'][self.i],
-        #                 )
