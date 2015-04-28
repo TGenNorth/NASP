@@ -386,7 +386,11 @@ class Fasta(SampleAnalysis):
             return index
 
 
-class Contig(metaclass=ABCMeta):
+# class Contig(metaclass=ABCMeta):
+class Contig(object):
+
+    __metaclass__ = ABCMeta
+
     # An empty position represents gaps between positions or the sample contig is shorter than the
     # reference contig.
     FASTA_EMPTY_POSITION = Position(

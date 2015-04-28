@@ -536,3 +536,57 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
 
             # No other artifacts were created in the tmpdir.
             self.assertListEqual(expected_files, os.listdir(tmpdir))
+
+
+class WriteMissingSnpfastaTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # cls.metadata = 'fake metadata\n'
+        cls.positions = (position1, position2, position3)
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_write_masked_base_calls_for_each_sample_analysis(self):
+        expected_files = ['test_contig_a_missingdata.fasta', 'test_contig_b_missingdata.fasta', 'test_contig_c_missingdata.fasta']
+        with TemporaryDirectory() as tmpdir:
+            coroutine = write_matrix.write_missingdata_snpfasta(tmpdir, 'test_contig', ['a', 'b', 'c'])
+            coroutine.send(None)
+
+            # The files were created
+            self.assertListEqual(os.listdir(tmpdir), expected_files)
+
+            for position in self.positions:
+                coroutine.send(position)
+
+            # TODO: Assert each file has its corresponding calls
+
+
+class WriteBestsnpSnpfastaTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # cls.metadata = 'fake metadata\n'
+        cls.positions = (position1, position2, position3)
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_write_masked_base_calls_for_each_sample_analysis(self):
+        expected_files = ['test_contig_a_bestsnp.fasta', 'test_contig_b_bestsnp.fasta', 'test_contig_c_bestsnp.fasta']
+        with TemporaryDirectory() as tmpdir:
+            coroutine = write_matrix.write_bestsnp_snpfasta(tmpdir, 'test_contig', ['a', 'b', 'c'])
+            coroutine.send(None)
+
+            # The files were created
+            self.assertListEqual(os.listdir(tmpdir), expected_files)
+
+            for position in self.positions:
+                coroutine.send(position)
+
+            # TODO: Assert each file has its corresponding calls
