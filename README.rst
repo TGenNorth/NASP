@@ -1,3 +1,7 @@
+.. image:: https://landscape.io/github/TGenNorth/NASP/tests/landscape.svg?style=flat
+   :target: https://landscape.io/github/TGenNorth/NASP/tests
+   :alt: Code Health
+
 .. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
 
 The Northern Arizona SNP Pipeline (NASP)
