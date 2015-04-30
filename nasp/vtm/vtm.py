@@ -49,8 +49,8 @@ def _parse_args():
 
 def _index_contigs(reference_fasta, reference_dups, frankenfastas, vcfs, num_workers=None):
     """
-    At initialization, each SampleAnalysis will scan their file to build an index of contig file positions for random
-    access. This allows contigs be processed in parallel without assuming they appear in any order or exist in any given
+    At initialization, each SampleAnalysis will scan their file to build an index of contig file positions.
+    This allows contigs be processed in parallel without assuming they appear in any order or exist in any given
     sample. _index_contigs is a helper function that uses a ProcessPoolExecutor to allow this initialization to run in
     parallel.
 

@@ -48,3 +48,6 @@ docs/nasp.rst
 
 # IDE metadata
 .idea/
+
+# Logs
+parse.log
