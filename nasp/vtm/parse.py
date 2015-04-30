@@ -419,8 +419,10 @@ class Contig(object):
         """
         pass
 
+    @abstractmethod
     def __repr__(self):
-        return "{0}(name={1!r})".format(self.__class__.__name__, self.name)
+        # return "{0}(name={1!r})".format(self.__class__.__name__, self.name)
+        pass
 
 
 class EmptyContig(Contig):

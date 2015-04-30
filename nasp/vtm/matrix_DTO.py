@@ -12,7 +12,7 @@ Created on April 3, 2014
 from xml.etree import ElementTree
 from collections import namedtuple
 
-
+# TODO: Remove
 # MatrixParameters = namedtuple('MatrixParameters', [
 #     'reference_fasta',
 #     'reference_dups',

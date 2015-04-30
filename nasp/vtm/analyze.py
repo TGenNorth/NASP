@@ -49,7 +49,7 @@ PositionInfo = namedtuple('PositionInfo', [
 ])
 
 
-class GenomeAnalysis:
+class GenomeAnalysis(object):
 
     def __init__(self, coverage_threshold, proportion_threshold):
         """
@@ -250,6 +250,7 @@ class GenomeAnalysis:
                 })
             ]
         ]
+
         for sample in samples:
             # any - True if true in any of the analysis_stats for the same sample.
             any = Counter({
@@ -497,8 +498,8 @@ class GenomeAnalysis:
                 sample_stats = position.all_sample_stats
             else:
                 # All following sample stats are summed with the first sample stat.
-                for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(position.all_sample_stats)):
-                    sum.update(analysis)
+                for stats_sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(position.all_sample_stats)):
+                    stats_sum.update(analysis)
 
             for coroutine in coroutines:
                 coroutine.send(position)

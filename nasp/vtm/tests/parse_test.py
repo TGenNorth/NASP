@@ -5,7 +5,7 @@ import tempfile
 import types
 import os
 
-from nasp.vtm.parse import Contig, EmptyContig, Fasta, FastaContig, VcfContig, Position
+from nasp.vtm.parse import Contig, EmptyContig, Fasta, Vcf, FastaContig, VcfContig, Position
 
 
 # TODO: It should handle \n and \r\n line endings
@@ -64,10 +64,7 @@ class EmptyContigTestCase(unittest.TestCase):
         self.assertEqual(Contig.VCF_EMPTY_POSITION, next(contig.positions))
         self.assertEqual(Contig.VCF_EMPTY_POSITION, next(contig.positions))
         self.assertEqual(contig_name, contig.name)
-        self.assertEqual("EmptyContig(name='{contig_name}', is_fasta={is_fasta})".format(
-            contig_name=contig_name,
-            is_fasta=is_fasta
-        ), repr(contig))
+        self.assertEqual("EmptyContig(name='{0}', is_fasta={1})".format(contig_name, is_fasta), repr(contig))
 
 
 class FastaContigTestCase(unittest.TestCase):
@@ -387,10 +384,6 @@ class VcfContigTestCase(unittest.TestCase):
                 # break
             # self.assertEquals(contig.VCF_EMPTY_POSITION, p)
 
-        print(next(positions))
-
-        print(next(positions))
-
         for _, p in zip(range(6), contig.positions):
             print(p)
             self.assertNotEqual(contig.VCF_EMPTY_POSITION, p)
@@ -478,3 +471,39 @@ class VcfContigTestCase(unittest.TestCase):
         #             vcf = Vcf(handle.name, 'TestVcf', 'pre-aligned', 'pre-called')
         #             contig = vcf.get_contig('DoesNotExist')
         #             self.assertIsInstance(contig, EmptyContig)
+
+class VcfTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUp(self):
+        self.vcf = Vcf('./test_data/gatk.vcf', 'test_vcf', 'test_aligner', 'test_snpcaller')
+
+    def test_repr(self):
+        expected = "Vcf(filepath='./test_data/gatk.vcf', name='test_vcf', aligner='test_aligner', snpcaller='test_snpcaller')"
+        self.assertEqual(expected, repr(self.vcf))
+
+    def test_identifier(self):
+        expected = 'test_fasta::test_aligner'
+        self.assertEqual(expected, self.vcf.identifier)
+
+    def test_get_contig(self):
+        """
+        The following tests assume VcfContig is working.
+        """
+        # It should return the correct contig at any file position or in any order.
+        contigs = (
+            'contig0',
+            'contig1',
+            'contig2'
+        )
+        for contig_name in contigs:
+            contig = self.vcf.get_contig('contig0')
+
+            # Ensure it is not an EmptyContig
+            self.assertIsInstance(contig, VcfContig)
+            self.assertEqual(contig_name, contig.name)
+
+    def test_get_contig_empty(self):
+        # If the sample does not contain a contig, it should return an EmptyContig placeholder.
+        contig = self.vcf.get_contig('DoesNotExist')
+        self.assertIsInstance(contig, EmptyContig)

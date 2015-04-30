@@ -171,7 +171,7 @@ class AnalyzePositionDuplicate(unittest.TestCase):
     def test_duplicate_information_position(self):
         """
         Scenario: The reference was scanned for duplicate positions.
-        As a result, it is assumed all positions passed.
+        Positions marked as duplicates should not
 
         TODO:
         - is_reference_duplicated is True

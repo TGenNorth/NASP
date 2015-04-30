@@ -13,6 +13,7 @@ from collections import Counter
 
 from nasp.vtm.analyze import PositionInfo
 from nasp.vtm import write_matrix
+from nasp.vtm.parse import FastaContig
 
 
 contig_name = 'TestContig'
@@ -91,6 +92,44 @@ position2 = deepcopy(position1)
 
 #
 position3 = deepcopy(position1)
+
+
+class VcfMetadataTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_vcf_metadata(self):
+        identifiers = ('Sample{0}'.format(x) for x in range(5))
+        contigs = tuple(FastaContig('contig{0}'.format(x), x, 0, '', True) for x in range(5))
+        expected = '\n'.join((
+            '##fileFormat=VCFv4.2',
+            '##source=NASPvtest_version',
+            '##contig=<ID="contig0",length=0>',
+            '##contig=<ID="contig1",length=1>',
+            '##contig=<ID="contig2",length=2>',
+            '##contig=<ID="contig3",length=3>',
+            '##contig=<ID="contig4",length=4>##SAMPLE=<ID="Sample0",Genomes="Sample0",Mixture=1.0>',
+            '##SAMPLE=<ID="Sample1",Genomes="Sample1",Mixture=1.0>',
+            '##SAMPLE=<ID="Sample2",Genomes="Sample2",Mixture=1.0>',
+            '##SAMPLE=<ID="Sample3",Genomes="Sample3",Mixture=1.0>',
+            '##SAMPLE=<ID="Sample4",Genomes="Sample4",Mixture=1.0>##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">',
+            '##FILTER=<ID=NoCall,Description="No call for this sample at this position">',
+            '##FILTER=<ID=CovFail,Description="Insufficient depth of coverage for this sample at this position">',
+            '##FILTER=<ID=PropFail,Description="Insufficient proportion of reads were variant for this sample at this position">',
+            '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">',
+            '##FORMAT=<ID=FT,Number=1,Type=String,Description="Filters that failed for this sample at this position">\n',
+        ))
+
+        observed = write_matrix.get_vcf_metadata('test_version', identifiers, contigs)
+
+        self.assertEqual(expected, observed)
 
 
 class GetHeaderTestCase(unittest.TestCase):
