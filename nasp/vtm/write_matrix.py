@@ -70,7 +70,7 @@ def get_header(type, identifiers):
     )
 
     # all callable or missing data
-    if type in ['master', 'missingdata']:
+    if type in ['all_callable', 'missing_data']:
         matrix_header += ('CallWasMade', 'PassedDepthFilter', 'PassedProportionFilter')
 
     matrix_header += ('Pattern', 'Pattern#')
