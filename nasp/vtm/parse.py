@@ -559,6 +559,7 @@ class VcfContig(Contig):
         Note:
             Has the side effect of modifying the `record` ALT key.
         """
+        return_value = 'X'
 
         # REF is concatenated with ALT because the genotype (GT) allele values are indices for which ALT belongs
         # to which sample with REF at index 0.
