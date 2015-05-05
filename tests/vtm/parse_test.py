@@ -17,7 +17,6 @@ from nasp.vtm.parse import Contig, EmptyContig, Fasta, Vcf, FastaContig, VcfCont
 
 
 class PositionTestCase(unittest.TestCase):
-
     def test_simple_call_normalizes_to_uppercase_and_masks_degeneracies_with_N(self):
         observed = ['g', 'a', 't', 'c', 'd', 'x', '.']
         expected = ['G', 'A', 'T', 'C', 'N', 'N', 'N']
@@ -91,11 +90,11 @@ class FastaContigTestCase(unittest.TestCase):
                 "GATC\n"
                 "GGAA\n"
                 "\n"
-            # ),
-            # # No linebreak
-            # (
-            #     ">contig2\n"
-            #     "GATCGGAA"
+                # ),
+                # # No linebreak
+                # (
+                # ">contig2\n"
+                #     "GATCGGAA"
             )
             # TODO: >80 characters contig?
         )
@@ -250,13 +249,13 @@ class FastaContigTestCase(unittest.TestCase):
 # TODO: SampleAnalyses are sorted lexically by identifier
 
 class FastaTestCase(unittest.TestCase):
-
     @classmethod
     def setUp(self):
         self.fasta = Fasta(testdata.PARSE_FASTA, 'test_fasta', 'test_aligner', is_reference=False)
 
     def test_repr(self):
-        expected = "Fasta(filepath='{0}', name='test_fasta', aligner='test_aligner', is_reference=False)".format(testdata.PARSE_FASTA)
+        expected = "Fasta(filepath='{0}', name='test_fasta', aligner='test_aligner', is_reference=False)".format(
+            testdata.PARSE_FASTA)
         self.assertEqual(expected, repr(self.fasta))
 
     def test_identifier(self):
@@ -293,14 +292,13 @@ class FastaTestCase(unittest.TestCase):
 
 
 class VcfContigTestCase(unittest.TestCase):
-
     @classmethod
     def setUp(self):
         self.file_path = testdata.GATK_VCF
 
         # # Expected values
         # self.contigs_expected = (
-        #     {
+        # {
         #         'name': 'contig0',
         #         'file_position': 0 + len('>contig0\n'),
         #         'positions': (
@@ -378,6 +376,7 @@ class VcfContigTestCase(unittest.TestCase):
     @unittest.skip('Not Implemented')
     def test_foo(self):
         from nasp.vtm.parse import Vcf
+
         vcf = Vcf(self.file_path, '', '', '')
         contig = vcf.get_contig('500WT1_test')
 
@@ -387,59 +386,66 @@ class VcfContigTestCase(unittest.TestCase):
             if n == 315:
                 a = 'a'
                 # break
-            # self.assertEquals(contig.VCF_EMPTY_POSITION, p)
+                # self.assertEquals(contig.VCF_EMPTY_POSITION, p)
 
         for _, p in zip(range(6), contig.positions):
             print(p)
             self.assertNotEqual(contig.VCF_EMPTY_POSITION, p)
 
-    @unittest.skip("Not Implemented")
     def test_sample_vcfs_return_infinite_positions(self):
-        contig_name = 'sample_contig'
-        length = len(self.contig1_positions)
-        file_position = 0
-        filepath = self.fasta_file.name
-        is_reference = False
+        vcf = Vcf(testdata.GATK_VCF, 'test_name', 'test_aliner', 'test_snpcaller')
+        contig = vcf.get_contig('500WT1_test')
+        positions = contig.positions
 
-        contig1 = FastaContig(contig_name, length, file_position, filepath, is_reference)
-        positions = fasta.positions
+        expected = (
+            Position(call='C', simple_call='C', coverage=19049, proportion='-'),
+            Position(call='C', simple_call='C', coverage=19049, proportion='-'),
+            Position(call='T', simple_call='T', coverage=18824, proportion='-'),
+            Position(call='G', simple_call='G', coverage=18804, proportion='-'),
+            Position(call='X', simple_call='N', coverage='?', proportion='?'),
+            Position(call='X', simple_call='N', coverage='?', proportion='?'),
+            Position(call='G', simple_call='G', coverage=18895, proportion='-'),
+            Position(call='A', simple_call='A', coverage=19005, proportion='-'),
+        )
 
-        self.assertEqual(length, len(contig1))
-
-        for expected, observed in zip(self.contig1_positions, positions):
-            self.assertEqual(expected, observed)
+        # It should yield all the contig positions.
+        position = 0
+        for expect, observe in zip(expected, positions):
+            position += 1
+            self.assertEqual(expect, observe)
+        self.assertEqual(len(expected), position)
 
         # It should yield empty positions after the contig is exhausted.
-        self.assertEqual(Contig.FASTA_EMPTY_POSITION, next(positions))
-        self.assertEqual(Contig.FASTA_EMPTY_POSITION, next(positions))
+        self.assertEqual(VcfContig.VCF_EMPTY_POSITION, next(positions))
+        self.assertEqual(VcfContig.VCF_EMPTY_POSITION, next(positions))
 
 
-        # class VcfTestCase(unittest.TestCase):
-        #
-        #     @classmethod
-        #     def setUpClass(cls):
-        #         pass
-        #
-        #     def setUp(self):
-        #         # Create a mock fasta
-        #         self.vcf_file = tempfile.NamedTemporaryFile(mode='w+', delete=False)
-        #         self.vcf_file.write(header)
-        #         self.vcf_file.seek(0)
-        #
-        #     def tearDown(self):
-        #         os.remove(self.vcf_file)
-        #
-        #     # VCF Syntax tests
-        #
-        #     # TODO: empty file?
-        #
-        #     # TODO: invalid rows?
-        #
-        #     def test_vcf_missing_header_raises_MalformedInputFileException(self):
-        #         with self.assertRaises(MalformedInputFileException) as tempfile.NamedTemporaryFile(mode="w+") as handle:
-        #             vcf = Vcf(handle.name, 'name', 'aligner', 'snpcaller')
-        #
-        
+            # class VcfTestCase(unittest.TestCase):
+            #
+            #     @classmethod
+            #     def setUpClass(cls):
+            #         pass
+            #
+            #     def setUp(self):
+            #         # Create a mock fasta
+            #         self.vcf_file = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+            #         self.vcf_file.write(header)
+            #         self.vcf_file.seek(0)
+            #
+            #     def tearDown(self):
+            #         os.remove(self.vcf_file)
+            #
+            #     # VCF Syntax tests
+            #
+            #     # TODO: empty file?
+            #
+            #     # TODO: invalid rows?
+            #
+            #     def test_vcf_missing_header_raises_MalformedInputFileException(self):
+            #         with self.assertRaises(MalformedInputFileException) as tempfile.NamedTemporaryFile(mode="w+") as handle:
+            #             vcf = Vcf(handle.name, 'name', 'aligner', 'snpcaller')
+            #
+
     def test_vcf_contig_repr(self):
         contig_name = 'test_name'
         sample_name = 'test_sample'
@@ -453,14 +459,13 @@ class VcfContigTestCase(unittest.TestCase):
             file_position
         )
 
-
         vcf_contig = VcfContig(contig_name, sample_name, file_path, file_position)
 
         self.assertEqual(expected, repr(vcf_contig))
 
 
         #
-        #     def test_vcf_identifier(self):
+        # def test_vcf_identifier(self):
         #         with tempfile.NamedTemporaryFile(mode="w+") as handle:
         #             expected = "name::aligner,snpcaller"
         #
@@ -489,14 +494,15 @@ class VcfContigTestCase(unittest.TestCase):
         #             contig = vcf.get_contig('DoesNotExist')
         #             self.assertIsInstance(contig, EmptyContig)
 
-class VcfTestCase(unittest.TestCase):
 
+class VcfTestCase(unittest.TestCase):
     @classmethod
     def setUp(self):
         self.vcf = Vcf(testdata.GATK_VCF, 'test_vcf', 'test_aligner', 'test_snpcaller')
 
     def test_repr(self):
-        expected = "Vcf(filepath='{0}', name='test_vcf', aligner='test_aligner', snpcaller='test_snpcaller')".format(testdata.GATK_VCF)
+        expected = "Vcf(filepath='{0}', name='test_vcf', aligner='test_aligner', snpcaller='test_snpcaller')".format(
+            testdata.GATK_VCF)
         self.assertEqual(expected, repr(self.vcf))
 
     def test_identifier(self):
