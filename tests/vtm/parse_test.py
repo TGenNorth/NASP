@@ -35,6 +35,7 @@ class PositionTestCase(unittest.TestCase):
             pos = Position(call=observe, coverage='-', proportion='-')
             self.assertEqual(expect, pos.call)
 
+    @unittest.skip('Not Implemented')
     def test_multi_base_call_raises_exception(self):
         # TODO: use appropriate exception
         with self.assertRaises(Exception):
@@ -375,6 +376,7 @@ class VcfContigTestCase(unittest.TestCase):
         #     is_reference=True
         # )
 
+    @unittest.skip('Not Implemented')
     def test_foo(self):
         from nasp.vtm.parse import Vcf
         vcf = Vcf(self.file_path, '', '', '')
@@ -497,12 +499,10 @@ class VcfTestCase(unittest.TestCase):
         """
         # It should return the correct contig at any file position or in any order.
         contigs = (
-            'contig0',
-            'contig1',
-            'contig2'
+            '500WT1_test',
         )
         for contig_name in contigs:
-            contig = self.vcf.get_contig('contig0')
+            contig = self.vcf.get_contig('500WT1_test')
 
             # Ensure it is not an EmptyContig
             self.assertIsInstance(contig, VcfContig)

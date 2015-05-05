@@ -181,7 +181,7 @@ class SampleAnalysis(object):
         pass
 
     def __repr__(self):
-        return "{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__, self._filepath, self._name, self._aligner, self._snpcaller)
+        return "{0}(filepath={1!r}, name={2!r}, aligner={3!r}, snpcaller={4!r})".format(self.__class__.__name__, self._filepath, self._name, self._aligner, self._snpcaller)
 
 
 class Vcf(SampleAnalysis):
