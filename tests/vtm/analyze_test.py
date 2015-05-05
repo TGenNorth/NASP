@@ -248,7 +248,6 @@ class AnalyzePositionDuplicate(unittest.TestCase):
             PassedProportionFilter='--',
             Pattern=['1', '1', '2']
         )
-        print(self.analysis.analyze_position(reference_position, dups_position, samples))
         self.assertEqual(expected, self.analysis.analyze_position(reference_position, dups_position, samples))
 
 
