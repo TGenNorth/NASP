@@ -16,7 +16,7 @@ install:
 
 # command to run tests, e.g. python setup.py test
 script:
-    coverage run --source nasp python setup.py test
+    coverage run --source nasp setup.py test
 
 after_success:
     coveralls
