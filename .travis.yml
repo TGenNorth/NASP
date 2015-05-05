@@ -20,5 +20,7 @@ install:
 script:
     coverage run --source nasp setup.py test
 
-after_success:
-    coveralls
+#after_success:
+#    coveralls
+
+after_script: coveralls
