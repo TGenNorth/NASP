@@ -507,3 +507,48 @@ class VcfTestCase(unittest.TestCase):
         # If the sample does not contain a contig, it should return an EmptyContig placeholder.
         contig = self.vcf.get_contig('DoesNotExist')
         self.assertIsInstance(contig, EmptyContig)
+
+    def test_varscan_call_cannot_be_made(self):
+        """
+        VarScan may include a position with ALT values when a call cannot be made.
+        It should still be called missing (X).
+        """
+
+        # The following is from a SRR011186 sample using bwamem and varscan.
+        # The positions from the source data were 34072-34074.
+        vcf_data = (
+            "#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SRR011186\n"
+            "gi|561108321|ref|NC_018143.2|	1	.	GC	C	.	PASS	ADP=114;WT=0;HET=0;HOM=1;NC=0	GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR	1/1:255:114:114:6:108:94.74%:1.6043E-58:40:38:2:4:46:62\n"
+            # This position should be called missing because the GT column is './.'
+            "gi|561108321|ref|NC_018143.2|	2	.	C	G	.	PASS	ADP=108;WT=1;HET=0;HOM=0;NC=0	GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR	./.:.:108\n"
+            "gi|561108321|ref|NC_018143.2|	3	.	A	.	.	PASS	ADP=112;WT=1;HET=0;HOM=0;NC=0	GT:GQ:SDP:DP:RD:AD:FREQ:PVAL:RBQ:ABQ:RDF:RDR:ADF:ADR	0/0:209:112:112:111:0:0%:1E0:38:0:47:64:0:0\n"
+        )
+
+        expected = (
+            Position(call='G', simple_call='G', coverage=114, proportion=0.05263157894736842),
+            Position(call='X', simple_call='N', coverage=108.0, proportion='-'),
+            Position(call='A', simple_call='A', coverage=112, proportion=0.9910714285714286)
+        )
+
+        with tempfile.NamedTemporaryFile('w+') as tmpfile:
+            # Seed the file with test data
+            tmpfile.write(vcf_data)
+            tmpfile.seek(0)
+
+            # Find the test contig.
+            vcf = Vcf(tmpfile.name, 'SRR011186', 'varscan', 'bwamem')
+            contig = vcf.get_contig('gi|561108321|ref|NC_018143.2|')
+            positions = contig.positions
+            self.assertIsInstance(contig, VcfContig)
+
+            # Check position values.
+            position = 0
+            for expect, observe in zip(expected, positions):
+                position += 1
+                self.assertEqual(expect, observe)
+
+            # It yields all expected positions
+            self.assertEqual(position, len(expected))
+
+            # All following positions should be empty
+            self.assertEqual(VcfContig.VCF_EMPTY_POSITION, next(positions))

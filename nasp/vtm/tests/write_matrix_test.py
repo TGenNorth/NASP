@@ -181,7 +181,7 @@ class GetHeaderTestCase(unittest.TestCase):
             'Pattern',
             'Pattern#'
         )
-        self.assertEqual(expected, write_matrix.get_header('master', identifiers))
+        self.assertEqual(expected, write_matrix.get_header('all_callable', identifiers))
 
     def test_bestsnp(self):
         expected = (
@@ -242,7 +242,7 @@ class GetHeaderTestCase(unittest.TestCase):
             'Pattern',
             'Pattern#'
         )
-        self.assertEqual(expected, write_matrix.get_header('missingdata', identifiers))
+        self.assertEqual(expected, write_matrix.get_header('missing_data', identifiers))
 
     def test_withallrefpos(self):
         expected = (
@@ -398,7 +398,14 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
         expected_lines = (
             self.metadata,
             '\t'.join(write_matrix.get_header('vcf', identifiers)) + '\n',
-            '',
+            'TestContig	1	.	A	g,d,B,D,m,Y,M,T,r,R,k,v,K,W,y,H,V,N,a,S,t,.,G,n,s,C,b,h,w,c	.	PASS	AN=31;NS=3	GT:FT',
+            'TestContig	1	.	A	k,D,W,r,g,m,T,K,w,c,a,y,H,h,v,s,N,M,C,n,t,b,.,V,G,B,R,d,Y,S	.	PASS	AN=31;NS=3	GT:FT',
+            'TestContig	1	.	A	v,V,H,g,.,W,c,m,k,G,K,d,a,M,y,r,Y,t,B,T,D,S,b,n,s,h,N,C,w,R	.	PASS	AN=31;NS=3	GT:FT',
+            'TestContig	1	.	A	S,V,w,b,M,C,K,k,H,T,R,W,g,n,d,a,B,Y,c,G,m,N,s,h,y,D,.,t,v,r	.	PASS	AN=31;NS=3	GT:FT',
+            'TestContig	1	.	A	K,H,h,w,g,b,T,B,v,n,.,W,D,t,V,y,S,d,s,a,k,G,N,m,r,Y,M,R,C,c	.	PASS	AN=31;NS=3	GT:FT',
+            'TestContig	1	.	A	c,R,t,n,C,K,d,H,N,a,r,k,Y,m,g,.,b,B,G,h,v,W,T,y,s,V,D,M,w,S	.	PASS	AN=31;NS=3	GT:FT',
+            'TestContig	1	.	A	Y,H,h,N,v,T,m,G,S,B,w,s,R,c,W,n,d,r,a,k,K,.,V,y,b,g,C,M,D,t	.	PASS	AN=31;NS=3	GT:FT',
+            'TestContig	1	.	A	T,B,k,G,Y,D,H,w,m,c,a,.,t,d,g,M,n,K,b,s,C,N,W,S,v,V,R,r,y,h	.	PASS	AN=31;NS=3	GT:FT				',
         )
 
         with TemporaryDirectory() as tmpdir:
@@ -406,6 +413,7 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             writer.send(None)
 
             for position in self.positions:
+                print("POSITION", position)
                 writer.send(position)
             writer.close()
 
@@ -415,6 +423,7 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             with open(os.path.join(tmpdir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
                 for expected_line, line in zip(expected_lines, handle):
+                    print(line)
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
@@ -521,9 +530,15 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
         expected_files = ['TestContig_withallrefpos.tsv']
         expected_lines = (
             '\t'.join(write_matrix.get_header('withallrefpos', identifiers)) + '\n',
-            '\t'.join(('TestContig::1', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0', '9', 'TestContig', '1', 'True', 'True', '','')) + '\n',
-            '\t'.join(('TestContig::2', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0', '9', 'TestContig', '2', 'True', 'True', '','')) + '\n',
-            '\t'.join(('TestContig::3', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0', '9', 'TestContig', '3', 'True', 'True', '','')) + '\n',
+            '\t'.join((
+            'TestContig::1', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0',
+            '9', 'TestContig', '1', 'True', 'True', '', '')) + '\n',
+            '\t'.join((
+            'TestContig::2', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0',
+            '9', 'TestContig', '2', 'True', 'True', '', '')) + '\n',
+            '\t'.join((
+            'TestContig::3', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0',
+            '9', 'TestContig', '3', 'True', 'True', '', '')) + '\n',
         )
 
         with TemporaryDirectory() as tmpdir:
@@ -550,14 +565,18 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
 
 
     def test_write_bestsnp_snpfasta(self):
-        expected_files = ['TestContig_withallrefpos.tsv']
+        expected_files = [
+            'TestContig_sample1::aligner,snpcaller_bestsnp.fasta',
+            'TestContig_sample2::aligner1,snpcaller_bestsnp.fasta',
+            'TestContig_sample2::aligner2,snpcaller_bestsnp.fasta',
+            'TestContig_sample3::aligner,snpcaller_bestsnp.fasta'
+        ]
         expected_lines = (
-            '\t'.join(write_matrix.get_header('withallrefpos', identifiers)) + '\n',
-            '',
+            'AAA',
         )
 
         with TemporaryDirectory() as tmpdir:
-            writer = write_matrix.write_withallrefpos_matrix(tmpdir, contig_name, identifiers)
+            writer = write_matrix.write_bestsnp_snpfasta(tmpdir, contig_name, identifiers)
             writer.send(None)
 
             for position in self.positions:
@@ -592,7 +611,8 @@ class WriteMissingSnpfastaTestCase(unittest.TestCase):
         pass
 
     def test_write_masked_base_calls_for_each_sample_analysis(self):
-        expected_files = ['test_contig_a_missingdata.fasta', 'test_contig_b_missingdata.fasta', 'test_contig_c_missingdata.fasta']
+        expected_files = ['test_contig_a_missingdata.fasta', 'test_contig_b_missingdata.fasta',
+                          'test_contig_c_missingdata.fasta']
         with TemporaryDirectory() as tmpdir:
             coroutine = write_matrix.write_missingdata_snpfasta(tmpdir, 'test_contig', ['a', 'b', 'c'])
             coroutine.send(None)
@@ -603,7 +623,7 @@ class WriteMissingSnpfastaTestCase(unittest.TestCase):
             for position in self.positions:
                 coroutine.send(position)
 
-            # TODO: Assert each file has its corresponding calls
+                # TODO: Assert each file has its corresponding calls
 
 
 class WriteBestsnpSnpfastaTestCase(unittest.TestCase):
@@ -630,4 +650,4 @@ class WriteBestsnpSnpfastaTestCase(unittest.TestCase):
             for position in self.positions:
                 coroutine.send(position)
 
-            # TODO: Assert each file has its corresponding calls
+                # TODO: Assert each file has its corresponding calls

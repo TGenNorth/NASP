@@ -559,7 +559,6 @@ class VcfContig(Contig):
         Note:
             Has the side effect of modifying the `record` ALT key.
         """
-        return_value = 'X'
 
         # REF is concatenated with ALT because the genotype (GT) allele values are indices for which ALT belongs
         # to which sample with REF at index 0.
@@ -569,7 +568,8 @@ class VcfContig(Contig):
             record['ALT'] = [record['REF']] + record['ALT'].split(',')
 
         # FIXME indels
-        return_value = None
+        # return_value = None
+        return_value = 'X'
         if len(record['ALT']) == 1:
             return_value = record['ALT'][0]
         if 'GT' in record[self._sample_name] and record[self._sample_name]['GT'] != '.':

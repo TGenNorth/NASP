@@ -323,7 +323,7 @@ def write_master_matrix(directory, contig_name, identifiers):
         identifiers (tuple of
     """
     with open('{0}_master.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=get_header('all_callable', identifiers), delimiter='\t', lineterminator='\n')
+        writer = csv.DictWriter(handle, fieldnames=get_header('master', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
         while True:
@@ -371,7 +371,7 @@ def write_missingdata_matrix(directory, contig_name, identifiers):
         identifiers:
     """
     with open('{0}_missingdata.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=get_header('missing_data', identifiers), delimiter='\t', lineterminator='\n')
+        writer = csv.DictWriter(handle, fieldnames=get_header('missingdata', identifiers), delimiter='\t', lineterminator='\n')
         writer.writeheader()
         position = 0
         while True:
