@@ -376,14 +376,14 @@ class GenomeAnalysis(object):
                     elif analysis.call == reference_position.call:
                         position_stats['called_reference'] += 1
                         analysis_stats['called_reference'] = 1
-                    elif dups_position.call != '1':
+                    elif not is_reference_duplicated:
                         # Called A/C/G/T and doesn't match the reference.
                         position_stats['called_snp'] += 1
                         analysis_stats['called_snp'] = 1
                         is_missing_matrix = True
 
                     # Sample stats is a little stricter than the matrices on what passes.
-                    if dups_position.call == '1':
+                    if is_reference_duplicated:
                         analysis_stats['quality_breadth'] = 0
                         analysis_stats['called_degen'] = 0
                         analysis_stats['called_reference'] = 0

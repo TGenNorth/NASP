@@ -172,12 +172,12 @@ class AnalyzePositionDuplicate(unittest.TestCase):
     def test_duplicate_information_position(self):
         """
         Scenario: The reference was scanned for duplicate positions.
-        Positions marked as duplicates should not
+        Positions marked as duplicates are not quality positions and should not increment the sample statistics.
 
-        TODO:
         - is_reference_duplicated is True
         - is_missing_matrix is False
         - is_all_quality_breadth is False
+        - is_all_passed_consensus is False
         - None of the sample stats are incremented
         """
 
@@ -214,40 +214,41 @@ class AnalyzePositionDuplicate(unittest.TestCase):
         expected = PositionInfo(
             is_all_called=True,
             is_reference_clean=True,
-            is_reference_duplicated=False,
+            is_reference_duplicated=True,
             is_all_passed_coverage=True,
             is_all_passed_proportion=True,
-            is_all_passed_consensus=True,
-            is_all_quality_breadth=True,
+            is_all_passed_consensus=False,
+            is_all_quality_breadth=False,
             is_best_snp=False,
             all_sample_stats=[
-                (
-                    Counter({'quality_breadth': 1, 'was_called': 1, 'called_reference': 1, 'passed_proportion_filter': 1, 'passed_coverage_filter': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'quality_breadth': 1, 'was_called': 1, 'called_reference': 1, 'passed_proportion_filter': 1, 'passed_coverage_filter': 1, 'called_snp': 0, 'called_degen': 0})),
                 [
-                    Counter({'quality_breadth': 1, 'was_called': 1, 'called_reference': 1, 'passed_proportion_filter': 1, 'passed_coverage_filter': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'quality_breadth': 1, 'was_called': 1, 'called_reference': 1, 'passed_proportion_filter': 1, 'passed_coverage_filter': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'quality_breadth': 1, 'was_called': 1, 'called_reference': 1, 'passed_proportion_filter': 1, 'passed_coverage_filter': 1, 'called_snp': 0, 'called_degen': 0})
+                    Counter({'passed_coverage_filter': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_reference': 0, 'quality_breadth': 0, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'passed_coverage_filter': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_reference': 0, 'quality_breadth': 0, 'called_snp': 0, 'called_degen': 0})
+                ], [
+                    Counter({'passed_coverage_filter': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_reference': 0, 'quality_breadth': 0, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'passed_coverage_filter': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_reference': 0, 'quality_breadth': 0, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'passed_coverage_filter': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_reference': 0, 'quality_breadth': 0, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'passed_coverage_filter': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_reference': 0, 'quality_breadth': 0, 'called_snp': 0, 'called_degen': 0})
                 ]
             ],
             is_missing_matrix=False,
             called_reference=1,
-
             called_snp=0,
-            passed_coverage_filter=1,
-            passed_proportion_filter=1,
-            num_A=0,
+            passed_coverage_filter=2,
+            passed_proportion_filter=2,
+            num_A=1,
             num_C=0,
             num_G=1,
             num_T=0,
             num_N=0,
-            call_str=['G', 'G'],
-            masked_call_str=['G', 'G'],
-            CallWasMade='Y',
-            PassedDepthFilter='-',
-            PassedProportionFilter='-',
-            Pattern=['1', '1']
+            call_str=['G', 'G', 'A'],
+            masked_call_str=['G', 'G', 'A'],
+            CallWasMade='YY',
+            PassedDepthFilter='--',
+            PassedProportionFilter='--',
+            Pattern=['1', '1', '2']
         )
+        print(self.analysis.analyze_position(reference_position, dups_position, samples))
         self.assertEqual(expected, self.analysis.analyze_position(reference_position, dups_position, samples))
 
 
