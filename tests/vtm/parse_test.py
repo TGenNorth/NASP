@@ -5,8 +5,12 @@ import tempfile
 import types
 import os
 
+from tests.vtm import testdata
+
 from nasp.vtm.parse import Contig, EmptyContig, Fasta, Vcf, FastaContig, VcfContig, Position
 
+
+# TODO: Relative and absolute paths
 
 # TODO: It should handle \n and \r\n line endings
 
@@ -249,10 +253,10 @@ class FastaTestCase(unittest.TestCase):
 
     @classmethod
     def setUp(self):
-        self.fasta = Fasta('./test_data/example.fasta', 'test_fasta', 'test_aligner', is_reference=False)
+        self.fasta = Fasta(testdata.PARSE_FASTA, 'test_fasta', 'test_aligner', is_reference=False)
 
     def test_repr(self):
-        expected = "Fasta(filepath='./test_data/example.fasta', name='test_fasta', aligner='test_aligner', is_reference=False)"
+        expected = "Fasta(filepath='{0}', name='test_fasta', aligner='test_aligner', is_reference=False)".format(testdata.PARSE_FASTA)
         self.assertEqual(expected, repr(self.fasta))
 
     def test_identifier(self):
@@ -292,7 +296,7 @@ class VcfContigTestCase(unittest.TestCase):
 
     @classmethod
     def setUp(self):
-        self.file_path = './test_data/gatk.vcf'
+        self.file_path = testdata.GATK_VCF
 
         # # Expected values
         # self.contigs_expected = (
@@ -476,14 +480,14 @@ class VcfTestCase(unittest.TestCase):
 
     @classmethod
     def setUp(self):
-        self.vcf = Vcf('./test_data/gatk.vcf', 'test_vcf', 'test_aligner', 'test_snpcaller')
+        self.vcf = Vcf(testdata.GATK_VCF, 'test_vcf', 'test_aligner', 'test_snpcaller')
 
     def test_repr(self):
-        expected = "Vcf(filepath='./test_data/gatk.vcf', name='test_vcf', aligner='test_aligner', snpcaller='test_snpcaller')"
+        expected = "Vcf(filepath='{0}', name='test_vcf', aligner='test_aligner', snpcaller='test_snpcaller')".format(testdata.GATK_VCF)
         self.assertEqual(expected, repr(self.vcf))
 
     def test_identifier(self):
-        expected = 'test_fasta::test_aligner'
+        expected = 'test_vcf::test_aligner,test_snpcaller'
         self.assertEqual(expected, self.vcf.identifier)
 
     def test_get_contig(self):
@@ -512,6 +516,8 @@ class VcfTestCase(unittest.TestCase):
         """
         VarScan may include a position with ALT values when a call cannot be made.
         It should still be called missing (X).
+
+        TODO: Add See Also VarScan documentation
         """
 
         # The following is from a SRR011186 sample using bwamem and varscan.
