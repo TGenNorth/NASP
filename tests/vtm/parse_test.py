@@ -9,7 +9,6 @@ from tests.vtm import testdata
 
 from nasp.vtm.parse import Contig, EmptyContig, Fasta, Vcf, FastaContig, VcfContig, Position
 
-
 # TODO: Relative and absolute paths
 
 # TODO: It should handle \n and \r\n line endings
