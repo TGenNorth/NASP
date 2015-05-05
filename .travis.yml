@@ -1,6 +1,8 @@
 # Config file for automatic testing at travis-ci.org
 
-language: python
+language: python 
+
+cache: pip
 
 python:
   - "3.4"
