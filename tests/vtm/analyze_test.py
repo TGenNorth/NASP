@@ -188,12 +188,9 @@ class AnalyzePositionDuplicate(unittest.TestCase):
             is_best_snp=False,
             all_sample_stats=[
                 [
-                    Counter(
-                        {'quality_breadth': 1, 'called_reference': 1, 'called_snp': 1,
-                         'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1,
-                         'called_degen': 0}), Counter(
-                    {'quality_breadth': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1,
-                     'was_called': 1, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0})], [
+                    Counter({'quality_breadth': 1, 'called_reference': 1, 'called_snp': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_degen': 0}),
+                    Counter({'quality_breadth': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0})
+                ], [
                     Counter({'quality_breadth': 1, 'called_reference': 1, 'called_snp': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_degen': 0}),
                     Counter({'quality_breadth': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0}),
                     Counter({'quality_breadth': 1, 'called_reference': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_snp': 0, 'called_degen': 0}),
@@ -357,31 +354,25 @@ class AnalyzePositionTestCase(unittest.TestCase):
                 )
             ),
         )
+
         expected = PositionInfo(
             is_all_called=True,
             is_reference_clean=True,
-            is_reference_duplicated=True,
+            is_reference_duplicated=False,
             is_all_passed_coverage=True,
             is_all_passed_proportion=True,
             is_all_passed_consensus=True,
-            is_all_quality_breadth=False,
+            is_all_quality_breadth=True,
             is_best_snp=False,
             all_sample_stats=[
                 [
-                    Counter({'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1,
-                             'quality_breadth': 0, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1,
-                             'quality_breadth': 0, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0})
-                ],
-                [
-                    Counter({'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1,
-                             'quality_breadth': 0, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1,
-                             'quality_breadth': 0, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1,
-                             'quality_breadth': 0, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1,
-                             'quality_breadth': 0, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0})
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0})
+                ], [
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0})
                 ]
             ],
             is_missing_matrix=False,

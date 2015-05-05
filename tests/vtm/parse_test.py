@@ -439,15 +439,26 @@ class VcfContigTestCase(unittest.TestCase):
         #         with self.assertRaises(MalformedInputFileException) as tempfile.NamedTemporaryFile(mode="w+") as handle:
         #             vcf = Vcf(handle.name, 'name', 'aligner', 'snpcaller')
         #
-        #     def test_vcf_repr(self):
-        #         with tempfile.NamedTemporaryFile(mode="w+") as handle:
-        #             expected = "Vcf('{0}', 'name', 'aligner', 'snpcaller')".format(handle.name)
-        #
-        #             handle.write(header)
-        #             handle.seek(0)
-        #             vcf = Vcf(handle.name, 'name', 'aligner', 'snpcaller')
-        #
-        #         self.assertEqual(expected, repr(vcf))
+        
+    def test_vcf_contig_repr(self):
+        contig_name = 'test_name'
+        sample_name = 'test_sample'
+        file_path = 'test/path'
+        file_position = 0
+
+        expected = 'VcfContig(contig_name={0!r}, sample_name={1!r}, filepath={2!r}, file_position={3!r})'.format(
+            contig_name,
+            sample_name,
+            file_path,
+            file_position
+        )
+
+
+        vcf_contig = VcfContig(contig_name, sample_name, file_path, file_position)
+
+        self.assertEqual(expected, repr(vcf_contig))
+
+
         #
         #     def test_vcf_identifier(self):
         #         with tempfile.NamedTemporaryFile(mode="w+") as handle:
