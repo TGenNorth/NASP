@@ -798,14 +798,19 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
                 if is_first_contig:
                     # TODO: Replace with shutil.move which can handle cross-filesystem moves.
                     os.rename(partial, complete)
-                    futures[index].set_result((futures, index))
+                    #futures[index].set_result((futures, index))
                 else:
                     # Schedule a process to append the next contig as soon as the previous contig is done.
+                    # if matrix.endswith('.vcf'):
+                    #     task = functools.partial(_concat_matrix, partial, complete, vcf_metadata_len)
+                    # else:
+                    #     task = functools.partial(_concat_matrix, partial, complete, 0)
+                    # futures[index].add_done_callback(_swap_future(executor, task))
+
                     if matrix.endswith('.vcf'):
-                        task = functools.partial(_concat_matrix, partial, complete, vcf_metadata_len)
+                        _concat_matrix(partial, complete, vcf_metadata_len)
                     else:
-                        task = functools.partial(_concat_matrix, partial, complete, 0)
-                    futures[index].add_done_callback(_swap_future(executor, task))
+                        _concat_matrix(partial, complete, 0)
             is_first_contig = False
 
             # TODO: Is there enough work here to run in a separate process?
