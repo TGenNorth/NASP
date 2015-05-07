@@ -188,13 +188,19 @@ class AnalyzePositionDuplicate(unittest.TestCase):
             is_best_snp=False,
             all_sample_stats=[
                 [
-                    Counter({'quality_breadth': 1, 'called_reference': 1, 'called_snp': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_degen': 0}),
-                    Counter({'quality_breadth': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0})
+                    Counter({'quality_breadth': 1, 'called_reference': 1, 'called_snp': 1, 'passed_coverage_filter': 1,
+                             'passed_proportion_filter': 1, 'was_called': 1, 'called_degen': 0}),
+                    Counter({'quality_breadth': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1,
+                             'was_called': 1, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0})
                 ], [
-                    Counter({'quality_breadth': 1, 'called_reference': 1, 'called_snp': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_degen': 0}),
-                    Counter({'quality_breadth': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'quality_breadth': 1, 'called_reference': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'quality_breadth': 1, 'called_snp': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1, 'was_called': 1, 'called_reference': 0, 'called_degen': 0})
+                    Counter({'quality_breadth': 1, 'called_reference': 1, 'called_snp': 1, 'passed_coverage_filter': 1,
+                             'passed_proportion_filter': 1, 'was_called': 1, 'called_degen': 0}),
+                    Counter({'quality_breadth': 1, 'passed_coverage_filter': 1, 'passed_proportion_filter': 1,
+                             'was_called': 1, 'called_reference': 0, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'quality_breadth': 1, 'called_reference': 1, 'passed_coverage_filter': 1,
+                             'passed_proportion_filter': 1, 'was_called': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'quality_breadth': 1, 'called_snp': 1, 'passed_coverage_filter': 1,
+                             'passed_proportion_filter': 1, 'was_called': 1, 'called_reference': 0, 'called_degen': 0})
                 ]
             ],
             is_missing_matrix=True,
@@ -366,13 +372,19 @@ class AnalyzePositionTestCase(unittest.TestCase):
             is_best_snp=False,
             all_sample_stats=[
                 [
-                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0})
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1,
+                             'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1,
+                             'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0})
                 ], [
-                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
-                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1, 'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0})
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1,
+                             'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1,
+                             'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1,
+                             'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0}),
+                    Counter({'called_reference': 1, 'passed_coverage_filter': 1, 'quality_breadth': 1, 'was_called': 1,
+                             'passed_proportion_filter': 1, 'called_snp': 0, 'called_degen': 0})
                 ]
             ],
             is_missing_matrix=False,
@@ -405,22 +417,103 @@ class AnalyzePositionTestCase(unittest.TestCase):
         # print(position)
 
 
+from tests.vtm import testdata
+from nasp.vtm.parse import EmptyContig, FastaContig, Fasta
+
+
 class AnalyzeContigTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         pass
 
     def setUp(self):
-        pass
+        fasta = Fasta(testdata.PARSE_FASTA, 'test_data', None, False)
+        ref_fasta = Fasta(testdata.PARSE_FASTA, 'test_data', None, True)
+
+        self.analysis = GenomeAnalysis(10, .9)
+        self.coroutine_fn = lambda *arg: (self.CoroutineMock(), self.CoroutineMock())
+        self.dups_contig = fasta
+        self.reference_contig = ref_fasta.get_contig('ContigWithFilePositionOffset')
+        self.sample_groups = (
+            (
+                fasta,
+                fasta
+            ), (
+                fasta,
+            ), (
+                fasta,
+                fasta
+            )
+        )
 
     def tearDown(self):
         pass
 
-        # # Infinite loop
-        # def test_sample_positions_empty_sample_analyses(self):
-        # raise NotImplementedError
-        # contig_name = 'foo'
-        # sample_positions = tuple(tuple())
-        # positions = analyze.sample_positions(contig_name, sample_positions)
-        # for position in positions:
-        # print(position)
+    # def test_it_calls_the_coroutine_function_once(self):
+    # coroutine_fn_call_count = 0
+    #
+    # def coroutine_fn():
+    # return lambda *args: coroutine_fn_call_count += 1
+    #
+    # self.analysis.analyze_contig(coroutine_fn, sample_groups, dups_contig, reference_contig)
+
+    class CoroutineMock:
+        def send(self, arg):
+            pass
+
+    def test_it_collects_analysis_and_overall_contig_stats(self):
+        expected_analysis_stats = [
+            [
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}),
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0})
+            ],
+            [
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}), Counter(
+                {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                 'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}), Counter(
+                {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                 'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}), Counter(
+                {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                 'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0})
+            ], [
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}), Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}), Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0})
+            ], [
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}),
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}),
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0}),
+                Counter(
+                    {'quality_breadth': 8, 'passed_proportion_filter': 8, 'called_reference': 8, 'was_called': 8,
+                     'passed_coverage_filter': 8, 'called_snp': 0, 'called_degen': 0})
+            ]
+        ]
+        expected_contig_stats = Counter(
+            {'reference_clean': 8, 'all_passed_proportion': 8, 'quality_breadth': 8,
+             'Contig': 'ContigWithFilePositionOffset', 'reference_length': 8, 'best_snps': 0,
+             'all_passed_coverage': 8, 'reference_duplicated': 0, 'all_passed_consensus': 8, 'all_called': 8,
+             'any_snps': 0}
+        )
+        observed_analysis_stats, observed_contig_stats = self.analysis.analyze_contig(self.coroutine_fn,
+                                                                                      self.sample_groups,
+                                                                                      self.dups_contig,
+                                                                                      self.reference_contig)
+
+        self.assertEqual(expected_analysis_stats, observed_analysis_stats)
+        self.assertEqual(expected_contig_stats, observed_contig_stats)
