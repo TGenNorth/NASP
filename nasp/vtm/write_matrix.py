@@ -48,7 +48,7 @@ def get_vcf_metadata(nasp_version, identifiers, contigs):
 def get_header(type, identifiers):
     """
     Args:
-        type (str): 'all_callable', 'missing_data', 'best_snp', 'vcf'
+        type (str): 'master', 'missingdata', 'best_snp', 'vcf'
         identifiers (tuple): A list of sample_name::aligner,snpcaller or just sample_name if type is 'best_snp'
 
     Returns:
@@ -70,7 +70,7 @@ def get_header(type, identifiers):
     )
 
     # all callable or missing data
-    if type in ['all_callable', 'missing_data']:
+    if type in ['master', 'missingdata']:
         matrix_header += ('CallWasMade', 'PassedDepthFilter', 'PassedProportionFilter')
 
     matrix_header += ('Pattern', 'Pattern#')
@@ -360,6 +360,10 @@ def write_master_matrix(directory, contig_name, identifiers):
             }
             # Match each base call with its sample analysis column.
             line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
+
+            print(sorted(get_header('master', identifiers)))
+            print(sorted(line.keys()))
+
             writer.writerow(line)
 
 

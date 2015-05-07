@@ -7,6 +7,8 @@ __author__ = 'jtravis'
 
 from collections import namedtuple, Counter
 import itertools
+import logging
+logging.basicConfig(filename='parse.log', level=logging.DEBUG)
 
 # PositionInfo is all the data collected for a single position across all the SampleAnalyses.
 PositionInfo = namedtuple('PositionInfo', [
@@ -503,5 +505,7 @@ class GenomeAnalysis(object):
 
             for coroutine in coroutines:
                 coroutine.send(position)
+
+        logging.log(logging.INFO, 'Completed contig: ' + reference_contig.name)
 
         return sample_stats, contig_stats
