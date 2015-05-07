@@ -361,9 +361,6 @@ def write_master_matrix(directory, contig_name, identifiers):
             # Match each base call with its sample analysis column.
             line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
 
-            print(sorted(get_header('master', identifiers)))
-            print(sorted(line.keys()))
-
             writer.writerow(line)
 
 

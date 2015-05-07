@@ -7,6 +7,7 @@ __author__ = 'jtravis'
 
 from collections import namedtuple, Counter
 import itertools
+import datetime
 import logging
 logging.basicConfig(filename='parse.log', level=logging.DEBUG)
 
@@ -466,6 +467,9 @@ class GenomeAnalysis(object):
         Returns:
             (list of lists of dict, collections.Counter): SampleAnalysis stats grouped by sample name and contig stats.
         """
+        start = datetime.datetime.now()
+        logging.log(logging.INFO, 'Started contig {0} at {1}'.format(reference_contig.name, str(datetime.now())))
+
         # sample stats is a list of dict lists representing the SampleAnalysis stats in the same order as sample_groups.
         sample_stats = None
         contig_stats = Counter({'Contig': reference_contig.name})
@@ -506,6 +510,10 @@ class GenomeAnalysis(object):
             for coroutine in coroutines:
                 coroutine.send(position)
 
-        logging.log(logging.INFO, 'Completed contig: ' + reference_contig.name)
+        end = datetime.datetime.now()
+        logging.log(logging.INFO, 'Completed contig {0} in {1}'.format(
+            reference_contig.name,
+            datetime.timedelta(seconds=(end-start).total_seconds())
+        ))
 
         return sample_stats, contig_stats
