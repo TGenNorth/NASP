@@ -17,6 +17,7 @@ from concurrent.futures import ProcessPoolExecutor, Future
 from tempfile import TemporaryDirectory
 import itertools
 import functools
+import logging
 
 from nasp.vtm.analyze import GenomeAnalysis
 
@@ -595,11 +596,13 @@ def _concat_matrix(src, dest, offset=0):
         dest (str):
         offset (int): Seek past the metadata
     """
+    logging.info('Started concat {0}'.format(src))
     with open(src) as partial, open(dest, 'a') as complete:
         partial.seek(offset)
         # Discard the header
         partial.readline()
         complete.writelines(partial)
+    logging.info('Completed concat {0}'.format(src))
 
 
 def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
@@ -784,6 +787,8 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
 
             # Concatenate the contig matrices.
             for index, matrix in enumerate(matrices):
+                logging.info('Scheduled concat contig {0}'.format(contig_name))
+
                 # Path to a contig matrix.
                 partial = os.path.join(tempdirname, '{0}_{1}'.format(contig_name, matrix))
                 # Path to the final matrix where all the contigs will be concatenated.
