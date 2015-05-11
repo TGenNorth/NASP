@@ -544,7 +544,7 @@ def write_bestsnp_snpfasta(directory, contig_name, identifiers):
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
-        files = tuple(stack.enter_context(open('{0}_{1}_bestsnp.fasta'.format(os.path.join(directory, contig_name), identifier), 'w')) for identifier in identifiers)
+        files = tuple(stack.enter_context(open('{0}_{1}_bestsnp.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier), 'w')) for identifier in identifiers)
 
         while True:
             row = yield
@@ -572,7 +572,7 @@ def write_missingdata_snpfasta(directory, contig_name, identifiers):
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
-        files = tuple(stack.enter_context(open('{0}_{1}_missingdata.fasta'.format(os.path.join(directory, contig_name), identifier), 'w')) for identifier in identifiers)
+        files = tuple(stack.enter_context(open('{0}_{1}_missingdata.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier), 'w')) for identifier in identifiers)
 
         while True:
             row = yield
@@ -633,7 +633,7 @@ def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
     """
     with ExitStack() as stack:
         analyses = (stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'a+')) for identifier in identifiers)
-        analysis_contigs = (stack.enter_context(open(os.path.join(src_dir, contig_name + '_' + identifier + suffix))) for identifier in identifiers)
+        analysis_contigs = (stack.enter_context(open(os.path.join(src_dir, 'fasta_partials', contig_name + '_' + identifier + suffix))) for identifier in identifiers)
 
         for analysis, analysis_contig in zip(analyses, analysis_contigs):
             analysis.writelines(analysis_contig)
@@ -774,6 +774,8 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
     # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
     # temporary directory which is deleted automatically.
     with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=matrix_dir) as tempdirname:
+
+        os.makedirs(os.path.join(tempdirname, 'fasta_partials'))
 
         vcf_metadata = get_vcf_metadata(nasp_version, identifiers, reference_fasta.contigs)
         vcf_metadata_len = len(vcf_metadata)
