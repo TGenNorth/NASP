@@ -740,7 +740,7 @@ def _get_write_coroutines(tempdirname, identifiers, sample_groups, vcf_metadata,
         write_bestsnp_snpfasta(tempdirname, contig_name, identifiers)
     )
 
-
+from multiprocessing import Pool
 def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, reference_dups, sample_groups, max_workers=None):
     """
     analyze_samples uses a ProcessPool to read contigs across all the sample analyses in parallel,
@@ -769,11 +769,12 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
     identifiers = ('Reference',) + tuple(analysis.identifier for analysis in itertools.chain.from_iterable(sample_groups))
 
     matrices = ('master.tsv', 'bestsnp.tsv', 'missingdata.tsv', 'withallrefpos.tsv', 'bestsnp.vcf', 'missingdata.vcf')
-    futures = [Future()] * len(matrices)
+    # futures = [Future()] * len(matrices)
 
     # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
     # temporary directory which is deleted automatically.
-    with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=matrix_dir) as tempdirname:
+    # with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=matrix_dir) as tempdirname:
+    with Pool(processes=max_workers) as pool, TemporaryDirectory(dir=matrix_dir) as tempdirname:
 
         os.makedirs(os.path.join(tempdirname, 'fasta_partials'))
 
@@ -783,12 +784,12 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
 
         # Only the reference contig is changing, bind the other parameters to the function.
         analyze = functools.partial(genome_analysis.analyze_contig, coroutine_partial, sample_groups, reference_dups)
-        for sample_stat, contig_stat in executor.map(analyze, reference_fasta.contigs):
+        for sample_stat, contig_stat in pool.map(analyze, reference_fasta.contigs):
             contig_stats.append(contig_stat)
             contig_name = contig_stat['Contig']
 
             # Concatenate the contig matrices.
-            for index, matrix in enumerate(matrices):
+            for matrix in matrices:
                 logging.info('Scheduled concat contig {0}'.format(contig_name))
 
                 # Path to a contig matrix.
@@ -826,8 +827,8 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
                 for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(sample_stat)):
                     sum.update(analysis)
 
-        executor.submit(_concat_snpfasta, matrix_dir, tempdirname, 'missingdata.fasta', identifiers, '_missingdata.fasta')
-        executor.submit(_concat_snpfasta, matrix_dir, tempdirname, 'bestsnp.fasta', identifiers, '_bestsnp.fasta')
+        _concat_snpfasta(matrix_dir, tempdirname, 'missingdata.fasta', identifiers, '_missingdata.fasta')
+        _concat_snpfasta(matrix_dir, tempdirname, 'bestsnp.fasta', identifiers, '_bestsnp.fasta')
 
         # TODO: If reference length is returned by matrix_dto, the stats files can be written in parallel
         reference_length = write_general_stats(os.path.join(stats_dir, 'general_stats.tsv'), contig_stats)
@@ -836,4 +837,4 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
         # The Python documentation says shutdown() is not explicitly needed inside a context manager, but the snpfasta
         # files were not always complete.
         # https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown
-        executor.shutdown()
+        # executor.shutdown()
