@@ -222,6 +222,42 @@ def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
         sample_stats (list of lists of Counters):
         sample_groups (tuple of tuples of SampleAnalysis):
         reference_length (int): Total number of positions in the reference.
+
+    Example:
+        sample_stats = (
+            # Any/All Counter summary for the whole genome.
+            ({
+                 'was_called': 0,
+                 'passed_coverage_filter': 0,
+                 'passed_proportion_filter': 0,
+                 'quality_breadth': 0,
+                 'called_reference': 0,
+                 'called_snp': 0,
+                 'called_degen': 0
+             }, {
+                 'was_called': 0,
+                 'passed_coverage_filter': 0,
+                 'passed_proportion_filter': 0,
+                 'quality_breadth': 0,
+                 'called_reference': 0,
+                 'called_snp': 0,
+                 'called_degen': 0
+             }),
+             # Followed by a tuple for each sample
+             # Where the first two elements are a Any/All Counter summary for the sample
+             # Followed by a Counter for each analysis combination
+             ({
+                 'was_called': 0,
+                 'passed_coverage_filter': 0,
+                 'passed_proportion_filter': 0,
+                 'quality_breadth': 0,
+                 'called_reference': 0,
+                 'called_snp': 0,
+                 'called_degen': 0
+              },
+              ...
+             ),
+        )
     """
     fieldnames = ('Sample', 'Sample::Analysis', 'was_called', 'was_called (%)', 'passed_coverage_filter',
                   'passed_coverage_filter (%)', 'passed_proportion_filter', 'passed_proportion_filter (%)',
@@ -283,6 +319,21 @@ def write_general_stats(filepath, contig_stats):
         filepath (str):
         contig_stats (tuple of Counter):
 
+    Example:
+        contig_stats = (Counter({
+            'Contig': 'contig_name',
+            'reference_length': 0,
+            'reference_clean': 0,
+            'reference_duplicated': 0,
+            'all_called': 0,
+            'all_passed_coverage': 0,
+            'all_passed_proportion': 0,
+            'all_passed_consensus': 0,
+            'quality_breadth': 0,
+            'any_snps': 0,
+            'best_snps': 0
+        }),)
+
     Return:
         int: Total reference length.
     """
@@ -292,6 +343,7 @@ def write_general_stats(filepath, contig_stats):
         whole_genome_stats.update(contig_stat)
     whole_genome_stats['Contig'] = 'Whole Genome'
 
+    # NOTE: Raises ZeroDivisionError if reference_length is 0.
     reference_length = whole_genome_stats['reference_length']
 
     with open(filepath, 'w') as handle:
@@ -681,38 +733,38 @@ def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
                 dest.write('{0}\n'.format(line))
 
 
-def _swap_future(executor, task):
-    """
-    swap_future is a helper to create callback chains of serialized tasks running in parallel.
-    As each future resolves the callback launches the next task in the series and replaces the reference to the
-    completed task with the newly started task so that tasks that follow can be attached in sequence.
-
-    Args:
-        executor (concurrent.futures.Executor):
-        task (callable):
-
-    Return:
-        callable: A function that replaces the completed future with a new future. The argument is a future that
-        resolves to an array and index.
-
-    Example:
-        In addition to concatenating the partial files in parallel:
-        1 |-----------------------> 2 |------------>        3 |-------->
-        1 |------->                 2 |------->             3 |------->
-        1 |------------------->     2 |-------------------> 3 |-------->
-
-        The done callback chain allows the next section to begin as each section completes.
-        1 |-----------------------> 2 |------------> 3 |-------->
-        1 |-------> 2 |-------> 3 |------->
-        1 |-------------------> 2 |-------------------> 3 |-------->
-    """
-    # FIXME: This method of chaining futures is a hack that is probably incorrectly implementing the intended design
-    # pattern of the futures done callback.
-    def callback(future):
-        result = future.result()
-        result[0][result[1]] = executor.submit(task)
-        return result
-    return callback
+# def _swap_future(executor, task):
+#     """
+#     swap_future is a helper to create callback chains of serialized tasks running in parallel.
+#     As each future resolves the callback launches the next task in the series and replaces the reference to the
+#     completed task with the newly started task so that tasks that follow can be attached in sequence.
+#
+#     Args:
+#         executor (concurrent.futures.Executor):
+#         task (callable):
+#
+#     Return:
+#         callable: A function that replaces the completed future with a new future. The argument is a future that
+#         resolves to an array and index.
+#
+#     Example:
+#         In addition to concatenating the partial files in parallel:
+#         1 |-----------------------> 2 |------------>        3 |-------->
+#         1 |------->                 2 |------->             3 |------->
+#         1 |------------------->     2 |-------------------> 3 |-------->
+#
+#         The done callback chain allows the next section to begin as each section completes.
+#         1 |-----------------------> 2 |------------> 3 |-------->
+#         1 |-------> 2 |-------> 3 |------->
+#         1 |-------------------> 2 |-------------------> 3 |-------->
+#     """
+#     # FIXME: This method of chaining futures is a hack that is probably incorrectly implementing the intended design
+#     # pattern of the futures done callback.
+#     def callback(future):
+#         result = future.result()
+#         result[0][result[1]] = executor.submit(task)
+#         return result
+#     return callback
 
 
 def _get_write_coroutines(tempdirname, identifiers, sample_groups, vcf_metadata, contig_name):
@@ -739,6 +791,7 @@ def _get_write_coroutines(tempdirname, identifiers, sample_groups, vcf_metadata,
         write_missingdata_snpfasta(tempdirname, contig_name, identifiers),
         write_bestsnp_snpfasta(tempdirname, contig_name, identifiers)
     )
+
 
 from multiprocessing import Pool
 def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, reference_dups, sample_groups, max_workers=None):

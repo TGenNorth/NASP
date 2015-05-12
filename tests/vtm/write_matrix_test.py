@@ -16,13 +16,30 @@ from nasp.vtm.analyze import PositionInfo
 from nasp.vtm import write_matrix
 from nasp.vtm.parse import FastaContig
 
+from collections import namedtuple
+
+MockSampleAnalysis = namedtuple('MockSampleAnalysis', ['name', 'identifier'])
+
+sample_groups = (
+    (
+        MockSampleAnalysis(name='sample1', identifier='sample1::aligner,snpcaller'),
+    ),
+    (
+        MockSampleAnalysis(name='sample2', identifier='sample2::aligner1,snpcaller'),
+        MockSampleAnalysis(name='sample2', identifier='sample2::aligner2'),
+    ),
+    (
+        MockSampleAnalysis(name='sample3', identifier='sample3::aligner,snpcaller'),
+    ),
+)
 
 contig_name = 'TestContig'
 
+# TODO: Remove
 identifiers = (
     'sample1::aligner,snpcaller',
-    'sample2::aligner1,snpcaller',
-    'sample2::aligner2,snpcaller',
+    'sample2::aligner1,snpcaller',  # VCF
+    'sample2::aligner2',  # FASTA
     'sample3::aligner,snpcaller'
 )
 
@@ -147,7 +164,7 @@ class GetHeaderTestCase(unittest.TestCase):
             'FORMAT',
             'sample1::aligner,snpcaller',
             'sample2::aligner1,snpcaller',
-            'sample2::aligner2,snpcaller',
+            'sample2::aligner2',
             'sample3::aligner,snpcaller'
         )
         self.assertEqual(expected, write_matrix.get_header('vcf', identifiers))
@@ -158,7 +175,7 @@ class GetHeaderTestCase(unittest.TestCase):
             'Reference',
             'sample1::aligner,snpcaller',
             'sample2::aligner1,snpcaller',
-            'sample2::aligner2,snpcaller',
+            'sample2::aligner2',
             'sample3::aligner,snpcaller',
             '#SNPcall',
             '#Indelcall',
@@ -190,7 +207,7 @@ class GetHeaderTestCase(unittest.TestCase):
             'Reference',
             'sample1::aligner,snpcaller',
             'sample2::aligner1,snpcaller',
-            'sample2::aligner2,snpcaller',
+            'sample2::aligner2',
             'sample3::aligner,snpcaller',
             '#SNPcall',
             '#Indelcall',
@@ -219,7 +236,7 @@ class GetHeaderTestCase(unittest.TestCase):
             'Reference',
             'sample1::aligner,snpcaller',
             'sample2::aligner1,snpcaller',
-            'sample2::aligner2,snpcaller',
+            'sample2::aligner2',
             'sample3::aligner,snpcaller',
             '#SNPcall',
             '#Indelcall',
@@ -251,7 +268,7 @@ class GetHeaderTestCase(unittest.TestCase):
             'Reference',
             'sample1::aligner,snpcaller',
             'sample2::aligner1,snpcaller',
-            'sample2::aligner2,snpcaller',
+            'sample2::aligner2',
             'sample3::aligner,snpcaller',
             '#SNPcall',
             '#Indelcall',
@@ -435,37 +452,33 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             # No other artifacts were created in the tmpdir.
             self.assertListEqual(expected_files, os.listdir(tmpdir))
 
-
-    def test_write_sample_stats(self):
-        expected_files = ['TestContig_sample_stats.tsv']
-        expected_lines = (
-            self.metadata,
-            '\t'.join(write_matrix.get_header('vcf', identifiers)) + '\n',
-            '',
-        )
-
-        with TemporaryDirectory() as tmpdir:
-            writer = write_matrix.write_sample_stats(tmpdir, contig_name, identifiers, self.metadata)
-            writer.send(None)
-
-            for position in self.positions:
-                writer.send(position)
-            writer.close()
-
-            # The file was created.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
-
-            with open(os.path.join(tmpdir, expected_files[0])) as handle:
-                # The file contains all the expected rows.
-                for expected_line, line in zip(expected_lines, handle):
-                    self.assertEqual(expected_line, line)
-
-                # The file does not contain any unexpected rows.
-                self.assertEqual([], handle.readlines())
-
-            # No other artifacts were created in the tmpdir.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
-
+    # def test_write_sample_stats(self):
+    #     expected_files = ['TestContig_sample_stats.tsv']
+    #     expected_lines = (
+    #         '',
+    #     )
+    #
+    #     with TemporaryDirectory() as tmpdir:
+    #         writer = write_matrix.write_sample_stats(tmpdir, contig_name, identifiers, self.metadata)
+    #         writer.send(None)
+    #
+    #         for position in self.positions:
+    #             writer.send(position)
+    #         writer.close()
+    #
+    #         # The file was created.
+    #         self.assertListEqual(expected_files, os.listdir(tmpdir))
+    #
+    #         with open(os.path.join(tmpdir, expected_files[0])) as handle:
+    #             # The file contains all the expected rows.
+    #             for expected_line, line in zip(expected_lines, handle):
+    #                 self.assertEqual(expected_line, line)
+    #
+    #             # The file does not contain any unexpected rows.
+    #             self.assertEqual([], handle.readlines())
+    #
+    #         # No other artifacts were created in the tmpdir.
+    #         self.assertListEqual(expected_files, os.listdir(tmpdir))
 
     def test_write_general_stats(self):
         expected_files = ['TestContig_general_stats.tsv']
@@ -497,13 +510,16 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             # No other artifacts were created in the tmpdir.
             self.assertListEqual(expected_files, os.listdir(tmpdir))
 
-
     def test_write_bestsnp_matrix(self):
-        expected_files = ['TestContig_bestsnp_matrix.tsv']
+        identifiers = tuple(map(lambda sample: sample[0].name, sample_groups))
+
+        expected_files = ['TestContig_bestsnp.tsv']
         expected_lines = (
-            self.metadata,
             '\t'.join(write_matrix.get_header('bestsnp', identifiers)) + '\n',
-            '',
+            'TestContig::1	A	C	G	R	2	0	1	7/30	3/30	4/30	5	6	7	8	0	9	TestContig	1	True	True		\n',
+            'TestContig::2	A	C	G	R	2	0	1	7/30	3/30	4/30	5	6	7	8	0	9	TestContig	2	True	True		\n',
+            'TestContig::3	A	C	G	R	2	0	1	7/30	3/30	4/30	5	6	7	8	0	9	TestContig	3	True	True		\n',
+            ''
         )
 
         with TemporaryDirectory() as tmpdir:
@@ -520,6 +536,7 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             with open(os.path.join(tmpdir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
                 for expected_line, line in zip(expected_lines, handle):
+                    print(line)
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
@@ -527,7 +544,6 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
 
             # No other artifacts were created in the tmpdir.
             self.assertListEqual(expected_files, os.listdir(tmpdir))
-
 
     def test_write_withallrefpos_matrix(self):
         expected_files = ['TestContig_withallrefpos.tsv']
@@ -582,6 +598,7 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
         )
 
         with TemporaryDirectory() as tmpdir:
+            os.mkdir(os.path.join(tmpdir, ''))
             writer = write_matrix.write_bestsnp_snpfasta(tmpdir, contig_name, identifiers)
             writer.send(None)
 
@@ -617,19 +634,25 @@ class WriteMissingSnpfastaTestCase(unittest.TestCase):
         pass
 
     def test_write_masked_base_calls_for_each_sample_analysis(self):
-        expected_files = ['test_contig_a_missingdata.fasta', 'test_contig_b_missingdata.fasta',
+        expected_files = ['test_contig_a_missingdata.fasta',
+                          'test_contig_b_missingdata.fasta',
                           'test_contig_c_missingdata.fasta']
         with TemporaryDirectory() as tmpdir:
+            fasta_partials_dir = os.path.join(tmpdir, 'fasta_partials')
+
+            os.mkdir(fasta_partials_dir)
+
             coroutine = write_matrix.write_missingdata_snpfasta(tmpdir, 'test_contig', ['a', 'b', 'c'])
             coroutine.send(None)
 
             # The files were created
-            self.assertListEqual(os.listdir(tmpdir), expected_files)
+            self.assertListEqual(os.listdir(fasta_partials_dir), expected_files)
 
             for position in self.positions:
                 coroutine.send(position)
 
                 # TODO: Assert each file has its corresponding calls
+                raise NotImplementedError
 
 
 class WriteBestsnpSnpfastaTestCase(unittest.TestCase):
@@ -657,10 +680,6 @@ class WriteBestsnpSnpfastaTestCase(unittest.TestCase):
                 coroutine.send(position)
 
                 # TODO: Assert each file has its corresponding calls
-
-
-from collections import namedtuple
-MockSampleAnalysis = namedtuple('MockSampleAnalysis', ['name', 'identifier'])
 
 
 class WriteSampleStatsTestCase(unittest.TestCase):
@@ -759,7 +778,7 @@ class WriteSampleStatsTestCase(unittest.TestCase):
             )
 
             sample_groups = (
-                (
+            (
                     MockSampleAnalysis(name='sample0', identifier='sample0::aligner,snpcaller'),
                     MockSampleAnalysis(name='sample0', identifier='sample0::aligner,snpcaller'),
                 ),
@@ -767,6 +786,8 @@ class WriteSampleStatsTestCase(unittest.TestCase):
                     MockSampleAnalysis(name='sample1', identifier='sample1::aligner,snpcaller'),
                 )
             )
+
+            reference_length = 42
 
             expected = (
                 'Sample	Sample::Analysis	was_called	was_called (%)	passed_coverage_filter	passed_coverage_filter (%)	passed_proportion_filter	passed_proportion_filter (%)	quality_breadth	quality_breadth (%)	called_reference	called_reference (%)	called_snp	called_snp (%)	called_degen	called_degen (%)\n',
@@ -785,12 +806,12 @@ class WriteSampleStatsTestCase(unittest.TestCase):
 
             )
 
-            reference_length = 42
             write_matrix.write_sample_stats(filepath, sample_stats, sample_groups, reference_length)
 
             with open(filepath) as handle:
                 for expect, observe in itertools.zip_longest(expected, handle):
                     self.assertEqual(expect, observe)
+
 
 class WriteGeneralStatsTestCase(unittest.TestCase):
     @classmethod
@@ -798,19 +819,51 @@ class WriteGeneralStatsTestCase(unittest.TestCase):
         pass
 
     def setUp(self):
-        pass
+        self.contig_stats = (Counter({
+            'Contig': 'contig0_name',
+            'reference_length': 10,
+            'reference_clean': 9,
+            'reference_duplicated': 8,
+            'all_called': 7,
+            'all_passed_coverage': 6,
+            'all_passed_proportion': 5,
+            'all_passed_consensus': 4,
+            'quality_breadth': 3,
+            'any_snps': 2,
+            'best_snps': 1
+        }),
+        Counter({
+            'Contig': 'contig1_name',
+            'reference_length': 20,
+            'reference_clean': 19,
+            'reference_duplicated': 18,
+            'all_called': 17,
+            'all_passed_coverage': 16,
+            'all_passed_proportion': 15,
+            'all_passed_consensus': 14,
+            'quality_breadth': 13,
+            'any_snps': 12,
+            'best_snps': 11
+        }))
 
     def tearDown(self):
         pass
 
-    def test_zero_length_reference_does_not_raise_ZeroDivisionError(self):
-        pass
-
     def test_write_general_stats(self):
+        expected = (
+            'Contig	reference_length	reference_clean	reference_clean (%)	reference_duplicated	reference_duplicated (%)	all_called	all_called (%)	all_passed_coverage	all_passed_coverage (%)	all_passed_proportion	all_passed_proportion (%)	all_passed_consensus	all_passed_consensus (%)	quality_breadth	quality_breadth (%)	any_snps	any_snps (%)	best_snps	best_snps (%)\n',
+            '\n',
+            'Whole Genome	30	28	93.33%	26	86.67%	24	80.00%	22	73.33%	20	66.67%	18	60.00%	16	53.33%	14	46.67%	12	40.00%\n',
+            'contig0_name	10	9	90.00%	8	80.00%	7	70.00%	6	60.00%	5	50.00%	4	40.00%	3	30.00%	2	20.00%	1	10.00%\n',
+            'contig1_name	20	19	95.00%	18	90.00%	17	85.00%	16	80.00%	15	75.00%	14	70.00%	13	65.00%	12	60.00%	11	55.00%\n'
+        )
+
         with TemporaryDirectory() as tmpdir:
             filepath = os.path.join(tmpdir, 'general_stats.tsv')
-            contig_stats = (
 
-            )
+            write_matrix.write_general_stats(filepath, self.contig_stats)
 
-            write_matrix.write_general_stats(filepath, contig_stats)
+            with open(filepath) as handle:
+                for expect, line in itertools.zip_longest(expected, handle):
+                    print(line)
+                    self.assertEqual(expect, line)
