@@ -10,6 +10,7 @@ import os
 from tempfile import TemporaryDirectory
 from copy import deepcopy
 from collections import Counter
+import itertools
 
 from nasp.vtm.analyze import PositionInfo
 from nasp.vtm import write_matrix
@@ -533,14 +534,17 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
         expected_lines = (
             '\t'.join(write_matrix.get_header('withallrefpos', identifiers)) + '\n',
             '\t'.join((
-            'TestContig::1', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0',
-            '9', 'TestContig', '1', 'True', 'True', '', '')) + '\n',
+                'TestContig::1', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8',
+                '0',
+                '9', 'TestContig', '1', 'True', 'True', '', '')) + '\n',
             '\t'.join((
-            'TestContig::2', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0',
-            '9', 'TestContig', '2', 'True', 'True', '', '')) + '\n',
+                'TestContig::2', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8',
+                '0',
+                '9', 'TestContig', '2', 'True', 'True', '', '')) + '\n',
             '\t'.join((
-            'TestContig::3', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8', '0',
-            '9', 'TestContig', '3', 'True', 'True', '', '')) + '\n',
+                'TestContig::3', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8',
+                '0',
+                '9', 'TestContig', '3', 'True', 'True', '', '')) + '\n',
         )
 
         with TemporaryDirectory() as tmpdir:
@@ -653,3 +657,160 @@ class WriteBestsnpSnpfastaTestCase(unittest.TestCase):
                 coroutine.send(position)
 
                 # TODO: Assert each file has its corresponding calls
+
+
+from collections import namedtuple
+MockSampleAnalysis = namedtuple('MockSampleAnalysis', ['name', 'identifier'])
+
+
+class WriteSampleStatsTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_write_sample_stats(self):
+        with TemporaryDirectory() as tmpdir:
+            filepath = os.path.join(tmpdir, 'sample_stats.tsv')
+            sample_stats = (
+                # Whole genome any/all stats
+                ({
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }, {
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }),
+                # Sample0 any/all + 2 SampleAnalyses
+                ({
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }, {
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }, {
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }, {
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }),
+                # Sample1 any/all + 1 SampleAnalyses
+                ({
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }, {
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 }, {
+                     'was_called': 0,
+                     'passed_coverage_filter': 0,
+                     'passed_proportion_filter': 0,
+                     'quality_breadth': 0,
+                     'called_reference': 0,
+                     'called_snp': 0,
+                     'called_degen': 0
+                 })
+            )
+
+            sample_groups = (
+                (
+                    MockSampleAnalysis(name='sample0', identifier='sample0::aligner,snpcaller'),
+                    MockSampleAnalysis(name='sample0', identifier='sample0::aligner,snpcaller'),
+                ),
+                (
+                    MockSampleAnalysis(name='sample1', identifier='sample1::aligner,snpcaller'),
+                )
+            )
+
+            expected = (
+                'Sample	Sample::Analysis	was_called	was_called (%)	passed_coverage_filter	passed_coverage_filter (%)	passed_proportion_filter	passed_proportion_filter (%)	quality_breadth	quality_breadth (%)	called_reference	called_reference (%)	called_snp	called_snp (%)	called_degen	called_degen (%)\n',
+                '\n',
+                '[any]		0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                '[all]		0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                '\n',
+                'sample0	[any]	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                'sample0	[all]	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                'sample0	sample0::aligner,snpcaller	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                'sample0	sample0::aligner,snpcaller	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                '\n',
+                'sample1	[any]	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                'sample1	[all]	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+                'sample1	sample1::aligner,snpcaller	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%	0	0.00%\n',
+
+            )
+
+            reference_length = 42
+            write_matrix.write_sample_stats(filepath, sample_stats, sample_groups, reference_length)
+
+            with open(filepath) as handle:
+                for expect, observe in itertools.zip_longest(expected, handle):
+                    self.assertEqual(expect, observe)
+
+class WriteGeneralStatsTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_zero_length_reference_does_not_raise_ZeroDivisionError(self):
+        pass
+
+    def test_write_general_stats(self):
+        with TemporaryDirectory() as tmpdir:
+            filepath = os.path.join(tmpdir, 'general_stats.tsv')
+            contig_stats = (
+
+            )
+
+            write_matrix.write_general_stats(filepath, contig_stats)
