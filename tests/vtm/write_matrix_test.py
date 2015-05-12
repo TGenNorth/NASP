@@ -12,9 +12,9 @@ from copy import deepcopy
 from collections import Counter
 import itertools
 
-from nasp.vtm.analyze import PositionInfo
+from nasp.vtm.analyze import PositionInfo, GenomeAnalysis
 from nasp.vtm import write_matrix
-from nasp.vtm.parse import FastaContig
+from nasp.vtm.parse import FastaContig, Fasta
 
 from collections import namedtuple
 
@@ -867,3 +867,28 @@ class WriteGeneralStatsTestCase(unittest.TestCase):
                 for expect, line in itertools.zip_longest(expected, handle):
                     print(line)
                     self.assertEqual(expect, line)
+
+from tests.vtm import testdata
+class SampleAnalysisTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_sample_analysis(self):
+        with TemporaryDirectory() as tmpdir:
+            matrix_dir = os.path.join(tmpdir, 'matrices')
+            stats_dir = os.path.join(tmpdir, 'statistics')
+
+            os.mkdir(matrix_dir)
+            os.mkdir(stats_dir)
+
+            genome_analysis = GenomeAnalysis(10, .9)
+            reference_fasta = Fasta(testdata.REFERENCE_FASTA, 'reference', 'aligner', is_reference=True)
+            reference_dups = Fasta(testdata.REFERENCE_DUPS, 'dups', 'aligner', is_reference=True)
+            write_matrix.analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, reference_dups, sample_groups, max_workers=1)
