@@ -8,8 +8,8 @@ __author__ = 'jtravis'
 from collections import namedtuple, Counter
 import itertools
 import datetime
-import logging
-logging.basicConfig(filename='analysis.log', level=logging.INFO)
+# import logging
+# logging.basicConfig(filename='analysis.log', level=logging.INFO)
 
 # PositionInfo is all the data collected for a single position across all the SampleAnalyses.
 PositionInfo = namedtuple('PositionInfo', [
@@ -468,7 +468,7 @@ class GenomeAnalysis(object):
             (list of lists of dict, collections.Counter): SampleAnalysis stats grouped by sample name and contig stats.
         """
         start = datetime.datetime.now()
-        logging.log(logging.INFO, 'Started contig {0} at {1}'.format(reference_contig.name, str(datetime.datetime.now())))
+        # logging.log(logging.INFO, 'Started contig {0} at {1}'.format(reference_contig.name, str(datetime.datetime.now())))
 
         # sample stats is a list of dict lists representing the SampleAnalysis stats in the same order as sample_groups.
         sample_stats = None
@@ -511,9 +511,9 @@ class GenomeAnalysis(object):
                 coroutine.send(position)
 
         end = datetime.datetime.now()
-        logging.log(logging.INFO, 'Completed contig {0} in {1}'.format(
-            reference_contig.name,
-            datetime.timedelta(seconds=(end-start).total_seconds())
-        ))
+        # logging.log(logging.INFO, 'Completed contig {0} in {1}'.format(
+        #     reference_contig.name,
+        #     datetime.timedelta(seconds=(end-start).total_seconds())
+        # ))
 
         return sample_stats, contig_stats

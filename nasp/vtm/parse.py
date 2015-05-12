@@ -17,7 +17,7 @@ __author__ = 'jtravis'
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
 import csv
-import logging
+# import logging
 #logging.basicConfig(filename='parse.log', level=logging.DEBUG)
 
 
@@ -227,7 +227,7 @@ class Vcf(SampleAnalysis):
         """
         file_position = self._index.get(contig_name)
         if file_position is None:
-            logging.debug("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
+            # logging.debug("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
             return EmptyContig(contig_name)
         return VcfContig(contig_name, self._sample_name, self._filepath, file_position)
 
@@ -317,7 +317,7 @@ class Fasta(SampleAnalysis):
         """
         contig_index = self._index.get(contig_name)
         if contig_index is None:
-            logging.debug("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
+            # logging.debug("{0}.get_contig({1!r}) => EmptyContig({1!r})".format(self.__repr__(), contig_name))
             return EmptyContig(contig_name, is_fasta=True)
         return FastaContig(contig_name, contig_index.length, contig_index.file_position, self._filepath, self._is_reference)
 
