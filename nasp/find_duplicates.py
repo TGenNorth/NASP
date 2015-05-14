@@ -16,7 +16,7 @@ def _parse_args():
     return parser.parse_args()
 
 
-# This should eventually be moved to the main job manager section
+# TODO: This should eventually be moved to the main job manager section
 def run_nucmer_on_reference(nucmer_path, reference_path):
     import subprocess
     import sys

@@ -15,21 +15,22 @@ class FindDuplicatesTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        import re
-        import subprocess
-        cls.nucmer_path = ""
-        try:
-            cls.nucmer_path = subprocess.check_output(["which", "nucmer"])
-        except subprocess.CalledProcessError:
-            try:
-                cls.nucmer_path = subprocess.check_output("find ~ -name nucmer", shell=True)
-            except subprocess.CalledProcessError as cpe:
-                cls.nucmer_path = cpe.output
-        cls.nucmer_path = str(cls.nucmer_path, encoding='utf-8')
-        match = re.search('^(.*)\n.*$', cls.nucmer_path)
-        if match:
-            cls.nucmer_path = match.group(1)
-        print("found nucmer at: %s" % cls.nucmer_path)
+        # import re
+        # import subprocess
+        # cls.nucmer_path = ""
+        # try:
+        #     cls.nucmer_path = subprocess.check_output(["which", "nucmer"])
+        # except subprocess.CalledProcessError:
+        #     try:
+        #         cls.nucmer_path = subprocess.check_output("find ~ -name nucmer", shell=True)
+        #     except subprocess.CalledProcessError as cpe:
+        #         cls.nucmer_path = cpe.output
+        # cls.nucmer_path = str(cls.nucmer_path, encoding='utf-8')
+        # match = re.search('^(.*)\n.*$', cls.nucmer_path)
+        # if match:
+        #     cls.nucmer_path = match.group(1)
+        # print("found nucmer at: %s" % cls.nucmer_path)
+        pass
 
     def setUp(self):
         self.fasta = open("find_dups_test.fasta", "w")
