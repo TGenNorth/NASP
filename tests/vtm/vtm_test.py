@@ -6,7 +6,7 @@ __author__ = 'jtravis'
 import unittest
 from nasp.vtm import vtm
 from nasp.vtm.parse import Fasta
-from tests.vtm import testdata
+from tests import testdata
 
 
 # TODO: What if fastas and vcfs are mixed in the dto?

@@ -868,7 +868,7 @@ class WriteGeneralStatsTestCase(unittest.TestCase):
                     print(line)
                     self.assertEqual(expect, line)
 
-from tests.vtm import testdata
+from tests import testdata
 class SampleAnalysisTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -5,7 +5,7 @@ import tempfile
 import types
 import os
 
-from tests.vtm import testdata
+from tests import testdata
 
 from nasp.vtm.parse import Contig, EmptyContig, Fasta, Vcf, FastaContig, VcfContig, Position
 

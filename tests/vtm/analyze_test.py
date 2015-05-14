@@ -417,8 +417,8 @@ class AnalyzePositionTestCase(unittest.TestCase):
         # print(position)
 
 
-from tests.vtm import testdata
-from nasp.vtm.parse import EmptyContig, FastaContig, Fasta
+from tests import testdata
+from nasp.vtm.parse import Fasta
 
 
 class AnalyzeContigTestCase(unittest.TestCase):
