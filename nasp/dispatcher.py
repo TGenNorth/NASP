@@ -67,7 +67,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
         if notify:
             args += " --mail-type=END"
         submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --time=%s:00:00 --mail-type=FAIL -J \'%s\' %s %s %s" % (
-            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], 
+            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'],
             job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
@@ -188,7 +188,7 @@ def _index_reference(configuration):
         else:
             print("Unknown aligner \'%s\' found, don't know how to index the reference for it. Skipping..." % name)
 
-    #if we are using GATK, we also need to create a Sequence Dictionary and samtools index of the reference        
+    #if we are using GATK, we also need to create a Sequence Dictionary and samtools index of the reference
     if next((v for i, v in enumerate(configuration["snpcallers"]) if re.search('gatk', v[0], re.IGNORECASE)), None):
         picard_path = configuration["picard"][1] or ""
         picard_memory = 2
@@ -241,7 +241,7 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
             command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
                 path, old_format_string, reference, read1, ncpus, output_file, args))
             command_parts.append(
-                "%s samse -r %s %s %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
+                "%s samse -r %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
         aligner_command = "\n".join(command_parts)
     bam_nickname = "%s-%s" % (name, aligner_name)
     samview_command = "%s view -S -b -h -" % sampath
@@ -467,6 +467,7 @@ def _find_dups(configuration, index_job_id, reference):
     command = "find_duplicates --nucmerpath %s --reference %s" % (path, reference)
     work_dir = os.path.dirname(reference)
     if not os.path.exists(work_dir):
+        # NOTE: This directory is implicitly created by _index_reference.
         os.makedirs(work_dir)
     final_file = os.path.join(work_dir, "duplicates.txt")
     job_parms['name'] = "nasp_%s" % name
