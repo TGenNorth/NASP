@@ -52,7 +52,7 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         self.reference.write(">reference_sequence_3\n")
         self.reference.write("gagcgatcgggatcgagctagctagcacgttcgtacgtacgtacgtacgtacgtacgtacgatcagctagcagcatcgatcgatcgacgatacgatcatg\n")
         self.reference.close()
-        
+
         self.external = open("convert_external_genome_external.fasta", "w")
         self.external.write(">external_sequence_1\n")
         self.external.write("ctgcgatcgggatcgagctagctagcacgtacgtacgtacgtacgtacgtacgtacgtacgatcagctagcagcatcgatcgatcgacgatacgatcatc\n")
@@ -61,7 +61,7 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         self.external.write(">external_sequence_3\n")
         self.external.write("gagcgatcgggatcgagctagctagcacgttcgtacgtacgtacgtacgtacgtacgtacgatcagctagcagcatcgatcgatcgacgatacgatcatg\n")
         self.external.close()
-        
+
         self.filtered_delta = "external.filtered.delta"
 
     def tearDown(self):
@@ -86,11 +86,18 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
     def test_parse_delta_file(self):
         from nasp.nasp_objects import GenomeStatus
         convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
-        dups_data = GenomeStatus()
-        convert_external_genome.parse_delta_file(self.delta, dups_data)
-        print(dups_data)
-                
-    def test_parse_delta_line(self):  
+        # dups_data = GenomeStatus()
+        # convert_external_genome.parse_delta_file(self.delta, dups_data)
+
+        from tempfile import NamedTemporaryFile
+        from nasp.nasp_objects import Genome
+        franken_genome = Genome()
+        external_genome = Genome()
+        convert_external_genome.parse_delta_file(self.filtered_delta, franken_genome, external_genome)
+        with NamedTemporaryFile() as tmpfile:
+            franken_genome.write_to_fasta_file(tmpfile.name)
+
+    def test_parse_delta_line(self):
         pass #tested by parse_delta_file tests
 
 if __name__ == "__main__":
