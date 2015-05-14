@@ -389,8 +389,6 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             '',
         )
 
-        print(expected_lines)
-
         with TemporaryDirectory() as tmpdir:
             writer = write_matrix.write_master_matrix(tmpdir, contig_name, identifiers)
             writer.send(None)
@@ -433,7 +431,6 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             writer.send(None)
 
             for position in self.positions:
-                print("POSITION", position)
                 writer.send(position)
             writer.close()
 
@@ -443,7 +440,6 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             with open(os.path.join(tmpdir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
                 for expected_line, line in zip(expected_lines, handle):
-                    print(line)
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
@@ -536,7 +532,6 @@ class WriteMissingMatrixTestCase(unittest.TestCase):
             with open(os.path.join(tmpdir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
                 for expected_line, line in zip(expected_lines, handle):
-                    print(line)
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
@@ -865,7 +860,6 @@ class WriteGeneralStatsTestCase(unittest.TestCase):
 
             with open(filepath) as handle:
                 for expect, line in itertools.zip_longest(expected, handle):
-                    print(line)
                     self.assertEqual(expect, line)
 
 from tests import testdata

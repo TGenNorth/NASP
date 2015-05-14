@@ -73,10 +73,12 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         pass #not worthwhile to test
 
     def test_generate_delta_file(self):
-        try:
-            convert_external_genome.generate_delta_file("", "", self.deltafilter_path, "external", self.reference.name, self.external.name)
-        except PermissionError:
-            self.fail("Unhandled PermissionError. Triggered when nucmer is not installed: self.nucmer_path=\"\"")
+        # Checking if the PermissionError is handled confuses users who expect nucmer is installed correctly.
+        # try:
+        #     convert_external_genome.generate_delta_file("", "", self.deltafilter_path, "external", self.reference.name, self.external.name)
+        # except PermissionError:
+        #     self.fail("Unhandled PermissionError. Triggered when nucmer is not installed: self.nucmer_path=\"\"")
+        # convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
         convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
 
     @unittest.skip("Throws TypeError: missing required arguments instead of asserted OSError. What is this testing?")

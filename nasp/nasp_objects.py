@@ -228,7 +228,7 @@ class GenomeStatus(object):
                                                 ( max_chars_per_line * i ):( max_chars_per_line * ( i + 1 ) )]) + "\n")
                     i += 1
             else:
-                output_handle.write(''.join(self._status_data[current_contig] + "\n"))
+                output_handle.write(''.join(self._status_data[current_contig]) + "\n")
 
     def write_to_fasta_file(self, output_filename, contig_prefix="", max_chars_per_line=80):
         """
