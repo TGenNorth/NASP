@@ -40,7 +40,7 @@ class FindDuplicatesTestCase(unittest.TestCase):
         self.fasta.write(">test_sequence_3\n")
         self.fasta.write("gagcgatcgggatcgagctagctagcacgttcgtacgtacgtacgtacgtacgtacgtacgatcagctagcagcatcgatcgatcgacgatacgatcatg\n")
         self.fasta.close()
-        
+
         self.delta = "reference.delta"
 
     def tearDown(self):
@@ -62,16 +62,19 @@ class FindDuplicatesTestCase(unittest.TestCase):
         self.assertRaises(OSError, find_duplicates.run_nucmer_on_reference, "", "")
 
     def test_parse_delta_file(self):
+        import itertools
         from nasp.nasp_objects import GenomeStatus
-        try:
-            find_duplicates.run_nucmer_on_reference("", self.fasta.name)
-        except PermissionError:
-            self.fail("Unhandled PermissionError. Triggered when nucmer is not installed: self.nucmer_path=\"\"")
-        find_duplicates.run_nucmer_on_reference(self.nucmer_path, self.fasta.name)
+        from tests import testdata
+        from tempfile import NamedTemporaryFile
+
         dups_data = GenomeStatus()
-        find_duplicates.parse_delta_file(self.delta, dups_data)
-        print(dups_data)
-                
+        find_duplicates.parse_delta_file(testdata.REFERENCE_DELTA, dups_data)
+        with NamedTemporaryFile() as tmpfile:
+            dups_data.write_to_fasta_file(tmpfile.name)
+            with  open(testdata.REFERENCE_DUPS) as expected, open(tmpfile.name) as observed:
+                for expect, observe in itertools.zip_longest(expected, observed):
+                    self.assertEqual(expect, observe)
+
     def test_parse_delta_line(self):
         pass #tested by parse_delta_file tests
 
