@@ -62,13 +62,13 @@ class GenomeStatusTestCase(unittest.TestCase):
         expected = ['A']
         contig_name = 'foo'
         self.genome.append_contig(expected[0], contig_name)
-        self.assertListEqual(expected, self.genome.get_value(contig_name, 1, -1))
+        self.assertListEqual(expected, self.genome.get_value(1, -1, contig_name))
 
     def test_append_contig_with_list(self):
         expected = ['A', 'C', 'G', 'T', 'U']
         contig_name = 'foo'
         self.genome.append_contig(expected, contig_name)
-        self.assertListEqual(expected, self.genome.get_value(contig_name, 1, -1))
+        self.assertListEqual(expected, self.genome.get_value(1, -1, contig_name))
 
     # TODO: make placeholder an optional final parameter
     def test_extend_contig(self):
@@ -83,7 +83,7 @@ class GenomeStatusTestCase(unittest.TestCase):
         # It allocated the additional space
         self.assertEqual(expected_length, self.genome.get_contig_length(contig_name))
         # It filled the allocated space after the data with the placeholder
-        self.assertListEqual(expected_content, self.genome.get_value(contig_name, 1, -1))
+        self.assertListEqual(expected_content, self.genome.get_value(1, -1, contig_name))
 
     def test_extend_contig_when_empty(self):
         expected = 42
@@ -94,7 +94,7 @@ class GenomeStatusTestCase(unittest.TestCase):
         # It allocated the additional space
         self.assertEqual(expected, self.genome.get_contig_length(contig_name))
         # It filled the undefined areas with the placeholder
-        self.assertListEqual([placeholder] * expected, self.genome.get_value(contig_name, 1, -1))
+        self.assertListEqual([placeholder] * expected, self.genome.get_value(1, -1, contig_name))
 
     def test_extend_contig_does_not_shrink_contig(self):
         contig_name = 'foo'
@@ -106,18 +106,18 @@ class GenomeStatusTestCase(unittest.TestCase):
         # It did not shrink the contig
         self.assertEqual(expected, self.genome.get_contig_length(contig_name))
         # It did not overwrite the existing data with a placeholder
-        self.assertListEqual(data, self.genome.get_value(contig_name, 1, -1))
+        self.assertListEqual(data, self.genome.get_value(1, -1, contig_name))
 
     def test_set_value(self):
         contig_name = 'foo'
         data = ['A', 'C', 'G', 'T', 'U']
         self.genome.set_value(data, 1, contig_name=contig_name)
         # Given a list, it should set the range of elements beginning with the start position
-        self.assertListEqual(data, self.genome.get_value(contig_name, 1, -1))
+        self.assertListEqual(data, self.genome.get_value(1, -1, contig_name))
         self.genome.set_value('A', 3, contig_name=contig_name)
         data[2] = 'A'
         # Given a character, it should set the element at the start position
-        self.assertListEqual(data, self.genome.get_value(contig_name, 1, -1))
+        self.assertListEqual(data, self.genome.get_value(1, -1, contig_name))
 
     # TODO: Should it instead raise an exception?
     def test_set_value_out_of_bounds(self):
@@ -127,54 +127,54 @@ class GenomeStatusTestCase(unittest.TestCase):
         expected.append('A')
         # It should fill the interim elements with the placeholder when setting an out of bounds element
         self.genome.set_value('A', 5, missing_range_filler="!", contig_name=contig_name)
-        self.assertEqual(expected, self.genome.get_value(contig_name, 1, -1))
+        self.assertEqual(expected, self.genome.get_value(1, -1, contig_name))
 
     # FIXME: get_value returns 3 data types - list, string, None
     def test_get_value_with_first_position(self):
         contig_name = 'foo'
         data = ['A', 'C', 'G', 'T', 'U']
         self.genome.append_contig(data, contig_name)
-        self.assertEqual('A', self.genome.get_value(contig_name, 1))
+        self.assertEqual('A', self.genome.get_value(1, contig_name=contig_name))
 
     def test_get_value_with_last_position(self):
         contig_name = 'foo'
         data = ['A', 'C', 'G', 'T', 'U']
         self.genome.append_contig(data, contig_name)
-        self.assertEqual(data, self.genome.get_value(contig_name, 1, -1))
+        self.assertEqual(data, self.genome.get_value(1, -1, contig_name))
 
     def test_get_value_empty(self):
         contig_name = 'foo'
         self.genome.add_contig(contig_name)
-        self.assertEqual([], self.genome.get_value(contig_name, 1))
+        self.assertEqual([], self.genome.get_value(1, contig_name=contig_name))
 
     def test_get_value_with_contig_name_invalid(self):
-        self.assertEqual([], self.genome.get_value('invalid', 1))
+        self.assertEqual([], self.genome.get_value(1, contig_name='invalid'))
 
     def test_get_value_with_invalid_position_raises_indexerror(self):
         with self.assertRaises(IndexError):
             contig_name = 'foo'
             data = ['A', 'C', 'G', 'T', 'U']
             self.genome.append_contig(data, contig_name)
-            self.genome.get_value(contig_name, 0)
+            self.genome.get_value(0, contig_name=contig_name)
 
     def test_get_value_range_of_one(self):
         contig_name = 'foo'
         data = ['A', 'C', 'G', 'T', 'U']
         self.genome.append_contig(data, contig_name)
-        self.assertListEqual(['C'], self.genome.get_value(contig_name, 2, 2))
+        self.assertListEqual(['C'], self.genome.get_value(2, 2, contig_name))
 
     def test_get_value_reversed_position_values(self):
         contig_name = 'foo'
         data = ['A', 'C', 'G', 'T', 'U']
         self.genome.append_contig(data, contig_name)
-        self.assertEqual([], self.genome.get_value(contig_name, 2, 1))
+        self.assertEqual([], self.genome.get_value(2, 1, contig_name=contig_name))
 
     # TODO: Could this hide index errors?
     def test_get_value_outside_range(self):
         contig_name = 'foo'
         expected = ['A', 'C', 'G', 'T', 'U']
         self.genome.append_contig(expected, contig_name)
-        self.assertListEqual(expected, self.genome.get_value(contig_name, 1, 10))
+        self.assertListEqual(expected, self.genome.get_value(1, 10, contig_name=contig_name))
 
     # TODO: Is there a conflict if there are different placeholders?
     # Example: contig_extend fills allocated region with placeholder A,
@@ -188,7 +188,7 @@ class GenomeStatusTestCase(unittest.TestCase):
         expected.extend([placeholder] * 5)
         self.genome.append_contig(data, contig_name)
         # It should fill out of bounds region with the placeholder
-        self.assertListEqual(expected, self.genome.get_value(contig_name, 1, 10, placeholder))
+        self.assertListEqual(expected, self.genome.get_value(1, 10, contig_name=contig_name, placeholder=placeholder))
 
     def test_get_contig_length(self):
         contig_name = 'foo'

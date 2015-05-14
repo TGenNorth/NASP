@@ -40,11 +40,11 @@ class GenomeTestCase(unittest.TestCase):
             self.genome._import_fasta_line('SEQUENCE2')
 
     def test__import_fasta_line_identifier_contains_spaces(self):
-        expected = 'SEQU ENCE'
-        prefix = ''
-        identifier = '>' + prefix + expected
+        identifier = '>prefixName Description'
+        prefix = 'prefix'
+        expected = 'Name'
         self.genome._import_fasta_line(identifier, prefix)
-        self.assertListEqual([identifier], self.genome.get_contigs())
+        self.assertListEqual([expected], self.genome.get_contigs())
 
     @unittest.skip("Covered by _import_fasta_file tests")
     def test_import_fasta_file(self):
@@ -53,8 +53,9 @@ class GenomeTestCase(unittest.TestCase):
     def test_reverse_complement(self):
         dna_string = 'ABCDGHMNRSTUVWXYabcdghmnrstuvwxy'
         expected = 'rxwbaasynkdchgvtRXWBAASYNKDCHGVT'
+        dna_string2 = 'ABCDGHKNRSTTVWXYabcdghknrsttvwxy'
         self.assertEqual(expected, self.genome.reverse_complement(dna_string))
-        self.assertEqual(dna_string, self.genome.reverse_complement(expected))
+        self.assertEqual(dna_string2, self.genome.reverse_complement(expected))
 
     def test_simple_call(self):
         expected = ['A', 'C', 'G', 'T']
