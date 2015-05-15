@@ -526,6 +526,8 @@ class FastaContig(Contig):
         while not self._is_reference:
             yield self.FASTA_EMPTY_POSITION
 
+VcfColumns = namedtuple('VcfColumns', ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT', 'SAMPLE'])
+VcfColumns.__new__.__defaults__ = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
 # FIXME: Support for multiple samples in a vcf is disabled.
 class VcfContig(Contig):
@@ -551,7 +553,7 @@ class VcfContig(Contig):
     def __repr__(self):
         return "{0}(contig_name={1!r}, sample_name={2!r}, filepath={3!r}, file_position={4!r})".format(self.__class__.__name__, self._name, self._sample_name, self._filepath, self._file_position)
 
-    def _get_sample_call(self, record):
+    def _get_sample_call(self, alt, ref, gt=None):
         """
         Args:
             record (dict):
@@ -560,20 +562,13 @@ class VcfContig(Contig):
             Has the side effect of modifying the `record` ALT key.
         """
 
-        # REF is concatenated with ALT because the genotype (GT) allele values are indices for which ALT belongs
-        # to which sample with REF at index 0.
-        if record['ALT'] == '.':
-            record['ALT'] = [record['REF']]
-        else:
-            record['ALT'] = [record['REF']] + record['ALT'].split(',')
-
         # FIXME indels
         # return_value = None
         return_value = 'X'
-        if len(record['ALT']) == 1:
-            return_value = record['ALT'][0]
-        if 'GT' in record[self._sample_name] and record[self._sample_name]['GT'] != '.':
-            return_value = record['ALT'][int(record[self._sample_name]['GT'])]
+        if len(alt) == 1:
+            return_value = alt[0]
+        if gt and gt != '.':
+            return_value = alt[int(gt)]
             # Handles a scenerio such as this from a Varscan output:
             # +-----+-----+
             # | REF | ALT |
@@ -581,17 +576,17 @@ class VcfContig(Contig):
             # | GTT | TT  |
             # +-----+-----+
             # TODO: clarify what the if statement is doing for parsing varscan output.
-            if len(record['REF']) > 1 and (len(record['REF']) - 1 ) == len(return_value) and \
-                            record['REF'][:len(return_value)] != return_value and \
-                            record['REF'][-len(return_value):] == return_value:
-                return_value = record['ALT'][0]
+            if len(ref) > 1 and (len(ref) - 1 ) == len(return_value) and \
+                            ref[:len(return_value)] != return_value and \
+                            ref[-len(return_value):] == return_value:
+                return_value = alt[0]
 
         if return_value is not None:
             return return_value[:1]
 
         return return_value
 
-    def _get_coverage(self, record):
+    def _get_coverage(self, sample_vector, info_vector):
         """
         Args:
             record (dict):
@@ -599,26 +594,46 @@ class VcfContig(Contig):
         Returns:
             int or 'PASS' or None:
         """
-        sample_coverage = '-'
-        if record[self._sample_name].get('DP') and record[self._sample_name]['DP'].isdigit():
-            sample_coverage = int(record[self._sample_name]['DP'])
-        elif record['INFO'].get('DP') and record['INFO']['DP'].isdigit():
-            sample_coverage = int(record['INFO']['DP']) / self._num_samples
-        elif record['INFO'].get('ADP') and record['INFO']['ADP'].isdigit():
-            sample_coverage = int(record['INFO']['ADP']) / self._num_samples
+        # sample_coverage = '-'
+        try:
+            return int(sample_vector['DP'])
+        except:
+            pass
+
+        try:
+            # return int(info['DP']) / self._num_samples
+            # This version does not support multiple samples
+            return int(info_vector['DP'])
+        except:
+            pass
+
+        try:
+            # return int(record['INFO']['ADP']) / self._num_samples
+            # This version does not support multiple samples
+            return int(info_vector['ADP'])
+        except:
+            pass
+
+        # if record[self._sample_name].get('DP') and record[self._sample_name]['DP'].isdigit():
+        #     sample_coverage = int(record[self._sample_name]['DP'])
+        # elif record['INFO'].get('DP') and record['INFO']['DP'].isdigit():
+        #     sample_coverage = int(record['INFO']['DP']) / self._num_samples
+        # elif record['INFO'].get('ADP') and record['INFO']['ADP'].isdigit():
+        #     sample_coverage = int(record['INFO']['ADP']) / self._num_samples
         # TODO: Deprecated? The coverage and proportion number was not included in the VCF's produced by NASP because it
         # was thrown away after the file was read. The information is still available with the new parser so the actual
         # value may be used instead.
         # NASP output
-        elif 'FT' in record[self._sample_name]:
-            failed_filters = record[self._sample_name]['FT'].split(',')
-            if 'CovFail' in failed_filters:
-                sample_coverage = -1
-            elif 'PASS' in failed_filters or 'PropFail' in failed_filters:
-                sample_coverage = 'PASS'
-        return sample_coverage
+        # elif 'FT' in record[self._sample_name]:
+        #     failed_filters = record[self._sample_name]['FT'].split(',')
+        #     if 'CovFail' in failed_filters:
+        #         sample_coverage = -1
+        #     elif 'PASS' in failed_filters or 'PropFail' in failed_filters:
+        #         sample_coverage = 'PASS'
+        # return sample_coverage
+        return '-'
 
-    def _get_proportion(self, record, sample_coverage, is_snp):
+    def _get_proportion(self, sample_vector, info_vector, sample_coverage, is_snp):
         """
         Args:
             record (dict):
@@ -630,38 +645,48 @@ class VcfContig(Contig):
             float or 'PASS' or None:
         """
         sample_proportion = '-'
-        if 'AD' in record[self._sample_name]:
-            call_depths = record[self._sample_name]['AD'].split(',')
+
+        try:
+            call_depths = sample_vector['AD'].split(',')
             # gatk, reliable and documented
-            if len(call_depths) > 1 and record[self._sample_name]['GT'] != '.':
-                sample_proportion = int(call_depths[int(record[self._sample_name]['GT'])]) / sample_coverage
+            if len(call_depths) > 1 and sample_vector['GT'] != '.':
+                sample_proportion = int(call_depths[int(sample_vector['GT'])]) / sample_coverage
                 # varscan, reliable and documented
             elif is_snp:
                 sample_proportion = int(call_depths[0]) / sample_coverage
-            elif not is_snp and 'RD' in record[self._sample_name]:
-                sample_proportion = int(record[self._sample_name]['RD']) / sample_coverage
-        # solsnp, undocumented, no multi-sample support
-        elif 'AR' in record['INFO']:
-            sample_proportion = float(record['INFO']['AR'])
+            elif not is_snp and 'RD' in sample_vector:
+                sample_proportion = int(sample_vector['RD']) / sample_coverage
+        except:
+            pass
+
+        try:
+            # solsnp, undocumented, no multi-sample support
+            sample_proportion = float(info_vector['AR'])
             if not is_snp:
                 sample_proportion = 1 - sample_proportion
+        except:
+            pass
+
         # samtools, estimate, dubious accuracy
-        elif 'DP4' in record['INFO']:
-            call_depths = record['INFO']['DP4'].split(',')
+        try:
+            call_depths = info_vector['DP4'].split(',')
             if is_snp:
                 sample_proportion = (int(call_depths[2]) + int(call_depths[3])) / (sample_coverage * self._num_samples)
             else:
                 sample_proportion = (int(call_depths[0]) + int(call_depths[1])) / (sample_coverage * self._num_samples)
+        except:
+            pass
+
         # TODO: Deprecated? The coverage and proportion number was not included in the VCF's produced by NASP because it
         # was thrown away after the file was read. The information is still available with the new parser so the actual
         # value may be used instead.
         # NASP output
-        elif 'FT' in record[self._sample_name]:
-            failed_filters = record[self._sample_name]['FT'].split(',')
-            if 'PropFail' in failed_filters:
-                sample_proportion = -1
-            elif 'PASS' in failed_filters:
-                sample_proportion = 'PASS'
+        # elif 'FT' in record[self._sample_name]:
+        #     failed_filters = record[self._sample_name]['FT'].split(',')
+        #     if 'PropFail' in failed_filters:
+        #         sample_proportion = -1
+        #     elif 'PASS' in failed_filters:
+        #         sample_proportion = 'PASS'
 
         # Some big SNP callers, like GATK, do not provide proportion information when
         # the position is called reference.  We cannot filter these positions.
@@ -714,84 +739,96 @@ class VcfContig(Contig):
                 "500WT1_test","320",".","GTT","G","900848.97",".","AC=1;AF=1.00;AN=1;BaseQRankSum=1.732;DP=18490;FS=0.000;MLEAC=1;MLEAF=1.00;MQ=59.72;MQ0=0;MQRankSum=0.013;QD=24.36;ReadPosRankSum=0.538","GT:AD:DP:GQ:MLPSAC:MLPSAF:PL","1:1,16410:18355:99:1:1.00:900888,0"
         """
         with open(self._filepath, 'r') as handle:
-            while True:
-                position = 1
-                # TODO: Every contig scans through the metadata just to get the headers. Pass the header as an argument instead.
-                # Skip past the metadata to the header
-                for line in handle:
-                    if line.startswith('#CHROM'):
-                        # Fieldnames are parsed here instead of by the DictReader because the file pointer has already moved
-                        # passed them.
-                        fieldnames = line.strip().split('\t')
-                        break
-                else:
-                    # TODO: Raise an appropriate exception for a missing header.
-                    raise Exception('VCF missing required header.')
+            # while True:
+            position = 1
+            # TODO: Every contig scans through the metadata just to get the headers. Pass the header as an argument instead.
+            # Skip past the metadata to the header
+            for line in handle:
+                if line.startswith('#CHROM'):
+                    # Fieldnames are parsed here instead of by the DictReader because the file pointer has already moved
+                    # passed them.
+                    # fieldnames = line.strip().split('\t')
+                    header = line.strip().split('\t')
+                    break
+            else:
+                # TODO: Raise an appropriate exception for a missing header.
+                raise Exception('VCF missing required header.')
 
-                # Move to the beginning of the contig.
-                handle.seek(self._file_position)
+            # Move to the beginning of the contig.
+            handle.seek(self._file_position)
 
-                for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
+            col = VcfColumns()
 
-                    # Stop iterating if a new contig has started.
-                    if row['#CHROM'] != self._name:
-                        break
+            # for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
+            for line in handle:
+                row = line.split('\t')
 
-                    row['POS'] = int(row['POS'])
+                # Stop iterating if a new contig has started.
+                # if row['#CHROM'] != self._name:
+                if row[col.CHROM] != self._name:
+                    break
 
-                    # TODO: Collect indel statistics instead of skipping them.
-                    # Skip past duplicate positions from indels.
-                    if row['POS'] < position:
-                        continue
+                row[col.POS] = int(row[col.POS])
 
-                    # Yield empty rows to bridge position gaps.
-                    while row['POS'] > position:
-                        position += 1
-                        yield self.VCF_EMPTY_POSITION
+                # TODO: Collect indel statistics instead of skipping them.
+                # Skip past duplicate positions from indels.
+                if row[col.POS] < position:
+                    continue
 
-                    # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
-                    # { 'NS': '3', 'DP': '4', 'AF': '0.5', 'DB': None, 'H2': None }
-                    # The list comprehension splits the string by the ';' delimiter and each key=value pair by '='.
-                    # If the element is not a key=value pair, the if condition assigns it the value None to guard against
-                    # IndexErrors. Finally, the dictionary comprehension assembles the final result.
-                    row['INFO'] = {elem[0]: elem[1] if len(elem) == 2 else None for elem in
-                                   [key_value.split('=', 1) for key_value in row['INFO'].split(';')]}
-
-                    # Join the FORMAT column vector with the sample column value vector as a dictionary.
-                    # If the FORMAT column and a sample column named 'NA00001' contained the following vectors:
-                    #
-                    # +--------------+-----------------+
-                    # | FORMAT       |  NA00001        |
-                    # | ===========  +  ============== |
-                    # | GT:GQ:DP:HQ  |  0|0:48:1:51,51 |
-                    # +--------------+-----------------+
-                    #
-                    # The row key 'NA00001' would have the following value:
-                    # { 'GT': 0|0, 'GQ': 48, 'DP': 1, 'HQ': 51,51 }
-                    row[self._sample_name] = dict(zip(row['FORMAT'].split(':'), row[self._sample_name].split(':')))
-
-                    # The genotype (GT) is an index to lookup the ALT allele for the sample.
-                    # It may be phased (|), unphased (/), or neither. If the value is unavailable it is a '.'
-                    if 'GT' in row[self._sample_name]:
-                        row[self._sample_name]['GT'] = row[self._sample_name]['GT'].split('|', 1)[0].split('/', 1)[0]
-
-                    call = self._get_sample_call(row)
-                    coverage = self._get_coverage(row)
-                    # call != ref checks if the sample is a SNP. The ref may have more than one position if it's an indel.
-                    proportion = self._get_proportion(row, coverage, call != row['REF'][:1])
-
-                    position += 1
-                    # Yield the position.
-                    yield Position(
-                        call=call,
-                        coverage=coverage,
-                        proportion=proportion,
-                    )
-
-                # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
-                while True:
+                # Yield empty rows to bridge position gaps.
+                while row[col.POS] > position:
                     position += 1
                     yield self.VCF_EMPTY_POSITION
+
+                # Parse INFO column such as NS=3;DP=14;AF=0.5;DB;H2 to a dictionary:
+                # { 'NS': '3', 'DP': '4', 'AF': '0.5', 'DB': None, 'H2': None }
+                # The list comprehension splits the string by the ';' delimiter and each key=value pair by '='.
+                # If the element is not a key=value pair, the if condition assigns it the value None to guard against
+                # IndexErrors. Finally, the dictionary comprehension assembles the final result.
+                # row[col.INFO] = {elem[0]: elem[1] if len(elem) == 2 else None for elem in
+                #                [key_value.split('=', 1) for key_value in row[col.INFO].split(';')]}
+                info_vector = {elem[0]: elem[1] if len(elem) == 2 else None for elem in
+                               [key_value.split('=', 1) for key_value in row[col.INFO].split(';')]}
+
+                # Join the FORMAT column vector with the sample column value vector as a dictionary.
+                # If the FORMAT column and a sample column named 'NA00001' contained the following vectors:
+                #
+                # +--------------+-----------------+
+                # | FORMAT       |  NA00001        |
+                # | ===========  +  ============== |
+                # | GT:GQ:DP:HQ  |  0|0:48:1:51,51 |
+                # +--------------+-----------------+
+                #
+                # The row key 'NA00001' would have the following value:
+                # { 'GT': 0|0, 'GQ': 48, 'DP': 1, 'HQ': 51,51 }
+                sample_vector = dict(zip(row[col.FORMAT].split(':'), row[col.SAMPLE].split(':')))
+
+                # The genotype (GT) is an index to lookup the ALT allele for the sample.
+                # It may be phased (|), unphased (/), or neither. If the value is unavailable it is a '.'
+                if 'GT' in sample_vector:
+                    sample_vector['GT'] = sample_vector['GT'].split('|', 1)[0].split('/', 1)[0]
+
+                # REF is concatenated with ALT because the genotype (GT) allele values are indices for which ALT belongs
+                # to which sample with REF at index 0.
+                alt = [row[col.REF]] if row[col.ALT] == '.' else [row[col.REF]] + row[col.ALT].split(',')
+
+                call = self._get_sample_call(alt, row[col.REF], sample_vector.get('GT'))
+                coverage = self._get_coverage(sample_vector, info_vector)
+                # call != ref checks if the sample is a SNP. The ref may have more than one position if it's an indel.
+                proportion = self._get_proportion(sample_vector, info_vector, coverage, call != row[col.REF][:1])
+
+                position += 1
+                # Yield the position.
+                yield Position(
+                    call=call,
+                    coverage=coverage,
+                    proportion=proportion,
+                )
+
+            # If the sample contig is shorter than the reference, yield empty positions after the file is exhausted.
+            while True:
+                position += 1
+                yield self.VCF_EMPTY_POSITION
 
 
 class MalformedInputFile(Exception):
