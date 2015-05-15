@@ -575,7 +575,7 @@ class DispatcherTestCase(unittest.TestCase):
             dispatcher._submit_job.assert_has_calls(expected_submit_job_calls)
             dispatcher._release_hold.assert_has_calls([call(self.job_submitter, '1')])
 
-    def test_it_snpcalls_pre_aligned_bam_files_with_solsnp(self):
+    def test_it_snpcalls_pre_aligned_bam_files_with_varscan(self):
         # FIXME: It crashes if the configuration does not contain a picard, samtools, or bam_index key
         self.configuration['picard'] = ['', '', '', {}]
         self.configuration['samtools'] = ['', 'path/to/samtools']
@@ -586,7 +586,7 @@ class DispatcherTestCase(unittest.TestCase):
         ]
         self.configuration['snpcallers'] = [
             # FIXME: It should use reasonable defaults if snpcaller parameters are undefined
-            ['solsnp', 'path/to/solsnp', '-args', {
+            ['varscan', 'path/to/varscan', '-args', {
                 'mem_requested': 1
             }],
         ]
@@ -596,31 +596,32 @@ class DispatcherTestCase(unittest.TestCase):
                 # _index_reference
                 call(
                     self.job_submitter,
-                    'format_fasta --inputfasta  --outputfasta {0}/reference/reference.fasta'.format(tmpdir),
-                    {'work_dir': '{0}/reference'.format(tmpdir)},
-                    hold=True
+                     'format_fasta --inputfasta  --outputfasta {0}/reference/reference.fasta'.format(tmpdir),
+                     {'work_dir': '{0}/reference'.format(tmpdir)},
+                     hold=True
                 ),
                 # _index_bams
                 call(
                     self.job_submitter,
-                    'ln -s -f path/to/bam {0}/bams/name.bam\n'
-                    'path/to/samtools index {0}/bams/name.bam'.format(tmpdir),
-                    {'work_dir': '{0}/bams'.format(tmpdir)},
+                     'ln -s -f path/to/bam {0}/bams/name.bam\npath/to/samtools index {0}/bams/name.bam'.format(tmpdir),
+                     {'work_dir': '{0}/bams'.format(tmpdir)},
                     ('1',)
                 ),
                 # _call_snps
                 call(
                     self.job_submitter,
-                    'java -Xmx1G -jar path/to/solsnp INPUT={0}/solsnp/name REFERENCE_SEQUENCE={0}/reference/reference.fasta OUTPUT={0}/solsnp/name-solsnp.vcf SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable -args'.format(tmpdir),
-                    {'work_dir': '{0}/solsnp'.format(tmpdir), 'mem_requested': 1, 'name': 'nasp_solsnp_name'},
+                     'echo name > {0}/varscan/name.txt\npath/to/samtools mpileup -B -d 10000000 -f {0}/reference/reference.fasta {0}/bams/name.bam > {0}/bams/name.mpileup'
+                     '\njava -Xmx1G -jar path/to/varscan mpileup2cns {0}/bams/name.mpileup --output-vcf 1 --vcf-sample-list {0}/varscan/name.txt > {0}/varscan/name-varscan.vcf -args'.format(tmpdir),
+                     {'mem_requested': 1, 'name': 'nasp_varscan_name',
+                      'work_dir': '{0}/varscan'.format(tmpdir)},
                     ('2',)
                 ),
                 # _create_matrices
                 call(
                     self.job_submitter,
-                    '/path/to/vtm --mode xml --dto-file {0}/matrix_dto.xml --num-threads 0'.format(tmpdir),
-                    {'work_dir': tmpdir, 'num_cpus': 0},
-                    ('3', 'afterany'),
+                     '/path/to/vtm --mode xml --dto-file {0}/matrix_dto.xml --num-threads 0'.format(tmpdir),
+                     {'num_cpus': 0, 'work_dir': '{0}'.format(tmpdir)},
+                     ('3', 'afterany'),
                     notify=True
                 )
             ]

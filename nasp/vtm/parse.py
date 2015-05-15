@@ -743,16 +743,16 @@ class VcfContig(Contig):
             position = 1
             # TODO: Every contig scans through the metadata just to get the headers. Pass the header as an argument instead.
             # Skip past the metadata to the header
-            for line in handle:
-                if line.startswith('#CHROM'):
-                    # Fieldnames are parsed here instead of by the DictReader because the file pointer has already moved
-                    # passed them.
-                    # fieldnames = line.strip().split('\t')
-                    header = line.strip().split('\t')
-                    break
-            else:
-                # TODO: Raise an appropriate exception for a missing header.
-                raise Exception('VCF missing required header.')
+            # for line in handle:
+            #     if line.startswith('#CHROM'):
+            #         # Fieldnames are parsed here instead of by the DictReader because the file pointer has already moved
+            #         # passed them.
+            #         # fieldnames = line.strip().split('\t')
+            #         header = line.strip().split('\t')
+            #         break
+            # else:
+            #     # TODO: Raise an appropriate exception for a missing header.
+            #     raise Exception('VCF missing required header.')
 
             # Move to the beginning of the contig.
             handle.seek(self._file_position)
