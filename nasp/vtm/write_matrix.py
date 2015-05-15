@@ -13,11 +13,9 @@ import os
 import csv
 from collections import Counter
 from contextlib import ExitStack
-# from concurrent.futures import ProcessPoolExecutor, Future
 from tempfile import TemporaryDirectory
 import itertools
 import functools
-# import logging
 
 from nasp.vtm.analyze import GenomeAnalysis
 
@@ -161,7 +159,8 @@ def write_missingdata_vcf(directory, contig_name, identifiers, metadata):
                 'REF': ref,
                 'ALT': ','.join(alts) or '.',
                 'QUAL': '.',
-                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
+                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus,
+                                             row.is_all_passed_proportion),
                 # TODO: Add #indel stat to NS
                 'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
                 'FORMAT': 'GT:FT'
@@ -183,37 +182,61 @@ def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
 
     with open('{0}_bestsnp.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
         handle.write(metadata)
-        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
-        writer.writeheader()
+        # writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
+        # writer.writeheader()
+        # position = 0
+        # while True:
+        #     row = yield
+        #     position += 1
+        #
+        #     if not row.is_best_snp:
+        #         continue
+        #
+        #     ref = row.call_str[0]
+        #     alts = set(row.call_str[1:])
+        #     alts.discard(ref)
+        #
+        #     line = {
+        #         '#CHROM': contig_name,
+        #         'POS': position,
+        #         'ID': '.',
+        #         'REF': ref,
+        #         'ALT': ','.join(alts) or '.',
+        #         'QUAL': '.',
+        #         'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus,
+        #                                      row.is_all_passed_proportion),
+        #         # TODO: AN is the number of snps + 1 for the reference.
+        #         # TODO: Add #indel stat to NS
+        #         'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
+        #         'FORMAT': 'GT:FT'
+        #     }
+        #     # Match each analysis with its analysis column.
+        #     line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
+        #     writer.writerow(line)
+
+        handle.write('{0}\n'.format('\t'.join(get_header('vcf', identifiers))))
+
         position = 0
+        num_samples = len(identifiers)
+
         while True:
             row = yield
-            position += 1
 
-            if not row.is_best_snp:
-                continue
+            position += 1
 
             ref = row.call_str[0]
             alts = set(row.call_str[1:])
             alts.discard(ref)
 
-            line = {
-                '#CHROM': contig_name,
-                'POS': position,
-                'ID': '.',
-                'REF': ref,
-                'ALT': ','.join(alts) or '.',
-                'QUAL': '.',
-                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus, row.is_all_passed_proportion),
-                # TODO: AN is the number of snps + 1 for the reference.
-                # TODO: Add #indel stat to NS
-                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
-                'FORMAT': 'GT:FT'
-            }
-            # Match each analysis with its analysis column.
-            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
-            writer.writerow(line)
-
+            handle.write(
+                '{0}\t{1}\t.\t{2}\t{3}\t.\t{4}\tGT:FT\n'.format(
+                    contig_name,
+                    position,
+                    ref,
+                    ','.join(alts) or '.',
+                    '\t'.join(_vcf_analysis_column(row.Pattern, row.all_sample_stats))
+                )
+            )
 
 def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
     """
@@ -362,7 +385,8 @@ def write_general_stats(filepath, contig_stats):
         for contig_stat in contig_stats:
             # Calculate contig stat percentages.
             for stat in fieldnames[2::2]:
-                contig_stat[stat + ' (%)'] = "{0:.2f}%".format(contig_stat[stat] / contig_stat['reference_length'] * 100)
+                contig_stat[stat + ' (%)'] = "{0:.2f}%".format(
+                    contig_stat[stat] / contig_stat['reference_length'] * 100)
             writer.writerow(contig_stat)
 
     return reference_length
@@ -376,45 +400,84 @@ def write_master_matrix(directory, contig_name, identifiers):
         identifiers (tuple of
     """
     with open('{0}_master.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=get_header('master', identifiers), delimiter='\t', lineterminator='\n')
-        writer.writeheader()
+        # writer = csv.DictWriter(handle, fieldnames=get_header('master', identifiers), delimiter='\t', lineterminator='\n')
+        # print(get_header('master', identifiers))
+        # writer.writeheader()
+        # position = 0
+        # while True:
+        # row = yield
+        # position += 1
+        #     # num_samples is the number of analyses not including the reference.
+        #     num_samples = len(row.call_str) - 1
+        #
+        #     line = {
+        #         'LocusID': "{0}::{1}".format(contig_name, position),
+        #         'Reference': row.call_str[0],
+        #         '#SNPcall': row.called_snp,
+        #         # TODO: replace with n/a
+        #         '#Indelcall': '0',
+        #         '#Refcall': row.called_reference,
+        #         '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
+        #         '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
+        #         '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
+        #         '#A': row.num_A,
+        #         '#C': row.num_C,
+        #         '#G': row.num_G,
+        #         '#T': row.num_T,
+        #         # TODO: replace with n/a
+        #         '#Indel': '0',
+        #         '#NXdegen': row.num_N,
+        #         'Contig': contig_name,
+        #         'Position': position,
+        #         'InDupRegion': row.is_reference_duplicated,
+        #         'SampleConsensus': row.is_all_passed_consensus,
+        #         'CallWasMade': row.CallWasMade,
+        #         'PassedDepthFilter': row.PassedDepthFilter,
+        #         'PassedProportionFilter': row.PassedProportionFilter,
+        #         'Pattern': "".join(row.Pattern)
+        #     }
+        #     # Match each base call with its sample analysis column.
+        #     line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
+        #
+        #     writer.writerow(line)
+        handle.write('{0}\n'.format('\t'.join(get_header('master', identifiers))))
+
         position = 0
+        num_samples = len(identifiers)
+
         while True:
             row = yield
+
             position += 1
-            # num_samples is the number of analyses not including the reference.
-            num_samples = len(row.call_str) - 1
 
-            line = {
-                'LocusID': "{0}::{1}".format(contig_name, position),
-                'Reference': row.call_str[0],
-                '#SNPcall': row.called_snp,
-                # TODO: replace with n/a
-                '#Indelcall': '0',
-                '#Refcall': row.called_reference,
-                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
-                '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
-                '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
-                '#A': row.num_A,
-                '#C': row.num_C,
-                '#G': row.num_G,
-                '#T': row.num_T,
-                # TODO: replace with n/a
-                '#Indel': '0',
-                '#NXdegen': row.num_N,
-                'Contig': contig_name,
-                'Position': position,
-                'InDupRegion': row.is_reference_duplicated,
-                'SampleConsensus': row.is_all_passed_consensus,
-                'CallWasMade': row.CallWasMade,
-                'PassedDepthFilter': row.PassedDepthFilter,
-                'PassedProportionFilter': row.PassedProportionFilter,
-                'Pattern': "".join(row.Pattern)
-            }
-            # Match each base call with its sample analysis column.
-            line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
-
-            writer.writerow(line)
+            handle.write(
+                '{0}::{1}\t{2}\t{3}\t0\t{4}\t{5:d}/{8:d}\t{6:d}/{8:d}\t{7:d}/{8:d}\t{9}\t{10}\t{11}\t{12}\t0\t{13}\t{14}\t{15}\t{16}\t{17}\t{18}\t{19}\t{20}\t{21}\n'.format(
+                    contig_name,
+                    position,
+                    '\t'.join(row.call_str),
+                    row.called_snp,
+                    # FIXME: #Indelcall unimplemented
+                    row.called_reference,
+                    num_samples - row.CallWasMade.count('N'),
+                    row.passed_coverage_filter,
+                    row.passed_proportion_filter,
+                    num_samples,
+                    row.num_A,
+                    row.num_C,
+                    row.num_G,
+                    row.num_T,
+                    # FIXME: #Index unimplemented
+                    row.num_N,
+                    contig_name,
+                    position,
+                    row.is_reference_duplicated,
+                    row.is_all_passed_consensus,
+                    row.CallWasMade,
+                    row.PassedDepthFilter,
+                    row.PassedProportionFilter,
+                    "".join(row.Pattern)
+                )
+            )
 
 
 def write_missingdata_matrix(directory, contig_name, identifiers):
@@ -425,8 +488,52 @@ def write_missingdata_matrix(directory, contig_name, identifiers):
         identifiers:
     """
     with open('{0}_missingdata.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=get_header('missingdata', identifiers), delimiter='\t', lineterminator='\n')
-        writer.writeheader()
+        # writer = csv.DictWriter(handle, fieldnames=get_header('missingdata', identifiers), delimiter='\t',
+        #                         lineterminator='\n')
+        # writer.writeheader()
+        # position = 0
+        # while True:
+        #     row = yield
+        #     position += 1
+        #
+        #     if not row.is_missing_matrix:
+        #         continue
+        #
+        #     # num_samples is the number of analyses not including the reference.
+        #     num_samples = len(row.masked_call_str) - 1
+        #
+        #     line = {
+        #         'LocusID': "{0}::{1}".format(contig_name, position),
+        #         'Reference': row.masked_call_str[0],
+        #         '#SNPcall': row.called_snp,
+        #         # TODO: replace with n/a
+        #         '#Indelcall': '0',
+        #         '#Refcall': row.called_reference,
+        #         '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
+        #         '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
+        #         '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
+        #         '#A': row.num_A,
+        #         '#C': row.num_C,
+        #         '#G': row.num_G,
+        #         '#T': row.num_T,
+        #         # TODO: replace with n/a
+        #         '#Indel': '0',
+        #         '#NXdegen': row.num_N,
+        #         'Contig': contig_name,
+        #         'Position': position,
+        #         'InDupRegion': row.is_reference_duplicated,
+        #         'SampleConsensus': row.is_all_passed_consensus,
+        #         'CallWasMade': row.CallWasMade,
+        #         'PassedDepthFilter': row.PassedDepthFilter,
+        #         'PassedProportionFilter': row.PassedProportionFilter,
+        #         'Pattern': "".join(row.Pattern)
+        #     }
+        #     # Match each base call with its sample analysis column.
+        #     line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
+        #     writer.writerow(line)
+
+        handle.write('{0}\n'.join(get_header('missingdata', identifiers)))
+
         position = 0
         while True:
             row = yield
@@ -438,35 +545,34 @@ def write_missingdata_matrix(directory, contig_name, identifiers):
             # num_samples is the number of analyses not including the reference.
             num_samples = len(row.masked_call_str) - 1
 
-            line = {
-                'LocusID': "{0}::{1}".format(contig_name, position),
-                'Reference': row.masked_call_str[0],
-                '#SNPcall': row.called_snp,
-                # TODO: replace with n/a
-                '#Indelcall': '0',
-                '#Refcall': row.called_reference,
-                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
-                '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
-                '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
-                '#A': row.num_A,
-                '#C': row.num_C,
-                '#G': row.num_G,
-                '#T': row.num_T,
-                # TODO: replace with n/a
-                '#Indel': '0',
-                '#NXdegen': row.num_N,
-                'Contig': contig_name,
-                'Position': position,
-                'InDupRegion': row.is_reference_duplicated,
-                'SampleConsensus': row.is_all_passed_consensus,
-                'CallWasMade': row.CallWasMade,
-                'PassedDepthFilter': row.PassedDepthFilter,
-                'PassedProportionFilter': row.PassedProportionFilter,
-                'Pattern': "".join(row.Pattern)
-            }
-            # Match each base call with its sample analysis column.
-            line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
-            writer.writerow(line)
+            handle.write(
+                '{0}::{1}\t{2}\t{3}\t0\t{4}\t{5:d}/{8:d}\t{6:d}/{8:d}\t{7:d}/{8:d}\t{9}\t{10}\t{11}\t{12}\t0\t{13}\t{14}\t{15}\t{16}\t{17}\t{18}\t{19}\t{20}\t{21}\n'.format(
+                    contig_name,
+                    position,
+                    '\t'.join(row.call_str),
+                    row.called_snp,
+                    # FIXME: #Indelcall unimplemented
+                    row.called_reference,
+                    num_samples - row.CallWasMade.count('N'),
+                    row.passed_coverage_filter,
+                    row.passed_proportion_filter,
+                    num_samples,
+                    row.num_A,
+                    row.num_C,
+                    row.num_G,
+                    row.num_T,
+                    # FIXME: #Index unimplemented
+                    row.num_N,
+                    contig_name,
+                    position,
+                    row.is_reference_duplicated,
+                    row.is_all_passed_consensus,
+                    row.CallWasMade,
+                    row.PassedDepthFilter,
+                    row.PassedProportionFilter,
+                    "".join(row.Pattern)
+                )
+            )
 
 
 def write_bestsnp_matrix(directory, contig_name, sample_groups):
@@ -486,9 +592,53 @@ def write_bestsnp_matrix(directory, contig_name, sample_groups):
         num_analyses += len(sample)
 
     with open('{0}_bestsnp.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t', lineterminator='\n')
-        writer.writeheader()
+        # writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t',
+        #                         lineterminator='\n')
+        # writer.writeheader()
+        # position = 0
+        # while True:
+        #     row = yield
+        #     position += 1
+        #
+        #     if not row.is_best_snp:
+        #         continue
+        #
+        #     # num_samples is the number of analyses not including the reference.
+        #     num_samples = len(row.call_str) - 1
+        #
+        #     line = {
+        #         'LocusID': "{0}::{1}".format(contig_name, position),
+        #         'Reference': row.call_str[0],
+        #         '#SNPcall': row.called_snp,
+        #         # TODO: replace with n/a
+        #         '#Indelcall': '0',
+        #         '#Refcall': row.called_reference,
+        #         '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
+        #         '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
+        #         '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
+        #         '#A': row.num_A,
+        #         '#C': row.num_C,
+        #         '#G': row.num_G,
+        #         '#T': row.num_T,
+        #         # TODO: replace with n/a
+        #         '#Indel': '0',
+        #         '#NXdegen': row.num_N,
+        #         'Contig': contig_name,
+        #         'Position': position,
+        #         'InDupRegion': row.is_reference_duplicated,
+        #         'SampleConsensus': row.is_all_passed_consensus,
+        #         'Pattern': "".join(row.Pattern)
+        #     }
+        #     # Match each base call with its sample analysis column.
+        #     line.update(
+        #         {sample_name: row.call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})
+        #
+        #     writer.writerow(line)
+
+        handle.write('{0}\n'.join(get_header('best_snp', sample_names)))
+
         position = 0
+        num_samples = num_analyses - 1
         while True:
             row = yield
             position += 1
@@ -496,37 +646,31 @@ def write_bestsnp_matrix(directory, contig_name, sample_groups):
             if not row.is_best_snp:
                 continue
 
-            # num_samples is the number of analyses not including the reference.
-            num_samples = len(row.call_str) - 1
-
-            line = {
-                'LocusID': "{0}::{1}".format(contig_name, position),
-                'Reference': row.call_str[0],
-                '#SNPcall': row.called_snp,
-                # TODO: replace with n/a
-                '#Indelcall': '0',
-                '#Refcall': row.called_reference,
-                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
-                '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
-                '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
-                '#A': row.num_A,
-                '#C': row.num_C,
-                '#G': row.num_G,
-                '#T': row.num_T,
-                # TODO: replace with n/a
-                '#Indel': '0',
-                '#NXdegen': row.num_N,
-                'Contig': contig_name,
-                'Position': position,
-                'InDupRegion': row.is_reference_duplicated,
-                'SampleConsensus': row.is_all_passed_consensus,
-                'Pattern': "".join(row.Pattern)
-            }
-            # Match each base call with its sample analysis column.
-            line.update(
-                {sample_name: row.call_str[index] for sample_name, index in zip(sample_names, first_analysis_index)})
-
-            writer.writerow(line)
+            handle.write(
+                '{0}::{1}\t{2}\t{3}\t0\t{4}\t{5:d}/{8:d}\t{6:d}/{8:d}\t{7:d}/{8:d}\t{9}\t{10}\t{11}\t{12}\t0\t{13}\t{14}\t{15}\t{16}\t{17}\t{18}\n'.format(
+                    contig_name,
+                    position,
+                    '\t'.join(row.call_str),
+                    row.called_snp,
+                    # FIXME: #Indelcall unimplemented
+                    row.called_reference,
+                    num_samples - row.CallWasMade.count('N'),
+                    row.passed_coverage_filter,
+                    row.passed_proportion_filter,
+                    num_samples,
+                    row.num_A,
+                    row.num_C,
+                    row.num_G,
+                    row.num_T,
+                    # FIXME: #Index unimplemented
+                    row.num_N,
+                    contig_name,
+                    position,
+                    row.is_reference_duplicated,
+                    row.is_all_passed_consensus,
+                    "".join(row.Pattern)
+                )
+            )
 
 
 def write_withallrefpos_matrix(directory, contig_name, identifiers):
@@ -540,46 +684,87 @@ def write_withallrefpos_matrix(directory, contig_name, identifiers):
         identifiers (tuple):
     """
     with open('{0}_withallrefpos.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
-        writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', identifiers), delimiter='\t', lineterminator='\n')
-        writer.writeheader()
+        # writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', identifiers), delimiter='\t',
+        #                         lineterminator='\n')
+        # writer.writeheader()
+        # position = 0
+        # while True:
+        #     row = yield
+        #     position += 1
+        #
+        #     # if not row.is_all_quality_breadth:
+        #     # continue
+        #
+        #     # num_samples is the number of analyses not including the reference.
+        #     num_samples = len(row.call_str) - 1
+        #
+        #     line = {
+        #         'LocusID': "{0}::{1}".format(contig_name, position),
+        #         'Reference': row.call_str[0],
+        #         '#SNPcall': row.called_snp,
+        #         # TODO: replace with n/a
+        #         '#Indelcall': '0',
+        #         '#Refcall': row.called_reference,
+        #         '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
+        #         '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
+        #         '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
+        #         '#A': row.num_A,
+        #         '#C': row.num_C,
+        #         '#G': row.num_G,
+        #         '#T': row.num_T,
+        #         # TODO: replace with n/a
+        #         '#Indel': '0',
+        #         '#NXdegen': row.num_N,
+        #         'Contig': contig_name,
+        #         'Position': position,
+        #         'InDupRegion': row.is_reference_duplicated,
+        #         'SampleConsensus': row.is_all_passed_consensus,
+        #         'Pattern': "".join(row.Pattern)
+        #     }
+        #     # Match each base call with its sample analysis column.
+        #     line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
+        #
+        #     writer.writerow(line)
+
+        handle.write('{0}\n'.format('\t'.join(get_header('best_snp', identifiers))))
+
         position = 0
+        num_samples = len(identifiers)
+
         while True:
             row = yield
+
             position += 1
 
-            # if not row.is_all_quality_breadth:
-            #     continue
+            handle.write(
+                '{0}::{1}\t{2}\t{3}\t0\t{4}\t{5:d}/{8:d}\t{6:d}/{8:d}\t{7:d}/{8:d}\t{9}\t{10}\t{11}\t{12}\t0\t{13}\t{14}\t{15}\t{16}\t{17}\t{18}\t{19}\t{20}\t{21}\n'.format(
+                    contig_name,
+                    position,
+                    '\t'.join(row.masked_call_str),
+                    row.called_snp,
+                    # FIXME: #Indelcall unimplemented
+                    row.called_reference,
+                    num_samples - row.CallWasMade.count('N'),
+                    row.passed_coverage_filter,
+                    row.passed_proportion_filter,
+                    num_samples,
+                    row.num_A,
+                    row.num_C,
+                    row.num_G,
+                    row.num_T,
+                    # FIXME: #Index unimplemented
+                    row.num_N,
+                    contig_name,
+                    position,
+                    row.is_reference_duplicated,
+                    row.is_all_passed_consensus,
+                    row.CallWasMade,
+                    row.PassedDepthFilter,
+                    row.PassedProportionFilter,
+                    "".join(row.Pattern)
+                )
+            )
 
-            # num_samples is the number of analyses not including the reference.
-            num_samples = len(row.call_str) - 1
-
-            line = {
-                'LocusID': "{0}::{1}".format(contig_name, position),
-                'Reference': row.call_str[0],
-                '#SNPcall': row.called_snp,
-                # TODO: replace with n/a
-                '#Indelcall': '0',
-                '#Refcall': row.called_reference,
-                '#CallWasMade': "{0:d}/{1:d}".format(num_samples - row.CallWasMade.count('N'), num_samples),
-                '#PassedDepthFilter': "{0:d}/{1:d}".format(row.passed_coverage_filter, num_samples),
-                '#PassedProportionFilter': "{0:d}/{1:d}".format(row.passed_proportion_filter, num_samples),
-                '#A': row.num_A,
-                '#C': row.num_C,
-                '#G': row.num_G,
-                '#T': row.num_T,
-                # TODO: replace with n/a
-                '#Indel': '0',
-                '#NXdegen': row.num_N,
-                'Contig': contig_name,
-                'Position': position,
-                'InDupRegion': row.is_reference_duplicated,
-                'SampleConsensus': row.is_all_passed_consensus,
-                'Pattern': "".join(row.Pattern)
-            }
-            # Match each base call with its sample analysis column.
-            line.update({k: v for k, v in zip(identifiers, row.call_str[1:])})
-
-            writer.writerow(line)
 
 
 def write_bestsnp_snpfasta(directory, contig_name, identifiers):
@@ -596,7 +781,9 @@ def write_bestsnp_snpfasta(directory, contig_name, identifiers):
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
-        files = tuple(stack.enter_context(open('{0}_{1}_bestsnp.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier), 'w')) for identifier in identifiers)
+        files = tuple(stack.enter_context(
+            open('{0}_{1}_bestsnp.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier),
+                 'w')) for identifier in identifiers)
 
         while True:
             row = yield
@@ -624,7 +811,9 @@ def write_missingdata_snpfasta(directory, contig_name, identifiers):
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
-        files = tuple(stack.enter_context(open('{0}_{1}_missingdata.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier), 'w')) for identifier in identifiers)
+        files = tuple(stack.enter_context(
+            open('{0}_{1}_missingdata.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier),
+                 'w')) for identifier in identifiers)
 
         while True:
             row = yield
@@ -654,7 +843,7 @@ def _concat_matrix(src, dest, offset=0):
         # Discard the header
         partial.readline()
         complete.writelines(partial)
-    # logging.info('Completed concat {0}'.format(src))
+        # logging.info('Completed concat {0}'.format(src))
 
 
 def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
@@ -684,8 +873,12 @@ def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
 
     """
     with ExitStack() as stack:
-        analyses = (stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'a+')) for identifier in identifiers)
-        analysis_contigs = (stack.enter_context(open(os.path.join(src_dir, 'fasta_partials', contig_name + '_' + identifier + suffix))) for identifier in identifiers)
+        analyses = (stack.enter_context(open(os.path.join(src_dir, identifier + suffix), 'a+')) for identifier in
+                    identifiers)
+        analysis_contigs = (
+            stack.enter_context(open(os.path.join(src_dir, 'fasta_partials', contig_name + '_' + identifier + suffix)))
+            for
+            identifier in identifiers)
 
         for analysis, analysis_contig in zip(analyses, analysis_contigs):
             analysis.writelines(analysis_contig)
@@ -734,8 +927,8 @@ def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
 
 
 # def _swap_future(executor, task):
-#     """
-#     swap_future is a helper to create callback chains of serialized tasks running in parallel.
+# """
+# swap_future is a helper to create callback chains of serialized tasks running in parallel.
 #     As each future resolves the callback launches the next task in the series and replaces the reference to the
 #     completed task with the newly started task so that tasks that follow can be attached in sequence.
 #
@@ -794,7 +987,10 @@ def _get_write_coroutines(tempdirname, identifiers, sample_groups, vcf_metadata,
 
 
 from multiprocessing import Pool
-def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, reference_dups, sample_groups, max_workers=None):
+
+
+def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, reference_dups, sample_groups,
+                    max_workers=None):
     """
     analyze_samples uses a ProcessPool to read contigs across all the sample analyses in parallel,
     write the partial results to a temporary directory, aggregate the results for each final file
@@ -819,7 +1015,8 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
     is_first_contig = True
     # An identifier is a sample_name::aligner,snpcaller header to identify each analysis file.
     # The Reference identifier is used by the snpfasta writers/concat methods, but skipped by the contig analysis.
-    identifiers = ('Reference',) + tuple(analysis.identifier for analysis in itertools.chain.from_iterable(sample_groups))
+    identifiers = ('Reference',) + tuple(
+        analysis.identifier for analysis in itertools.chain.from_iterable(sample_groups))
 
     matrices = ('master.tsv', 'bestsnp.tsv', 'missingdata.tsv', 'withallrefpos.tsv', 'bestsnp.vcf', 'missingdata.vcf')
     # futures = [Future()] * len(matrices)
@@ -833,7 +1030,8 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
 
         vcf_metadata = get_vcf_metadata(nasp_version, identifiers, reference_fasta.contigs)
         vcf_metadata_len = len(vcf_metadata)
-        coroutine_partial = functools.partial(_get_write_coroutines, tempdirname, identifiers, sample_groups, vcf_metadata)
+        coroutine_partial = functools.partial(_get_write_coroutines, tempdirname, identifiers, sample_groups,
+                                              vcf_metadata)
 
         # Only the reference contig is changing, bind the other parameters to the function.
         analyze = functools.partial(genome_analysis.analyze_contig, coroutine_partial, sample_groups, reference_dups)
@@ -877,7 +1075,8 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
             if sample_stats is None:
                 sample_stats = sample_stat
             else:
-                for sum, analysis in zip(itertools.chain.from_iterable(sample_stats), itertools.chain.from_iterable(sample_stat)):
+                for sum, analysis in zip(itertools.chain.from_iterable(sample_stats),
+                                         itertools.chain.from_iterable(sample_stat)):
                     sum.update(analysis)
 
         _concat_snpfasta(matrix_dir, tempdirname, 'missingdata.fasta', identifiers, '_missingdata.fasta')
