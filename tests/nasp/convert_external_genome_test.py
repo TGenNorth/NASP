@@ -87,7 +87,8 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
 
     def test_parse_delta_file(self):
         from nasp.nasp_objects import GenomeStatus
-        convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
+        from tests import testdata
+        # convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
         # dups_data = GenomeStatus()
         # convert_external_genome.parse_delta_file(self.delta, dups_data)
 
@@ -95,9 +96,14 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         from nasp.nasp_objects import Genome
         franken_genome = Genome()
         external_genome = Genome()
-        convert_external_genome.parse_delta_file(self.filtered_delta, franken_genome, external_genome)
+        external_genome.import_fasta_file(testdata.REFERENCE_FASTA)
+        convert_external_genome.parse_delta_file(testdata.REFERENCE_DELTA, franken_genome, external_genome)
         with NamedTemporaryFile() as tmpfile:
             franken_genome.write_to_fasta_file(tmpfile.name)
+
+            with open(tmpfile.name) as handle:
+                for line in handle:
+                    print(line)
 
     def test_parse_delta_line(self):
         pass #tested by parse_delta_file tests

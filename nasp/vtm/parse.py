@@ -761,7 +761,7 @@ class VcfContig(Contig):
 
             # for row in csv.DictReader(handle, fieldnames=fieldnames, delimiter='\t'):
             for line in handle:
-                row = line.split('\t')
+                row = line.strip().split('\t')
 
                 # Stop iterating if a new contig has started.
                 # if row['#CHROM'] != self._name:

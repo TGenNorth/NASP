@@ -17,8 +17,6 @@ from tempfile import TemporaryDirectory
 import itertools
 import functools
 
-from nasp.vtm.analyze import GenomeAnalysis
-
 
 def get_vcf_metadata(nasp_version, identifiers, contigs):
     """
@@ -217,10 +215,12 @@ def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
         handle.write('{0}\n'.format('\t'.join(get_header('vcf', identifiers))))
 
         position = 0
-        num_samples = len(identifiers)
 
         while True:
             row = yield
+
+            if not row.is_best_snp:
+                continue
 
             position += 1
 
