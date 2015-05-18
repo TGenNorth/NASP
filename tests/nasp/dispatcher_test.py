@@ -633,8 +633,7 @@ class DispatcherTestCase(unittest.TestCase):
             dispatcher._submit_job.assert_has_calls(expected_submit_job_calls)
             dispatcher._release_hold.assert_has_calls([call(self.job_submitter, '1')])
 
-    @unittest.skip('Not implemented')
-    def test_it_ignore_(self):
+    def test_it_snpcalls_with_samtools(self):
         # FIXME: It crashes if the configuration does not contain a picard, samtools, or bam_index key
         self.configuration['picard'] = ['', '', '', {}]
         self.configuration['samtools'] = ['', 'path/to/samtools']
@@ -1109,7 +1108,7 @@ class DispatcherSlurmSubmitJobTestCase(unittest.TestCase):
 
 
     @unittest.mock.patch('subprocess.getoutput', return_value='Submitted batch job 12345')
-    def test_it_submits_PBS_jobs(self, mock_getoutput):
+    def test_it_submits_jobs(self, mock_getoutput):
 
         expected = '12345'
         observed = dispatcher._submit_job(self.job_submitter, self.command, self.job_parms, self.waitfor_id)
@@ -1119,7 +1118,7 @@ class DispatcherSlurmSubmitJobTestCase(unittest.TestCase):
         mock_getoutput.assert_called_once_with('sbatch -D \'{work_dir}\' -c{ncpus} --mem={mem}000 --time={walltime}:00:00 --mail-type=FAIL -J \'{name}\' -d {dependency_string}:{job_id} -p {queue} -args --wrap="{command}"'.format(**self.expected_command))
 
     @unittest.mock.patch('subprocess.getoutput', return_value='')
-    def test_it_logs_an_error_if_PBS_does_not_return_a_job_id(self, mock_getoutput):
+    def test_it_logs_an_error_if_it_does_not_return_a_job_id(self, mock_getoutput):
 
         expected = None
         observed = dispatcher._submit_job(self.job_submitter, self.command, self.job_parms, self.waitfor_id)
@@ -1152,32 +1151,82 @@ class DispatcherSlurmSubmitJobTestCase(unittest.TestCase):
 
         mock_getoutput.assert_called_once_with('sbatch -D \'{work_dir}\' -c{ncpus} --mem={mem}000 --time={walltime}:00:00 --mail-type=FAIL -J \'{name}\' -d {dependency_string}:{job_id} -p {queue} -args {notify_flag} --wrap="{command}"'.format(**self.expected_command))
 
+class DispatcherSGESubmitJobTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        pass
 
-    # @unittest.mock.patch('subprocess.getoutput', return_value='')
-    # @unittest.mock.patch('subprocess.Popen')
-    # @unittest.mock.patch('os.open', autospec=True)
-    # def test_logs_an_error_if_PBS_does_not_return_a_job_id(self, mock_open, mock_subproc_popen, mock_getoutput):
-    #     job_submitter = 'PBS'
-    #     command = 'fake_command'
-    #     job_parms = {
-    #         'queue': 'fake_queue',
-    #         'args': '-args',
-    #         'work_dir': '',
-    #         'num_cpus': -1,
-    #         'mem_requested': -2,
-    #         'walltime': -3,
-    #         'name': 'fake_name'
-    #     }
-    #     waitfor_id = ('fake', 'id')
-    #
-    #     # process_mock = unittest.mock.Mock()
-    #     # attrs = {'pid': 43}
-    #     # process_mock.configure_mock(**attrs)
-    #     # mock_subproc_popen.return_value = process_mock
-    #
-    #     # mock_getoutput.return_value = '12345.host'
-    #     dispatcher._submit_job(job_submitter, command, job_parms, waitfor_id)
-    #
-    #     # self.assertTrue(mock_subproc_popen.called)
-    #     self.assertTrue(mock_getoutput.called)
-    #     self.assertTrue(mock_open.called)
+    def setUp(self):
+        self.job_submitter = 'SGE'
+        self.command = 'fake_command'
+        self.job_parms = {
+            'queue': 'fake_queue',
+            'args': '-args',
+            'work_dir': 'my_work_dir',
+            'num_cpus': -1,
+            'mem_requested': -2,
+            'walltime': -3,
+            'name': 'fake_name'
+        }
+        self.waitfor_id = ('-4', 'afterok')
+
+        self.expected_command = {
+            'command': self.command,
+            'work_dir': self.job_parms['work_dir'],
+            'ncpus': self.job_parms['num_cpus'],
+            'mem': self.job_parms['mem_requested'],
+            'walltime': self.job_parms['walltime'],
+            'name': self.job_parms['name'],
+            'dependency_string': self.waitfor_id[1],
+            'job_id': self.waitfor_id[0],
+            'queue': self.job_parms['queue'],
+            'args': self.job_parms['args']
+        }
+
+    def tearDown(self):
+        pass
+
+
+    @unittest.mock.patch('subprocess.getoutput', return_value='12345.host')
+    def test_it_submits_jobs(self, mock_getoutput):
+
+        expected = '12345'
+        observed = dispatcher._submit_job(self.job_submitter, self.command, self.job_parms, self.waitfor_id)
+
+        # self.assertEqual(expected, observed)
+
+        mock_getoutput.assert_called_once_with('echo "{command}" | qsub -V -cwd \'{work_dir}\' -wd \'{work_dir}\' -l h_data=-2097152.0gb,h_rt=-3:00:00 -m a -N \'{name}\' -hold_jid -4 -q {queue} {args} - '.format(**self.expected_command))
+
+    @unittest.mock.patch('subprocess.getoutput', return_value='')
+    def test_it_logs_an_error_if_it_does_not_return_a_job_id(self, mock_getoutput):
+
+        expected = None
+        observed = dispatcher._submit_job(self.job_submitter, self.command, self.job_parms, self.waitfor_id)
+
+        self.assertEqual(expected, observed)
+
+        mock_getoutput.assert_called_once_with('echo "{command}" | qsub -V -cwd \'{work_dir}\' -wd \'{work_dir}\' -l h_data=-2097152.0gb,h_rt=-3:00:00 -m a -N \'{name}\' -hold_jid -4 -q {queue} {args} - '.format(**self.expected_command))
+
+    @unittest.mock.patch('subprocess.getoutput', return_value='12345.host')
+    def test_it_sets_hold_flags(self, mock_getoutput):
+
+        expected = '12345'
+        observed = dispatcher._submit_job(self.job_submitter, self.command, self.job_parms, self.waitfor_id, hold=True)
+
+        self.assertEqual(expected, observed)
+
+        self.expected_command['hold_flag'] = '-h'
+
+        mock_getoutput.assert_called_once_with('echo "{command}" | qsub -V -cwd \'{work_dir}\' -wd \'{work_dir}\' -l h_data=-2097152.0gb,h_rt=-3:00:00 -m a -N \'{name}\' -hold_jid -4 -q {queue} {args} {hold_flag} - '.format(**self.expected_command))
+
+    @unittest.mock.patch('subprocess.getoutput', return_value='12345.host')
+    def test_it_set_notify_flags(self, mock_getoutput):
+
+        expected = '12345'
+        observed = dispatcher._submit_job(self.job_submitter, self.command, self.job_parms, self.waitfor_id, notify=True)
+
+        self.assertEqual(expected, observed)
+
+        self.expected_command['notify_flag'] = '-m e'
+
+        mock_getoutput.assert_called_once_with('echo "{command}" | qsub -V -cwd \'{work_dir}\' -wd \'{work_dir}\' -l h_data=-2097152.0gb,h_rt=-3:00:00 -m a -N \'{name}\' -hold_jid -4 -q {queue} {args} {notify_flag} - '.format(**self.expected_command))
