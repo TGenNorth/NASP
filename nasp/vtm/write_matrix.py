@@ -51,6 +51,11 @@ def get_header(type, identifiers):
     Returns:
         list: Header columns for the requested file type.
     """
+    types = ('master', 'withallrefpos', 'missingdata', 'best_snp', 'vcf')
+
+    if type not in types:
+        raise ValueError('Expected header type `{0}` to be one of: {1}'.format(type, ', '.join(types)))
+
     if type == 'vcf':
         return ('#CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'FORMAT') + identifiers
 
@@ -224,16 +229,17 @@ def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
 
             position += 1
 
-            ref = row.call_str[0]
-            alts = set(row.call_str[1:])
-            alts.discard(ref)
+            seen = set()
+            seen_add = seen.add
+            unique_calls = tuple(x for x in row.call_str if not (x in seen or seen_add(x)))
+            ref = unique_calls[0]
 
             handle.write(
                 '{0}\t{1}\t.\t{2}\t{3}\t.\t{4}\tGT:FT\n'.format(
                     contig_name,
                     position,
                     ref,
-                    ','.join(alts) or '.',
+                    ','.join(unique_calls[1:]) or '.',
                     '\t'.join(_vcf_analysis_column(row.Pattern, row.all_sample_stats))
                 )
             )
@@ -532,7 +538,7 @@ def write_missingdata_matrix(directory, contig_name, identifiers):
         #     line.update({k: v for k, v in zip(identifiers, row.masked_call_str[1:])})
         #     writer.writerow(line)
 
-        handle.write('{0}\n'.join(get_header('missingdata', identifiers)))
+        handle.write('{0}\n'.format('\t'.join(get_header('missingdata', identifiers))))
 
         position = 0
         while True:
@@ -635,7 +641,7 @@ def write_bestsnp_matrix(directory, contig_name, sample_groups):
         #
         #     writer.writerow(line)
 
-        handle.write('{0}\n'.join(get_header('best_snp', sample_names)))
+        handle.write('{0}\n'.format('\t'.join(get_header('best_snp', sample_names))))
 
         position = 0
         num_samples = num_analyses - 1
@@ -843,8 +849,7 @@ def _concat_matrix(src, dest, offset=0):
         # Discard the header
         partial.readline()
         complete.writelines(partial)
-        # logging.info('Completed concat {0}'.format(src))
-
+        
 
 def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
     """
@@ -925,41 +930,6 @@ def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
                     break
                 dest.write('{0}\n'.format(line))
 
-
-# def _swap_future(executor, task):
-# """
-# swap_future is a helper to create callback chains of serialized tasks running in parallel.
-#     As each future resolves the callback launches the next task in the series and replaces the reference to the
-#     completed task with the newly started task so that tasks that follow can be attached in sequence.
-#
-#     Args:
-#         executor (concurrent.futures.Executor):
-#         task (callable):
-#
-#     Return:
-#         callable: A function that replaces the completed future with a new future. The argument is a future that
-#         resolves to an array and index.
-#
-#     Example:
-#         In addition to concatenating the partial files in parallel:
-#         1 |-----------------------> 2 |------------>        3 |-------->
-#         1 |------->                 2 |------->             3 |------->
-#         1 |------------------->     2 |-------------------> 3 |-------->
-#
-#         The done callback chain allows the next section to begin as each section completes.
-#         1 |-----------------------> 2 |------------> 3 |-------->
-#         1 |-------> 2 |-------> 3 |------->
-#         1 |-------------------> 2 |-------------------> 3 |-------->
-#     """
-#     # FIXME: This method of chaining futures is a hack that is probably incorrectly implementing the intended design
-#     # pattern of the futures done callback.
-#     def callback(future):
-#         result = future.result()
-#         result[0][result[1]] = executor.submit(task)
-#         return result
-#     return callback
-
-
 def _get_write_coroutines(tempdirname, identifiers, sample_groups, vcf_metadata, contig_name):
     """
     Args:
@@ -1019,11 +989,10 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
         analysis.identifier for analysis in itertools.chain.from_iterable(sample_groups))
 
     matrices = ('master.tsv', 'bestsnp.tsv', 'missingdata.tsv', 'withallrefpos.tsv', 'bestsnp.vcf', 'missingdata.vcf')
-    # futures = [Future()] * len(matrices)
 
     # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
     # temporary directory which is deleted automatically.
-    # with ProcessPoolExecutor(max_workers=max_workers) as executor, TemporaryDirectory(dir=matrix_dir) as tempdirname:
+    # with ProcessPoolExecutor(max_workers=max_workers) as pool, TemporaryDirectory(dir=matrix_dir) as tempdirname:
     with Pool(processes=max_workers) as pool, TemporaryDirectory(dir=matrix_dir) as tempdirname:
 
         os.makedirs(os.path.join(tempdirname, 'fasta_partials'))
@@ -1038,6 +1007,8 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
         for sample_stat, contig_stat in pool.map(analyze, reference_fasta.contigs):
             contig_stats.append(contig_stat)
             contig_name = contig_stat['Contig']
+
+            print('Appending', contig_name)
 
             # Concatenate the contig matrices.
             for matrix in matrices:
@@ -1054,13 +1025,6 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
                     os.rename(partial, complete)
                     #futures[index].set_result((futures, index))
                 else:
-                    # Schedule a process to append the next contig as soon as the previous contig is done.
-                    # if matrix.endswith('.vcf'):
-                    #     task = functools.partial(_concat_matrix, partial, complete, vcf_metadata_len)
-                    # else:
-                    #     task = functools.partial(_concat_matrix, partial, complete, 0)
-                    # futures[index].add_done_callback(_swap_future(executor, task))
-
                     if matrix.endswith('.vcf'):
                         _concat_matrix(partial, complete, vcf_metadata_len)
                     else:
@@ -1086,6 +1050,7 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
         reference_length = write_general_stats(os.path.join(stats_dir, 'general_stats.tsv'), contig_stats)
         write_sample_stats(os.path.join(stats_dir, 'sample_stats.tsv'), sample_stats, sample_groups, reference_length)
 
+        # TODO: remove comment
         # The Python documentation says shutdown() is not explicitly needed inside a context manager, but the snpfasta
         # files were not always complete.
         # https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown
