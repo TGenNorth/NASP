@@ -275,86 +275,167 @@ class ConfigurationParserWriteReadConfigTestCase(unittest.TestCase):
         pass
 
     def setUp(self):
-        pass
+        self.expected = {
+            'run_name': 'test_run_name',
+            # 'output_folder': tmpdir,
+            'reference': ('test_reference', 'test_reference.fasta'),
+            # TODO: It should initialize to False if unspecified
+            'find_dups': 'False',
+            'job_submitter': 'None',
+            'reads': [],
+            'assemblies': [],
+            'alignments': [],
+            'vcfs': [],
+            'index': ('Index', 'path/to/bin', '-args', {
+                'name': 'index_job',
+                'mem_requested': '1',
+                'num_cpus': '2',
+                'walltime': '3',
+                'queue': 'four',
+                'args': '-five'
+            }),
+            'matrix_generator': ('MatrixGenerator', 'path/to/bin/vtm', '-args', {
+                'name': 'matrix_job',
+                'mem_requested': '1',
+                'num_cpus': '2',
+                'walltime': '3',
+                'queue': 'four',
+                'args': '-five'
+            }),
+            'samtools': ('Samtools', 'path/to/bin/vtm', '-args', {}),
+            'aligners': [
+                ('BWA-mem', 'path/to/bwa', '-args', {
+                    'name': 'bwa_align_job',
+                    'mem_requested': '1',
+                    'num_cpus': '2',
+                    'walltime': '3',
+                    'queue': 'four',
+                    'args': '-five'
+                }),
+                ('Bowtie2', 'path/to/bt2', '-args', {
+                    'name': 'bowtie_align_job',
+                    'mem_requested': '1',
+                    'num_cpus': '2',
+                    'walltime': '3',
+                    'queue': 'four',
+                    'args': '-five'
+                }),
+            ],
+            'snpcallers': [
+                ('GATK', 'path/to/gatk', '-args', {
+                    'name': 'gatk_snpcall_job',
+                    'mem_requested': '1',
+                    'num_cpus': '2',
+                    'walltime': '3',
+                    'queue': 'four',
+                    'args': '-five'
+                }),
+                ('VarScan', 'path/to/varscan', '-args', {
+                    'name': 'varscan_snpcall_job',
+                    'mem_requested': '1',
+                    'num_cpus': '2',
+                    'walltime': '3',
+                    'queue': 'four',
+                    'args': '-five'
+                }),
+            ]
+        }
 
     def tearDown(self):
-        pass
+        # FIXME: The configuration_parser global variables prevent the unit tests from running in isolation.
+        configuration_parser.configuration = {}
+        configuration_parser.read_list = []
+        configuration_parser.fasta_list = []
+        configuration_parser.bam_list = []
+        configuration_parser.vcf_list = []
+        configuration_parser.aligner_list = []
+        configuration_parser.snpcaller_list = []
 
-    def test_the_object_it_writes_should_match_the_object_it_reads(self):
-        with TemporaryDirectory() as tmpdir:
-            expected = {
-                'run_name': 'test_run_name',
-                'output_folder': tmpdir,
-                'reference': ('test_reference', 'test_reference.fasta'),
-                # TODO: It should initialize to False if unspecified
-                'find_dups': 'False',
-                'job_submitter': 'None',
-                'reads': [
 
-                ],
-                'assemblies': [],
-                'alignments': [],
-                'vcfs': [],
-                'index': ('Index', 'path/to/bin', '-args', {
-                    'name': 'index_job',
-                    'mem_requested': '1',
-                    'num_cpus': '2',
-                    'walltime': '3',
-                    'queue': 'four',
-                    'args': '-five'
-                }),
-                'matrix_generator': ('MatrixGenerator', 'path/to/bin/vtm', '-args', {
-                    'name': 'matrix_job',
-                    'mem_requested': '1',
-                    'num_cpus': '2',
-                    'walltime': '3',
-                    'queue': 'four',
-                    'args': '-five'
-                }),
-                'samtools': ('Samtools', 'path/to/bin/vtm', '-args', {}),
-                'aligners': [
-                    ('BWA-mem', 'path/to/bwa', '-args', {
-                        'name': 'bwa_align_job',
-                        'mem_requested': '1',
-                        'num_cpus': '2',
-                        'walltime': '3',
-                        'queue': 'four',
-                        'args': '-five'
-                    }),
-                    ('Bowtie2', 'path/to/bt2', '-args', {
-                        'name': 'bowtie_align_job',
-                        'mem_requested': '1',
-                        'num_cpus': '2',
-                        'walltime': '3',
-                        'queue': 'four',
-                        'args': '-five'
-                    }),
-                ],
-                'snpcallers': [
-                    ('GATK', 'path/to/gatk', '-args', {
-                        'name': 'gatk_snpcall_job',
-                        'mem_requested': '1',
-                        'num_cpus': '2',
-                        'walltime': '3',
-                        'queue': 'four',
-                        'args': '-five'
-                    }),
-                    ('VarScan', 'path/to/varscan', '-args', {
-                        'name': 'varscan_snpcall_job',
-                        'mem_requested': '1',
-                        'num_cpus': '2',
-                        'walltime': '3',
-                        'queue': 'four',
-                        'args': '-five'
-                    }),
-                ]
-            }
+def test_the_object_it_writes_should_match_the_object_it_reads(self):
+    with TemporaryDirectory(suffix='fjdksnfsdk') as tmpdir:
+        self.expected['output_folder'] = tmpdir
 
-            configuration_parser.write_config(expected)
+        configuration_parser.write_config(self.expected)
 
-            observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+        observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
 
-            self.assertDictEqual(expected, observed)
+        self.assertDictEqual(self.expected, observed)
+
+
+# def test_the_object_it_should_warn_when_the_read_element_does_not_contain_read_files(self):
+#     with TemporaryDirectory() as tmpdir:
+#         self.expected['output_folder'] = tmpdir
+#
+#         self.expected['reads'] = [
+#             ('not_a_valid_read_file', '', '')
+#         ]
+#
+#         configuration_parser.write_config(self.expected)
+#
+#         observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+#
+#         self.assertDictEqual(self.expected, observed)
+
+def test_the_object_it_stores_reads(self):
+    with TemporaryDirectory() as tmpdir:
+        self.expected['output_folder'] = tmpdir
+
+        self.expected['reads'] = [
+            ('foo', 'bar', 'baz')
+        ]
+
+        configuration_parser.write_config(self.expected)
+
+        observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+
+        self.assertDictEqual(self.expected, observed)
+
+
+def test_the_object_it_stores_assemblies(self):
+    with TemporaryDirectory() as tmpdir:
+        self.expected['output_folder'] = tmpdir
+
+        self.expected['assemblies'] = [
+            ('foo', 'bar')
+        ]
+
+        configuration_parser.write_config(self.expected)
+
+        observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+
+        self.assertDictEqual(self.expected, observed)
+
+
+def test_the_object_it_stores_alignments(self):
+    with TemporaryDirectory() as tmpdir:
+        self.expected['output_folder'] = tmpdir
+
+        self.expected['alignments'] = [
+            ('foo', 'bar')
+        ]
+
+        configuration_parser.write_config(self.expected)
+
+        observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+
+        self.assertDictEqual(self.expected, observed)
+
+
+def test_the_object_it_stores_vcfs(self):
+    with TemporaryDirectory() as tmpdir:
+        self.expected['output_folder'] = tmpdir
+
+        self.expected['vcfs'] = [
+            ('foo', 'bar')
+        ]
+
+        configuration_parser.write_config(self.expected)
+
+        observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+
+        self.assertDictEqual(self.expected, observed)
+
 
 if __name__ == "__main__":
     unittest.main()
