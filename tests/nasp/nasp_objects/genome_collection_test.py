@@ -17,10 +17,14 @@ class GenomeCollectionStatsTestCase(unittest.TestCase):
         reference.import_fasta_file(reference_path)
         reference.import_dups_file(dups_path)
         self.genome = GenomeCollection()
+        self.genome.set_reference(reference)
         fasta = FastaGenome()
         fasta.import_fasta_file(reference_path)
+        fasta.set_file_path(reference_path)
+        fasta.set_file_type('fasta')
+        fasta.set_nickname('test_nickname')
+        fasta.add_generators(['genA', 'genB'])
         self.genome.add_genome(fasta)
-        self.genome.set_reference(reference)
 
         self.tmpfile = tempfile.NamedTemporaryFile(mode='w', delete=False)
 

@@ -4,6 +4,7 @@
 __author__ = "jtravis"
 
 from nasp import configuration_parser
+import os
 import unittest
 import tempfile
 from xml.etree import ElementTree
@@ -42,37 +43,37 @@ class ConfigurationParserTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @unittest.skip("Not Implemented")
-    def test_parse_args(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_parse_options(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_find_reads(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_find_files(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_get_reads(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_get_fastas(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_get_bams(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_get_vcfs(self):
-        raise NotImplementedError
+    # @unittest.skip("Not Implemented")
+    # def test_parse_args(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_parse_options(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_find_reads(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_find_files(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_get_reads(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_get_fastas(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_get_bams(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_get_vcfs(self):
+    #     raise NotImplementedError
 
     def test_parse_files_empty_files_node(self):
         expected = {
@@ -115,37 +116,37 @@ class ConfigurationParserTestCase(unittest.TestCase):
                                             '   </ReadFolder>'
                                             '</Files>')
         self.assertRaises(AttributeError, configuration_parser._parse_files, files_node)
-        #configuration_parser._parse_files(files_node)
-        #self.assertTrue(all(configuration_parser.configuration[key] == expected[key] for key in expected.keys()),
+        # configuration_parser._parse_files(files_node)
+        # self.assertTrue(all(configuration_parser.configuration[key] == expected[key] for key in expected.keys()),
         #                "The configuration must contain all the expected key value pairs")
 
-    @unittest.skip("Not Implemented")
-    def test_get_application(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_parse_applications(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_write_reads(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_write_files(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_write_application(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_write_config_node(self):
-        raise NotImplementedError
-
-    @unittest.skip("Not Implemented")
-    def test_write_config(self):
-        raise NotImplementedError
+    # @unittest.skip("Not Implemented")
+    # def test_get_application(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_parse_applications(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_write_reads(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_write_files(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_write_application(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_write_config_node(self):
+    #     raise NotImplementedError
+    #
+    # @unittest.skip("Not Implemented")
+    # def test_write_config(self):
+    #     raise NotImplementedError
 
     # FileNotFound
     def test_parse_config_when_file_does_not_exist(self):
@@ -261,6 +262,99 @@ class ConfigurationParserTestCase(unittest.TestCase):
                 'find_dups': None
             }
             self.assertDictEqual(expected, configuration_parser.parse_config(config.name))
+
+
+from tempfile import TemporaryDirectory
+
+
+class ConfigurationParserWriteReadConfigTestCase(unittest.TestCase):
+    maxDiff = None
+
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_the_object_it_writes_should_match_the_object_it_reads(self):
+        with TemporaryDirectory() as tmpdir:
+            expected = {
+                'run_name': 'test_run_name',
+                'output_folder': tmpdir,
+                'reference': ('test_reference', 'test_reference.fasta'),
+                # TODO: It should initialize to False if unspecified
+                'find_dups': 'False',
+                'job_submitter': 'None',
+                'reads': [
+
+                ],
+                'assemblies': [],
+                'alignments': [],
+                'vcfs': [],
+                'index': ('Index', 'path/to/bin', '-args', {
+                    'name': 'index_job',
+                    'mem_requested': '1',
+                    'num_cpus': '2',
+                    'walltime': '3',
+                    'queue': 'four',
+                    'args': '-five'
+                }),
+                'matrix_generator': ('MatrixGenerator', 'path/to/bin/vtm', '-args', {
+                    'name': 'matrix_job',
+                    'mem_requested': '1',
+                    'num_cpus': '2',
+                    'walltime': '3',
+                    'queue': 'four',
+                    'args': '-five'
+                }),
+                'samtools': ('Samtools', 'path/to/bin/vtm', '-args', {}),
+                'aligners': [
+                    ('BWA-mem', 'path/to/bwa', '-args', {
+                        'name': 'bwa_align_job',
+                        'mem_requested': '1',
+                        'num_cpus': '2',
+                        'walltime': '3',
+                        'queue': 'four',
+                        'args': '-five'
+                    }),
+                    ('Bowtie2', 'path/to/bt2', '-args', {
+                        'name': 'bowtie_align_job',
+                        'mem_requested': '1',
+                        'num_cpus': '2',
+                        'walltime': '3',
+                        'queue': 'four',
+                        'args': '-five'
+                    }),
+                ],
+                'snpcallers': [
+                    ('GATK', 'path/to/gatk', '-args', {
+                        'name': 'gatk_snpcall_job',
+                        'mem_requested': '1',
+                        'num_cpus': '2',
+                        'walltime': '3',
+                        'queue': 'four',
+                        'args': '-five'
+                    }),
+                    ('VarScan', 'path/to/varscan', '-args', {
+                        'name': 'varscan_snpcall_job',
+                        'mem_requested': '1',
+                        'num_cpus': '2',
+                        'walltime': '3',
+                        'queue': 'four',
+                        'args': '-five'
+                    }),
+                ]
+            }
+
+            configuration_parser.write_config(expected)
+
+            observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+
+            self.assertDictEqual(expected, observed)
 
 if __name__ == "__main__":
     unittest.main()

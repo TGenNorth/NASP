@@ -292,7 +292,7 @@ class Genome(GenomeStatus):
             if data_match:
                 self.append_contig(list(data_match.group(1)))
 
-    # NOTE: contig_prefix is unused
+    # contig_prefix is used by vcf_to_matrix to discard the frankenfasta contig name prefix.
     def import_fasta_file(self, fasta_filename, contig_prefix=""):
         """ Read in a fasta file.
 
