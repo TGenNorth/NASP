@@ -89,7 +89,7 @@ def _index_contigs(reference_fasta, reference_dups, frankenfastas, vcfs, num_wor
         )
 
         executor.shutdown()
-        
+
     return reference_fasta.result(), reference_dups.result(), sample_groups
 
 

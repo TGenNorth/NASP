@@ -139,7 +139,7 @@ def write_missingdata_vcf(directory, contig_name, identifiers, metadata):
     coverage_threshold = 10
     proportion_threshold = 0.9
 
-    with open('{0}_missingdata.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
+    with open('{0}_missingdata.vcf'.format(os.path.join(directory, 'missingdata.vcf', contig_name)), 'w') as handle:
         handle.write(metadata)
         # writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
         # writer.writeheader()
@@ -215,7 +215,7 @@ def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
     coverage_threshold = 10
     proportion_threshold = 0.9
 
-    with open('{0}_bestsnp.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
+    with open('{0}_bestsnp.vcf'.format(os.path.join(directory, 'bestsnp.vcf', contig_name)), 'w') as handle:
         handle.write(metadata)
         # writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
         # writer.writeheader()
@@ -441,7 +441,7 @@ def write_master_matrix(directory, contig_name, identifiers):
         contig_name (str): Name
         identifiers (tuple of
     """
-    with open('{0}_master.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
+    with open('{0}_master.tsv'.format(os.path.join(directory, 'master.tsv', contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('master', identifiers), delimiter='\t', lineterminator='\n')
         # print(get_header('master', identifiers))
         # writer.writeheader()
@@ -529,7 +529,7 @@ def write_missingdata_matrix(directory, contig_name, identifiers):
         contig_name (str):
         identifiers:
     """
-    with open('{0}_missingdata.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
+    with open('{0}_missingdata.tsv'.format(os.path.join(directory, 'missingdata.tsv', contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('missingdata', identifiers), delimiter='\t',
         #                         lineterminator='\n')
         # writer.writeheader()
@@ -633,7 +633,7 @@ def write_bestsnp_matrix(directory, contig_name, sample_groups):
         first_analysis_index.append(num_analyses)
         num_analyses += len(sample)
 
-    with open('{0}_bestsnp.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
+    with open('{0}_bestsnp.tsv'.format(os.path.join(directory, 'bestsnp.tsv', contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t',
         #                         lineterminator='\n')
         # writer.writeheader()
@@ -725,7 +725,7 @@ def write_withallrefpos_matrix(directory, contig_name, identifiers):
         contig_name (str):
         identifiers (tuple):
     """
-    with open('{0}_withallrefpos.tsv'.format(os.path.join(directory, contig_name)), 'w') as handle:
+    with open('{0}_withallrefpos.tsv'.format(os.path.join(directory, 'withallrefpos.tsv', contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', identifiers), delimiter='\t',
         #                         lineterminator='\n')
         # writer.writeheader()
@@ -1033,6 +1033,9 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
 
         os.makedirs(os.path.join(tempdirname, 'fasta_partials'))
 
+        for matrix in matrices:
+            os.makedirs(os.path.join(tempdirname, matrix))
+
         vcf_metadata = get_vcf_metadata(nasp_version, identifiers, reference_fasta.contigs)
         vcf_metadata_len = len(vcf_metadata)
         coroutine_partial = functools.partial(_get_write_coroutines, tempdirname, identifiers, sample_groups,
@@ -1062,7 +1065,7 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
                 # logging.info('Scheduled concat contig {0}'.format(contig_name))
 
                 # Path to a contig matrix.
-                partial = os.path.join(tempdirname, '{0}_{1}'.format(contig_name, matrix))
+                partial = os.path.join(tempdirname, matrix, '{0}_{1}'.format(contig_name, matrix))
                 # Path to the final matrix where all the contigs will be concatenated.
                 complete = os.path.join(matrix_dir, matrix)
 

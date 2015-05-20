@@ -695,7 +695,7 @@ class WriteMatrixTestCase(unittest.TestCase):
             'TestContig_sample3::aligner,snpcaller_bestsnp.fasta'
         ]
         expected_lines = (
-            'AAA',
+            'A',
         )
 
         with TemporaryDirectory() as tmpdir:
@@ -708,12 +708,13 @@ class WriteMatrixTestCase(unittest.TestCase):
                 writer.send(position)
             writer.close()
 
-            # The file was created.
+            # The files were created.
             self.assertListEqual(expected_files, os.listdir(fasta_partials))
 
+            # Sample from the first file
             with open(os.path.join(tmpdir, 'fasta_partials', expected_files[0])) as handle:
                 # The file contains all the expected rows.
-                for expected_line, line in zip(expected_lines, handle):
+                for expected_line, line in itertools.zip_longest(expected_lines, handle):
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
