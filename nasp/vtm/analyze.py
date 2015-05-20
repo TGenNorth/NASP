@@ -516,4 +516,7 @@ class GenomeAnalysis(object):
         #     datetime.timedelta(seconds=(end-start).total_seconds())
         # ))
 
+        for coroutine in coroutines:
+            coroutine.close()
+
         return sample_stats, contig_stats

@@ -141,36 +141,67 @@ def write_missingdata_vcf(directory, contig_name, identifiers, metadata):
 
     with open('{0}_missingdata.vcf'.format(os.path.join(directory, contig_name)), 'w') as handle:
         handle.write(metadata)
-        writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
-        writer.writeheader()
+        # writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
+        # writer.writeheader()
+        # position = 0
+        # while True:
+        #     row = yield
+        #     position += 1
+        #
+        #     if not row.is_missing_matrix:
+        #         continue
+        #
+        #     ref = row.call_str[0]
+        #     seen = {ref, 'X', 'N'}
+        #     seen_add = seen.add
+        #     alts = tuple(x for x in row.masked_call_str if not (x in seen or seen_add(x)))
+        #
+        #     line = {
+        #         '#CHROM': contig_name,
+        #         'POS': position,
+        #         'ID': '.',
+        #         'REF': ref,
+        #         'ALT': ','.join(alts) or '.',
+        #         'QUAL': '.',
+        #         'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus,
+        #                                      row.is_all_passed_proportion),
+        #         # TODO: Add #indel stat to NS
+        #         'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
+        #         'FORMAT': 'GT:FT'
+        #     }
+        #     # Match each analysis with its analysis column.
+        #     line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
+        #     writer.writerow(line)
+
+        handle.write('{0}\n'.format('\t'.join(get_header('vcf', identifiers))))
+
         position = 0
+
         while True:
             row = yield
+
             position += 1
 
             if not row.is_missing_matrix:
                 continue
 
             ref = row.call_str[0]
-            alts = set(row.call_str[1:])
-            alts.difference_update(('X', 'N', ref))
+            seen = {ref, 'X', 'N'}
+            seen_add = seen.add
+            alts = tuple(x for x in row.masked_call_str if not (x in seen or seen_add(x)))
 
-            line = {
-                '#CHROM': contig_name,
-                'POS': position,
-                'ID': '.',
-                'REF': ref,
-                'ALT': ','.join(alts) or '.',
-                'QUAL': '.',
-                'FILTER': _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus,
-                                             row.is_all_passed_proportion),
-                # TODO: Add #indel stat to NS
-                'INFO': 'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
-                'FORMAT': 'GT:FT'
-            }
-            # Match each analysis with its analysis column.
-            line.update({k: v for k, v in zip(identifiers, _vcf_analysis_column(row.Pattern, row.all_sample_stats))})
-            writer.writerow(line)
+            handle.write(
+                '{0}\t{1}\t.\t{2}\t{3}\t.\t{4}\t{5}\tGT:FT\n'.format(
+                    contig_name,
+                    position,
+                    ref,
+                    ','.join(alts) or '.',
+                    _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus,
+                                       row.is_all_passed_proportion),
+                    'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
+                    '\t'.join(_vcf_analysis_column(row.Pattern, row.all_sample_stats))
+                )
+            )
 
 
 def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
@@ -180,6 +211,7 @@ def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
         contig_name (str):
         identifiers:
     """
+    # FIXME: Remove hardcoded thresholds
     coverage_threshold = 10
     proportion_threshold = 0.9
 
@@ -224,25 +256,29 @@ def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
         while True:
             row = yield
 
+            position += 1
+
             if not row.is_best_snp:
                 continue
 
-            position += 1
-
-            seen = set()
+            ref = row.call_str[0]
+            seen = {ref}
             seen_add = seen.add
-            unique_calls = tuple(x for x in row.call_str if not (x in seen or seen_add(x)))
-            ref = unique_calls[0]
+            alts = tuple(x for x in row.call_str if not (x in seen or seen_add(x)))
 
             handle.write(
-                '{0}\t{1}\t.\t{2}\t{3}\t.\t{4}\tGT:FT\n'.format(
+                '{0}\t{1}\t.\t{2}\t{3}\t.\t{4}\t{5}\tGT:FT\n'.format(
                     contig_name,
                     position,
                     ref,
-                    ','.join(unique_calls[1:]) or '.',
+                    ','.join(alts) or '.',
+                    _vcf_filter_column(coverage_threshold, proportion_threshold, row.is_all_passed_consensus,
+                                       row.is_all_passed_proportion),
+                    'AN={0};NS={1}'.format(len(alts) + 1, row.called_reference + row.called_snp),
                     '\t'.join(_vcf_analysis_column(row.Pattern, row.all_sample_stats))
                 )
             )
+
 
 def write_sample_stats(filepath, sample_stats, sample_groups, reference_length):
     """
@@ -772,7 +808,6 @@ def write_withallrefpos_matrix(directory, contig_name, identifiers):
             )
 
 
-
 def write_bestsnp_snpfasta(directory, contig_name, identifiers):
     """
     Args:
@@ -930,6 +965,7 @@ def _concat_snpfasta(dest_dir, src_dir, dest, identifiers, suffix):
                     break
                 dest.write('{0}\n'.format(line))
 
+
 def _get_write_coroutines(tempdirname, identifiers, sample_groups, vcf_metadata, contig_name):
     """
     Args:
@@ -1008,6 +1044,7 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
         # for sample_stat, contig_stat in pool.map(analyze, reference_fasta.contigs):
 
         import time
+
         print("Analyzing contigs in parallel:", time.strftime("%Y-%m-%d %H:%M:%S"))
         results = pool.map(analyze, reference_fasta.contigs)
         pool.close()
@@ -1033,7 +1070,7 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
                 if is_first_contig:
                     # TODO: Replace with shutil.move which can handle cross-filesystem moves.
                     os.rename(partial, complete)
-                    #futures[index].set_result((futures, index))
+                    # futures[index].set_result((futures, index))
                 else:
                     if matrix.endswith('.vcf'):
                         _concat_matrix(partial, complete, vcf_metadata_len)

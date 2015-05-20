@@ -88,7 +88,9 @@ def _index_contigs(reference_fasta, reference_dups, frankenfastas, vcfs, num_wor
             tuple(v) for _, v in itertools.groupby(sorted(future.result() for future in futures), lambda x: x.name)
         )
 
-        return reference_fasta.result(), reference_dups.result(), sample_groups
+        executor.shutdown()
+        
+    return reference_fasta.result(), reference_dups.result(), sample_groups
 
 
 def main():

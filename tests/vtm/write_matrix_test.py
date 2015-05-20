@@ -46,7 +46,7 @@ identifiers = (
 # TODO: It should handle \n and \r\n line endings
 # TODO: vcf column assertions
 
-# A non-missingdata position
+# Neither missing nor bestsnp position
 position1 = PositionInfo(
     # General Stats
     is_all_called=True,
@@ -56,7 +56,66 @@ position1 = PositionInfo(
     is_all_passed_proportion=True,
     is_all_passed_consensus=True,
     is_all_quality_breadth=True,
-    is_best_snp=True,
+    is_best_snp=False,
+
+    # NOTE: Would it increase performance if this were a tuple of tuples and we avoided using append?
+    # Sample Stats - A list of list of Counters representing the stats for each analysis file grouped by sample.
+    all_sample_stats=(
+        Counter({
+            'was_called': 0,
+            'passed_coverage_filter': 0,
+            'passed_proportion_filter': 0,
+            'quality_breadth': 0,
+            'called_reference': 0,
+            'called_snp': 0,
+            'called_degen': 0
+        }),
+
+        # all - True if true in all of the analysis_stats for the same sample.
+        Counter({
+            'was_called': 1,
+            'passed_coverage_filter': 1,
+            'passed_proportion_filter': 1,
+            'quality_breadth': 1,
+            'called_reference': 1,
+            'called_snp': 1,
+            'called_degen': 1
+        })),
+
+    # Missing Data Matrix condition - at least one SampleAnalysis passes quality_breadth and is a SNP.
+    is_missing_matrix=False,
+
+    # NASP Master Matrix
+    # Counters
+    called_reference=1,
+    called_snp=2,
+    passed_coverage_filter=3,
+    passed_proportion_filter=4,
+    num_A=5,
+    num_C=6,
+    num_G=7,
+    num_T=8,
+    num_N=9,
+    # Strings
+    call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
+    masked_call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
+    CallWasMade='YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN',
+    PassedDepthFilter='',
+    PassedProportionFilter='',
+    Pattern=''
+)
+
+# A missingdata position
+position2 = PositionInfo(
+    # General Stats
+    is_all_called=True,
+    is_reference_clean=True,
+    is_reference_duplicated=True,
+    is_all_passed_coverage=True,
+    is_all_passed_proportion=True,
+    is_all_passed_consensus=True,
+    is_all_quality_breadth=True,
+    is_best_snp=False,
 
     # NOTE: Would it increase performance if this were a tuple of tuples and we avoided using append?
     # Sample Stats - A list of list of Counters representing the stats for each analysis file grouped by sample.
@@ -105,11 +164,64 @@ position1 = PositionInfo(
     Pattern=''
 )
 
-# A missingdata position
-position2 = deepcopy(position1)
+# Best SNP position
+position3 = PositionInfo(
+    # General Stats
+    is_all_called=True,
+    is_reference_clean=True,
+    is_reference_duplicated=True,
+    is_all_passed_coverage=True,
+    is_all_passed_proportion=True,
+    is_all_passed_consensus=True,
+    is_all_quality_breadth=True,
+    is_best_snp=True,
 
-#
-position3 = deepcopy(position1)
+    # NOTE: Would it increase performance if this were a tuple of tuples and we avoided using append?
+    # Sample Stats - A list of list of Counters representing the stats for each analysis file grouped by sample.
+    all_sample_stats=(
+        Counter({
+            'was_called': 0,
+            'passed_coverage_filter': 0,
+            'passed_proportion_filter': 0,
+            'quality_breadth': 0,
+            'called_reference': 0,
+            'called_snp': 0,
+            'called_degen': 0
+        }),
+
+        # all - True if true in all of the analysis_stats for the same sample.
+        Counter({
+            'was_called': 1,
+            'passed_coverage_filter': 1,
+            'passed_proportion_filter': 1,
+            'quality_breadth': 1,
+            'called_reference': 1,
+            'called_snp': 1,
+            'called_degen': 1
+        })),
+
+    # Missing Data Matrix condition - at least one SampleAnalysis passes quality_breadth and is a SNP.
+    is_missing_matrix=False,
+
+    # NASP Master Matrix
+    # Counters
+    called_reference=1,
+    called_snp=2,
+    passed_coverage_filter=3,
+    passed_proportion_filter=4,
+    num_A=5,
+    num_C=6,
+    num_G=7,
+    num_T=8,
+    num_N=9,
+    # Strings
+    call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
+    masked_call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
+    CallWasMade='YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN',
+    PassedDepthFilter='',
+    PassedProportionFilter='',
+    Pattern=''
+)
 
 
 class VcfMetadataTestCase(unittest.TestCase):
@@ -328,6 +440,7 @@ class WriteMatrixTestCase(unittest.TestCase):
         expected_lines = (
             self.metadata,
             '\t'.join(write_matrix.get_header('vcf', identifiers)) + '\n',
+            'TestContig	2	.	A	C,G,T,R,Y,K,M,S,W,B,D,H,V,.,a,c,g,t,r,y,k,m,s,w,b,d,h,v,n	.	PASS	AN=30;NS=3	GT:FT\n'
             # TODO: test thresholds aren't hardcoded
         )
 
@@ -344,7 +457,7 @@ class WriteMatrixTestCase(unittest.TestCase):
 
             with open(os.path.join(tmpdir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
-                for expected_line, line in zip(expected_lines, handle):
+                for expected_line, line in itertools.zip_longest(expected_lines, handle):
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
@@ -416,10 +529,7 @@ class WriteMatrixTestCase(unittest.TestCase):
         expected_lines = (
             self.metadata,
             '\t'.join(write_matrix.get_header('vcf', identifiers)) + '\n',
-            'TestContig	1	.	A	C,G,T,R,Y,K,M,S,W,B,D,H,V,N,.,a,c,g,t,r,y,k,m,s,w,b,d,h,v,n	.		GT:FT\n',
-            'TestContig	2	.	A	C,G,T,R,Y,K,M,S,W,B,D,H,V,N,.,a,c,g,t,r,y,k,m,s,w,b,d,h,v,n	.		GT:FT\n',
-            'TestContig	3	.	A	C,G,T,R,Y,K,M,S,W,B,D,H,V,N,.,a,c,g,t,r,y,k,m,s,w,b,d,h,v,n	.		GT:FT\n'
-
+            'TestContig	3	.	A	C,G,T,R,Y,K,M,S,W,B,D,H,V,N,.,a,c,g,t,r,y,k,m,s,w,b,d,h,v,n	.	PASS	AN=31;NS=3	GT:FT\n'
         )
 
         with TemporaryDirectory() as tmpdir:
@@ -435,7 +545,7 @@ class WriteMatrixTestCase(unittest.TestCase):
 
             with open(os.path.join(tmpdir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
-                for expected_line, line in zip(expected_lines, handle):
+                for expected_line, line in itertools.zip_longest(expected_lines, handle):
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
