@@ -849,7 +849,7 @@ def _concat_matrix(src, dest, offset=0):
         # Discard the header
         partial.readline()
         complete.writelines(partial)
-        
+
 
 def _concat_snpfasta_contig(src_dir, contig_name, identifiers, suffix):
     """
@@ -993,7 +993,7 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
     # Analyze the contigs in parallel. The partial files leading up to the final result will be written in a
     # temporary directory which is deleted automatically.
     # with ProcessPoolExecutor(max_workers=max_workers) as pool, TemporaryDirectory(dir=matrix_dir) as tempdirname:
-    with Pool(processes=max_workers) as pool, TemporaryDirectory(dir=matrix_dir) as tempdirname:
+    with Pool(processes=max_workers, maxtasksperchild=100) as pool, TemporaryDirectory(dir=matrix_dir) as tempdirname:
 
         os.makedirs(os.path.join(tempdirname, 'fasta_partials'))
 
@@ -1004,11 +1004,21 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
 
         # Only the reference contig is changing, bind the other parameters to the function.
         analyze = functools.partial(genome_analysis.analyze_contig, coroutine_partial, sample_groups, reference_dups)
-        for sample_stat, contig_stat in pool.map(analyze, reference_fasta.contigs):
+
+        # for sample_stat, contig_stat in pool.map(analyze, reference_fasta.contigs):
+
+        import time
+        print("Analyzing contigs in parallel:", time.strftime("%Y-%m-%d %H:%M:%S"))
+        results = pool.map(analyze, reference_fasta.contigs)
+        pool.close()
+
+        for sample_stat, contig_stat in results:
+
             contig_stats.append(contig_stat)
             contig_name = contig_stat['Contig']
 
-            print('Appending', contig_name)
+            print('Appending', contig_name, time.strftime("%Y-%m-%d %H:%M:%S"))
+
 
             # Concatenate the contig matrices.
             for matrix in matrices:
@@ -1055,3 +1065,5 @@ def analyze_samples(matrix_dir, stats_dir, genome_analysis, reference_fasta, ref
         # files were not always complete.
         # https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor.shutdown
         # executor.shutdown()
+
+        pool.join()
