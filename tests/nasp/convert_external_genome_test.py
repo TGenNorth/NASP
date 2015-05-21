@@ -11,6 +11,7 @@ import os
 
 
 class ConvertExternalGenomeTestCase(unittest.TestCase):
+    maxDiff = None
 
     @classmethod
     def setUpClass(cls):
@@ -79,18 +80,14 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         # except PermissionError:
         #     self.fail("Unhandled PermissionError. Triggered when nucmer is not installed: self.nucmer_path=\"\"")
         # convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
-        convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
+        convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name, 'convert_external_genome_external.fasta')
 
     @unittest.skip("Throws TypeError: missing required arguments instead of asserted OSError. What is this testing?")
     def test_update_genome_from_delta_data(self):
         self.assertRaises(OSError, convert_external_genome._update_genome_from_delta_data, "", "")
 
     def test_parse_delta_file(self):
-        from nasp.nasp_objects import GenomeStatus
         from tests import testdata
-        # convert_external_genome.generate_delta_file(self.nucmer_path, "", self.deltafilter_path, "external", self.reference.name, self.external.name)
-        # dups_data = GenomeStatus()
-        # convert_external_genome.parse_delta_file(self.delta, dups_data)
 
         from tempfile import NamedTemporaryFile
         from nasp.nasp_objects import Genome
@@ -101,9 +98,8 @@ class ConvertExternalGenomeTestCase(unittest.TestCase):
         with NamedTemporaryFile() as tmpfile:
             franken_genome.write_to_fasta_file(tmpfile.name)
 
-            with open(tmpfile.name) as handle:
-                for line in handle:
-                    print(line)
+            with open(testdata.REFERENCE_FASTA) as expected, open(tmpfile.name) as actual:
+                self.assertEqual(expected.readlines(), actual.readlines())
 
     def test_parse_delta_line(self):
         pass #tested by parse_delta_file tests

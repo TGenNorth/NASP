@@ -25,7 +25,7 @@ def format_fasta(inputfasta, outputfasta):
 
 def main():
     commandline_args = _parse_args()
-    format_fasta(commandline_args.inputfasta, commandline_args.ouputfasta)
+    format_fasta(commandline_args.inputfasta, commandline_args.outputfasta)
 
 
 if __name__ == "__main__":

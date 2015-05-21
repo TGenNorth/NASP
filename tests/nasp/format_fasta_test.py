@@ -19,7 +19,7 @@ class FormatFastaTestCase(unittest.TestCase):
         from tests import testdata
         from nasp.format_fasta import format_fasta
 
-        expected_max_line_length = 80
+        expected_max_line_length = 80 + 1 # +1 for the newline character
 
 
         with NamedTemporaryFile() as tmpfile:
@@ -27,4 +27,5 @@ class FormatFastaTestCase(unittest.TestCase):
 
             with open(tmpfile.name) as observed:
                 for line in observed:
+                    print(line)
                     self.assertLessEqual(len(line), expected_max_line_length)

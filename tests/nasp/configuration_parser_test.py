@@ -28,8 +28,6 @@ from xml.etree import ElementTree
 # snpcaller_list ditto
 #
 # _getReads returns num_reads which is never read and writes global read_list that is read
-#
-# FileNotFoundError: [Errno 2] No such file or directory: '/scratch/dlemmer/nasp_test/reads'
 
 
 class ConfigurationParserTestCase(unittest.TestCase):
