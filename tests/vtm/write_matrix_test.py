@@ -100,9 +100,9 @@ position1 = PositionInfo(
     call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
     masked_call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
     CallWasMade='YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN',
-    PassedDepthFilter='',
-    PassedProportionFilter='',
-    Pattern=''
+    PassedDepthFilter='YYYYYYYYYYYYNNNNNNNNNNNN',
+    PassedProportionFilter='NNNNNNNNNNNNYYYYYYYYYYYY',
+    Pattern='1NNNNNNNNNNNNNNNNNNNNNNN'
 )
 
 # A missingdata position
@@ -159,9 +159,9 @@ position2 = PositionInfo(
     call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
     masked_call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
     CallWasMade='YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN',
-    PassedDepthFilter='',
-    PassedProportionFilter='',
-    Pattern=''
+    PassedDepthFilter='YYYYYYYYYYYYNNNNNNNNNNNN',
+    PassedProportionFilter='NNNNNNNNNNNNYYYYYYYYYYYY',
+    Pattern='1NNNNNNNNNNNNNNNNNNNNNN1'
 )
 
 # Best SNP position
@@ -218,9 +218,9 @@ position3 = PositionInfo(
     call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
     masked_call_str='ACGTRYKMSWBDHVN.acgtrykmswbdhvn',
     CallWasMade='YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN',
-    PassedDepthFilter='',
-    PassedProportionFilter='',
-    Pattern=''
+    PassedDepthFilter='YYYYYYYYYYYYNNNNNNNNNNNN',
+    PassedProportionFilter='NNNNNNNNNNNNYYYYYYYYYYYY',
+    Pattern='1NNNNNNNNNNNNNNNNNNNNNN2'
 )
 
 
@@ -470,10 +470,12 @@ class WriteMatrixTestCase(unittest.TestCase):
         expected_files = ['TestContig_missingdata.tsv']
         expected_lines = (
             '\t'.join(write_matrix.get_header('missingdata', identifiers)) + '\n',
-            '',
+            'TestContig::2	A	C	G	T	R	Y	K	M	S	W	B	D	H	V	N	.	a	c	g	t	r	y	k	m	s	w	b	d	h	v	n	2	0	1	7/30	3/30	4/30	5	6	7	8	0	9	TestContig	2	True	True	YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN	YYYYYYYYYYYYNNNNNNNNNNNN	NNNNNNNNNNNNYYYYYYYYYYYY	1NNNNNNNNNNNNNNNNNNNNNN1\n',
         )
 
         with TemporaryDirectory() as tmpdir:
+            missingdata_dir = os.path.join(tmpdir, 'missingdata.tsv')
+
             writer = write_matrix.write_missingdata_matrix(tmpdir, contig_name, identifiers)
             writer.send(None)
 
@@ -482,9 +484,9 @@ class WriteMatrixTestCase(unittest.TestCase):
             writer.close()
 
             # The file was created.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(missingdata_dir))
 
-            with open(os.path.join(tmpdir, expected_files[0])) as handle:
+            with open(os.path.join(missingdata_dir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
                 for expected_line, line in zip(expected_lines, handle):
                     self.assertEqual(expected_line, line)
@@ -493,16 +495,21 @@ class WriteMatrixTestCase(unittest.TestCase):
                 self.assertEqual([], handle.readlines())
 
             # No other artifacts were created in the tmpdir.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(missingdata_dir))
 
     def test_write_master_matrix(self):
         expected_files = ['TestContig_master.tsv']
         expected_lines = (
             '\t'.join(write_matrix.get_header('master', identifiers)) + '\n',
-            '',
+            'TestContig::1	A	C	G	T	R	Y	K	M	S	W	B	D	H	V	N	.	a	c	g	t	r	y	k	m	s	w	b	d	h	v	n	2	0	1	-19/4	3/4	4/4	5	6	7	8	0	9	TestContig	1	True	True	YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN	YYYYYYYYYYYYNNNNNNNNNNNN	NNNNNNNNNNNNYYYYYYYYYYYY	1NNNNNNNNNNNNNNNNNNNNNNN\n',
+            'TestContig::2	A	C	G	T	R	Y	K	M	S	W	B	D	H	V	N	.	a	c	g	t	r	y	k	m	s	w	b	d	h	v	n	2	0	1	-19/4	3/4	4/4	5	6	7	8	0	9	TestContig	2	True	True	YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN	YYYYYYYYYYYYNNNNNNNNNNNN	NNNNNNNNNNNNYYYYYYYYYYYY	1NNNNNNNNNNNNNNNNNNNNNN1\n',
+            'TestContig::3	A	C	G	T	R	Y	K	M	S	W	B	D	H	V	N	.	a	c	g	t	r	y	k	m	s	w	b	d	h	v	n	2	0	1	-19/4	3/4	4/4	5	6	7	8	0	9	TestContig	3	True	True	YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN	YYYYYYYYYYYYNNNNNNNNNNNN	NNNNNNNNNNNNYYYYYYYYYYYY	1NNNNNNNNNNNNNNNNNNNNNN2\n'
         )
 
         with TemporaryDirectory() as tmpdir:
+            master_tsv_dir = os.path.join(tmpdir, 'master.tsv')
+            os.mkdir(master_tsv_dir)
+
             writer = write_matrix.write_master_matrix(tmpdir, contig_name, identifiers)
             writer.send(None)
 
@@ -511,9 +518,9 @@ class WriteMatrixTestCase(unittest.TestCase):
             writer.close()
 
             # The file was created.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(master_tsv_dir))
 
-            with open(os.path.join(tmpdir, expected_files[0])) as handle:
+            with open(os.path.join(master_tsv_dir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
                 for expected_line, line in zip(expected_lines, handle):
                     self.assertEqual(expected_line, line)
@@ -522,7 +529,7 @@ class WriteMatrixTestCase(unittest.TestCase):
                 self.assertEqual([], handle.readlines())
 
             # No other artifacts were created in the tmpdir.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(master_tsv_dir))
 
     def test_write_bestsnp_vcf(self):
         expected_files = ['TestContig_bestsnp.vcf']
@@ -625,6 +632,8 @@ class WriteMatrixTestCase(unittest.TestCase):
         )
 
         with TemporaryDirectory() as tmpdir:
+            bestsnp_dir = os.path.join(tmpdir, 'bestsnp.tsv')
+
             writer = write_matrix.write_bestsnp_matrix(tmpdir, contig_name, sample_groups)
             writer.send(None)
 
@@ -633,38 +642,31 @@ class WriteMatrixTestCase(unittest.TestCase):
             writer.close()
 
             # The file was created.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(bestsnp_dir))
 
-            with open(os.path.join(tmpdir, expected_files[0])) as handle:
+            with open(os.path.join(bestsnp_dir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
-                for expected_line, line in zip(expected_lines, handle):
+                for expected_line, line in itertools.zip_longest(expected_lines, handle):
                     self.assertEqual(expected_line, line)
 
                 # The file does not contain any unexpected rows.
                 self.assertEqual([], handle.readlines())
 
             # No other artifacts were created in the tmpdir.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(bestsnp_dir))
 
     def test_write_withallrefpos_matrix(self):
         expected_files = ['TestContig_withallrefpos.tsv']
         expected_lines = (
             '\t'.join(write_matrix.get_header('withallrefpos', identifiers)) + '\n',
-            '\t'.join((
-                'TestContig::1', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8',
-                '0',
-                '9', 'TestContig', '1', 'True', 'True', '', '')) + '\n',
-            '\t'.join((
-                'TestContig::2', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8',
-                '0',
-                '9', 'TestContig', '2', 'True', 'True', '', '')) + '\n',
-            '\t'.join((
-                'TestContig::3', 'A', 'C', 'G', 'T', 'R', '2', '0', '1', '7/30', '3/30', '4/30', '5', '6', '7', '8',
-                '0',
-                '9', 'TestContig', '3', 'True', 'True', '', '')) + '\n',
+            'TestContig::1	A	C	G	T	R	Y	K	M	S	W	B	D	H	V	N	.	a	c	g	t	r	y	k	m	s	w	b	d	h	v	n	2	0	1	-19/4	3/4	4/4	5	6	7	8	0	9	TestContig	1	True	True	YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN	YYYYYYYYYYYYNNNNNNNNNNNN	NNNNNNNNNNNNYYYYYYYYYYYY	1NNNNNNNNNNNNNNNNNNNNNNN\n',
+            'TestContig::2	A	C	G	T	R	Y	K	M	S	W	B	D	H	V	N	.	a	c	g	t	r	y	k	m	s	w	b	d	h	v	n	2	0	1	-19/4	3/4	4/4	5	6	7	8	0	9	TestContig	2	True	True	YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN	YYYYYYYYYYYYNNNNNNNNNNNN	NNNNNNNNNNNNYYYYYYYYYYYY	1NNNNNNNNNNNNNNNNNNNNNN1\n',
+            'TestContig::3	A	C	G	T	R	Y	K	M	S	W	B	D	H	V	N	.	a	c	g	t	r	y	k	m	s	w	b	d	h	v	n	2	0	1	-19/4	3/4	4/4	5	6	7	8	0	9	TestContig	3	True	True	YYYYNNNNNNNNNNNNYYYYNNNNNNNNNNN	YYYYYYYYYYYYNNNNNNNNNNNN	NNNNNNNNNNNNYYYYYYYYYYYY	1NNNNNNNNNNNNNNNNNNNNNN2\n'
         )
 
         with TemporaryDirectory() as tmpdir:
+            withallrefpos_dir = os.path.join(tmpdir, 'withallrefpos.tsv')
+
             writer = write_matrix.write_withallrefpos_matrix(tmpdir, contig_name, identifiers)
             writer.send(None)
 
@@ -673,9 +675,9 @@ class WriteMatrixTestCase(unittest.TestCase):
             writer.close()
 
             # The file was created.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(withallrefpos_dir))
 
-            with open(os.path.join(tmpdir, expected_files[0])) as handle:
+            with open(os.path.join(withallrefpos_dir, expected_files[0])) as handle:
                 # The file contains all the expected rows.
                 for expected_line, line in zip(expected_lines, handle):
                     self.assertEqual(expected_line, line)
@@ -684,7 +686,7 @@ class WriteMatrixTestCase(unittest.TestCase):
                 self.assertEqual([], handle.readlines())
 
             # No other artifacts were created in the tmpdir.
-            self.assertListEqual(expected_files, os.listdir(tmpdir))
+            self.assertListEqual(expected_files, os.listdir(withallrefpos_dir))
 
 
     def test_write_bestsnp_snpfasta(self):

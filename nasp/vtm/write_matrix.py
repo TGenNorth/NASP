@@ -128,7 +128,6 @@ def _vcf_analysis_column(pattern, analysis_stats):
             ft = "PASS"
         yield '{0}:{1}'.format(gt, ft)
 
-
 def write_missingdata_vcf(directory, contig_name, identifiers, metadata):
     """
     Args:
@@ -136,10 +135,16 @@ def write_missingdata_vcf(directory, contig_name, identifiers, metadata):
         contig_name (str):
         identifiers:
     """
+    # TODO: Remove hardcoded thresholds
     coverage_threshold = 10
     proportion_threshold = 0.9
 
-    with open('{0}_missingdata.vcf'.format(os.path.join(directory, 'missingdata.vcf', contig_name)), 'w') as handle:
+    missingdata_vcf_dir = os.path.join(directory, 'missingdata.vcf')
+
+    if not os.path.exists(missingdata_vcf_dir):
+        os.makedirs(missingdata_vcf_dir)
+
+    with open('{0}_missingdata.vcf'.format(os.path.join(missingdata_vcf_dir, contig_name)), 'w') as handle:
         handle.write(metadata)
         # writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
         # writer.writeheader()
@@ -215,7 +220,12 @@ def write_bestsnp_vcf(directory, contig_name, identifiers, metadata):
     coverage_threshold = 10
     proportion_threshold = 0.9
 
-    with open('{0}_bestsnp.vcf'.format(os.path.join(directory, 'bestsnp.vcf', contig_name)), 'w') as handle:
+    bestsnp_vcf_dir = os.path.join(directory, 'bestsnp.vcf')
+
+    if not os.path.exists(bestsnp_vcf_dir):
+        os.makedirs(bestsnp_vcf_dir)
+
+    with open('{0}_bestsnp.vcf'.format(os.path.join(bestsnp_vcf_dir, contig_name)), 'w') as handle:
         handle.write(metadata)
         # writer = csv.DictWriter(handle, fieldnames=get_header('vcf', identifiers), delimiter='\t')
         # writer.writeheader()
@@ -441,7 +451,13 @@ def write_master_matrix(directory, contig_name, identifiers):
         contig_name (str): Name
         identifiers (tuple of
     """
-    with open('{0}_master.tsv'.format(os.path.join(directory, 'master.tsv', contig_name)), 'w') as handle:
+
+    master_tsv_dir = os.path.join(directory, 'master.tsv')
+
+    if not os.path.exists(master_tsv_dir):
+        os.makedirs(master_tsv_dir)
+
+    with open('{0}_master.tsv'.format(os.path.join(master_tsv_dir, contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('master', identifiers), delimiter='\t', lineterminator='\n')
         # print(get_header('master', identifiers))
         # writer.writeheader()
@@ -529,7 +545,13 @@ def write_missingdata_matrix(directory, contig_name, identifiers):
         contig_name (str):
         identifiers:
     """
-    with open('{0}_missingdata.tsv'.format(os.path.join(directory, 'missingdata.tsv', contig_name)), 'w') as handle:
+
+    missingdata_tsv_dir = os.path.join(directory, 'missingdata.tsv')
+
+    if not os.path.exists(missingdata_tsv_dir):
+        os.makedirs(missingdata_tsv_dir)
+
+    with open('{0}_missingdata.tsv'.format(os.path.join(missingdata_tsv_dir, contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('missingdata', identifiers), delimiter='\t',
         #                         lineterminator='\n')
         # writer.writeheader()
@@ -624,6 +646,12 @@ def write_bestsnp_matrix(directory, contig_name, sample_groups):
         contig_name (str):
         sample_groups
     """
+
+    bestsnp_tsv_dir = os.path.join(directory, 'bestsnp.tsv')
+
+    if not os.path.exists(bestsnp_tsv_dir):
+        os.makedirs(bestsnp_tsv_dir)
+
     sample_names = tuple(sample[0].name for sample in sample_groups)
     # first_analysis_index is a list of the index of the first analysis for each sample in the call string
     first_analysis_index = []
@@ -633,7 +661,7 @@ def write_bestsnp_matrix(directory, contig_name, sample_groups):
         first_analysis_index.append(num_analyses)
         num_analyses += len(sample)
 
-    with open('{0}_bestsnp.tsv'.format(os.path.join(directory, 'bestsnp.tsv', contig_name)), 'w') as handle:
+    with open('{0}_bestsnp.tsv'.format(os.path.join(bestsnp_tsv_dir, contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', sample_names), delimiter='\t',
         #                         lineterminator='\n')
         # writer.writeheader()
@@ -725,7 +753,13 @@ def write_withallrefpos_matrix(directory, contig_name, identifiers):
         contig_name (str):
         identifiers (tuple):
     """
-    with open('{0}_withallrefpos.tsv'.format(os.path.join(directory, 'withallrefpos.tsv', contig_name)), 'w') as handle:
+
+    withallrefpos_tsv_dir = os.path.join(directory, 'withallrefpos.tsv')
+
+    if not os.path.exists(withallrefpos_tsv_dir):
+        os.makedirs(withallrefpos_tsv_dir)
+
+    with open('{0}_withallrefpos.tsv'.format(os.path.join(withallrefpos_tsv_dir, contig_name)), 'w') as handle:
         # writer = csv.DictWriter(handle, fieldnames=get_header('best_snp', identifiers), delimiter='\t',
         #                         lineterminator='\n')
         # writer.writeheader()
@@ -818,12 +852,18 @@ def write_bestsnp_snpfasta(directory, contig_name, identifiers):
     Example:
         directory/contig_sample::aligner,snpcaller_bestsnp.fasta
     """
+
+    fasta_partials_dir = os.path.join(directory, 'fasta_partials')
+
+    if not os.path.exists(fasta_partials_dir):
+        os.makedirs(fasta_partials_dir)
+
     # All opened files will automatically be closed at the end of
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
         files = tuple(stack.enter_context(
-            open('{0}_{1}_bestsnp.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier),
+            open('{0}_{1}_bestsnp.fasta'.format(os.path.join(fasta_partials_dir, contig_name), identifier),
                  'w')) for identifier in identifiers)
 
         while True:
@@ -848,12 +888,18 @@ def write_missingdata_snpfasta(directory, contig_name, identifiers):
     Example:
         directory/contig_sample::aligner,snpcaller_missingdata.fasta
     """
+
+    fasta_partials_dir = os.path.join(directory, 'fasta_partials')
+
+    if not os.path.exists(fasta_partials_dir):
+        os.makedirs(fasta_partials_dir)
+
     # All opened files will automatically be closed at the end of
     # the with statement, even if attempts to open files later
     # in the list raise an exception
     with ExitStack() as stack:
         files = tuple(stack.enter_context(
-            open('{0}_{1}_missingdata.fasta'.format(os.path.join(directory, 'fasta_partials', contig_name), identifier),
+            open('{0}_{1}_missingdata.fasta'.format(os.path.join(fasta_partials_dir, contig_name), identifier),
                  'w')) for identifier in identifiers)
 
         while True:
