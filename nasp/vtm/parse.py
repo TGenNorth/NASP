@@ -8,8 +8,6 @@ have corresponding contigs, positions, and data formats.
 
 The key to the interface is that the iterators yield information for each position even when there is no data and all
 the positions have the same format.
-
-
 """
 
 __author__ = 'jtravis'

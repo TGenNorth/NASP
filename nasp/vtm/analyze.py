@@ -1,6 +1,6 @@
 """
-TODO: more detail
-The analyze module takes a collection of SampleAnalyses.
+The analyze module takes a collection of SampleAnalyses, compares each position, and yields PositionInfo objects so the
+various write_matrix coroutines can write the data to file.
 """
 
 __author__ = 'jtravis'
@@ -121,7 +121,7 @@ class GenomeAnalysis(object):
         while True:
             # The inner tuple is all the sample analyses for a single sample.
             # The outer tuple is all the sample groupings.
-            # ( (SampleInfo, SampleInfo,), (SampleInfo, SampleInfo), )
+            # ( (Position, Position,), (Position, Position), )
             yield tuple(tuple(map(next, contig_group)) for contig_group in contig_groups)
 
     @staticmethod

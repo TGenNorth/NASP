@@ -1,8 +1,8 @@
 """
 write_matrix handles all disk IO operations.
 
-TODO: Most of the functions are written as coroutines that could be used improve performance by using asyncio to
-continue processing instead of waiting for data to be read/written to/from disk.
+The primary function is analyze_samples() which uses a multiprocessing.Pool to analyze the contigs in parallel and then
+concatenate the results. The other functions are helpers responsible for writing the analysis in the various file formats.
 """
 __author__ = 'jtravis'
 __version__ = "0.9.8"

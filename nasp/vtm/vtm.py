@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+#
+# This is the entry point for the vtm package. It parses the commandline arguments, indexes contig file positions, and
+# starts the analysis.
 
 __author__ = 'jtravis'
 
