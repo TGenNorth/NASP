@@ -1,3 +1,8 @@
+# The tests in this section should verify the parse module can:
+# - Read the file formats
+# - Align positions across all the files
+# - Yield positions in a unifying data format irregardless of the file format
+
 __author__ = 'jtravis'
 
 import unittest
@@ -372,25 +377,6 @@ class VcfContigTestCase(unittest.TestCase):
         #     self.fasta_file.name,
         #     is_reference=True
         # )
-
-    @unittest.skip('Not Implemented')
-    def test_foo(self):
-        from nasp.vtm.parse import Vcf
-
-        vcf = Vcf(self.file_path, '', '', '')
-        contig = vcf.get_contig('500WT1_test')
-
-        positions = contig.positions
-
-        for n, p in zip(range(2), positions):
-            if n == 315:
-                a = 'a'
-                # break
-                # self.assertEquals(contig.VCF_EMPTY_POSITION, p)
-
-        for _, p in zip(range(6), contig.positions):
-            print(p)
-            self.assertNotEqual(contig.VCF_EMPTY_POSITION, p)
 
     def test_sample_vcfs_return_infinite_positions(self):
         vcf = Vcf(testdata.GATK_VCF, 'test_name', 'test_aliner', 'test_snpcaller')

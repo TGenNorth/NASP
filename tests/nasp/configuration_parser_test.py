@@ -350,7 +350,7 @@ class ConfigurationParserWriteReadConfigTestCase(unittest.TestCase):
         configuration_parser.snpcaller_list = []
 
 
-def test_the_object_it_writes_should_match_the_object_it_reads(self):
+def test_it_reads_the_same_data_it_writes(self):
     with TemporaryDirectory(suffix='fjdksnfsdk') as tmpdir:
         self.expected['output_folder'] = tmpdir
 
@@ -361,21 +361,22 @@ def test_the_object_it_writes_should_match_the_object_it_reads(self):
         self.assertDictEqual(self.expected, observed)
 
 
-# def test_the_object_it_should_warn_when_the_read_element_does_not_contain_read_files(self):
-#     with TemporaryDirectory() as tmpdir:
-#         self.expected['output_folder'] = tmpdir
-#
-#         self.expected['reads'] = [
-#             ('not_a_valid_read_file', '', '')
-#         ]
-#
-#         configuration_parser.write_config(self.expected)
-#
-#         observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
-#
-#         self.assertDictEqual(self.expected, observed)
+@unittest.skip("Not implemented")
+def test_it_should_warn_when_the_read_element_does_not_contain_read_files(self):
+    with TemporaryDirectory() as tmpdir:
+        self.expected['output_folder'] = tmpdir
 
-def test_the_object_it_stores_reads(self):
+        self.expected['reads'] = [
+            ('not_a_valid_read_file', '', '')
+        ]
+
+        configuration_parser.write_config(self.expected)
+
+        observed = configuration_parser.parse_config(os.path.join(tmpdir, 'test_run_name-config.xml'))
+
+        self.assertDictEqual(self.expected, observed)
+
+def test_it_stores_reads(self):
     with TemporaryDirectory() as tmpdir:
         self.expected['output_folder'] = tmpdir
 
@@ -390,7 +391,7 @@ def test_the_object_it_stores_reads(self):
         self.assertDictEqual(self.expected, observed)
 
 
-def test_the_object_it_stores_assemblies(self):
+def test_it_stores_assemblies(self):
     with TemporaryDirectory() as tmpdir:
         self.expected['output_folder'] = tmpdir
 
@@ -405,7 +406,7 @@ def test_the_object_it_stores_assemblies(self):
         self.assertDictEqual(self.expected, observed)
 
 
-def test_the_object_it_stores_alignments(self):
+def test_it_stores_alignments(self):
     with TemporaryDirectory() as tmpdir:
         self.expected['output_folder'] = tmpdir
 
@@ -420,7 +421,7 @@ def test_the_object_it_stores_alignments(self):
         self.assertDictEqual(self.expected, observed)
 
 
-def test_the_object_it_stores_vcfs(self):
+def test_it_stores_vcfs(self):
     with TemporaryDirectory() as tmpdir:
         self.expected['output_folder'] = tmpdir
 

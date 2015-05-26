@@ -1,5 +1,5 @@
 """
-The following tests verify the I/O functions create the expected files with the expected content and format.
+The tests in this section should verify the I/O functions create the expected files with the expected content and format.
 They are not expected to validate the data passed to them.
 """
 

@@ -13,7 +13,8 @@ from nasp.vtm.matrix_DTO import NaspFile, parse_dto, write_dto
 # }
 
 # FIXME: dto parsing is crude. The following is an example of the output where empty strings are assigned the value
-# None and the parameters, instead of being a dict of its elements string with a newline and pretty print indentation.
+# None and the parameters, instead of being a dict of its elements it is a string with a newline and pretty print
+# indentation.
 # + {'filter_matrix_format': None,
 # +  'frankenfasta': (NaspFile(path='file1.frankenfasta', name='name1', aligner='aligner1', snpcaller=None),
 # +                   NaspFile(path='file2.frankenfasta', name='name2', aligner='aligner2', snpcaller=None),

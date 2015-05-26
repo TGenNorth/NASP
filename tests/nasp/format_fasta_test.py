@@ -27,5 +27,4 @@ class FormatFastaTestCase(unittest.TestCase):
 
             with open(tmpfile.name) as observed:
                 for line in observed:
-                    print(line)
                     self.assertLessEqual(len(line), expected_max_line_length)

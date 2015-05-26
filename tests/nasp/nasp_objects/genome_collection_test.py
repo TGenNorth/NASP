@@ -13,21 +13,6 @@ class GenomeCollectionStatsTestCase(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        # reference_path = testdata.REFERENCE_FASTA
-        # dups_path = testdata.REFERENCE_DUPS
-        # reference = ReferenceGenome()
-        # reference.import_fasta_file(reference_path)
-        # reference.import_dups_file(dups_path)
-        # self.genome = GenomeCollection()
-        # self.genome.set_reference(reference)
-        # fasta = FastaGenome()
-        # fasta.import_fasta_file(reference_path)
-        # fasta.set_file_path(reference_path)
-        # fasta.set_file_type('fasta')
-        # fasta.set_nickname('test_nickname')
-        # fasta.add_generators(['genA', 'genB'])
-        # self.genome.add_genome(fasta)
-
         reference_path = testdata.REFERENCE_FASTA
         dups_path = testdata.REFERENCE_DUPS
         reference = ReferenceGenome()
@@ -42,16 +27,6 @@ class GenomeCollectionStatsTestCase(unittest.TestCase):
         self.genome.write_to_matrices({})
 
         self.tmpfile = tempfile.NamedTemporaryFile(mode='w', delete=False)
-        #
-        # self.tmpfile = tempfile.NamedTemporaryFile(mode='w', delete=False)
-
-        # self.matrix_formats = [
-        #     {
-        #         'dataformat': 'matrix',
-        #         'handle': self.tmpfile,
-        #         'filter': ''
-        #     }
-        # ]
 
     def tearDown(self):
         os.remove(self.tmpfile.name)
@@ -153,7 +128,4 @@ class GenomeCollectionBestSnpVcfTestCase(unittest.TestCase):
         self.genome.send_to_matrix_handles(self.matrix_formats)
 
         with open(self.tmpfile.name) as handle:
-            for line in handle:
-                print(line)
-                # Why is it empty?
-                self.assertEqual('fdsfdsfds', line)
+            self.assertEqual(expected, handle.readlines())
