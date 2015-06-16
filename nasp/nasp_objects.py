@@ -162,7 +162,7 @@ class GenomeStatus(object):
         """
         contig_name = self.set_current_contig(contig_name)
         self.extend_contig(position_number, missing_range_filler, contig_name)
-        if isinstance(new_data, list):
+        if len(new_data) > 1:
             self._status_data[contig_name][position_number - 1:position_number - 1 + len(new_data)] = new_data
         else:
             self._status_data[contig_name][position_number - 1] = new_data
