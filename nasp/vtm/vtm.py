@@ -6,6 +6,7 @@
 __author__ = 'jtravis'
 
 import itertools
+import tempfile
 from concurrent.futures import ProcessPoolExecutor
 
 from nasp.vtm.matrix_DTO import parse_dto
@@ -107,6 +108,10 @@ def main():
     # TODO: handle cast to float exception
     coverage_threshold = float(matrix_params.get('minimum_coverage', arguments.minimum_coverage))
     proportion_threshold = float(matrix_params.get('minimum_proportion', arguments.minimum_proportion))
+
+    if not reference_dups:
+      foo = tempfile.NamedTemporaryFile()
+      reference_dups = foo.name
 
     print("Building contig indices...")
     (reference, dups, sample_groups) = _index_contigs(reference_fasta, reference_dups, matrix_params['frankenfasta'],
