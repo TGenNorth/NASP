@@ -380,6 +380,11 @@ def _get_user_input(reference, output_folder):
                         filename=logfile,
                         filemode='w')
 
+    logging.info("$PATH="+os.environ.get("PATH", ""))
+    logging.info("$PYTHONPATH="+os.environ.get("PYTHONPATH", ""))
+    if "LOADEDMODULES" in os.environ:
+        logging.info("LOADEDMODULES="+os.environ.get("LOADEDMODULES", ""))
+
     if not reference:
         reference = input("\nWhere is the reference fasta file you would like to use? ")
     reference = _expand_path(reference)
