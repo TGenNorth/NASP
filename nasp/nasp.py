@@ -93,7 +93,7 @@ def _find_executable(application):  # This method is not OS-independent. Should 
     return executable
 
 
-def _find_(path):
+def _find_reads(path):
     read_list = []
     for file in os.listdir(path):
         is_read = re.search('(.*)(\.fastq(?:\.gz)?)$', file, re.IGNORECASE)
@@ -489,7 +489,9 @@ def _get_user_input(reference, output_folder):
         configuration["proportion_filter"] = str(proportion_filter)
         logging.info("ProportionFilter = %s", configuration["proportion_filter"])
 
-    matrix_path = os.path.join(run_path, "gonasp")
+    # matrix_path = os.path.join(run_path, "gonasp")
+    import pkg_resources
+    matrix_path = pkg_resources.resource_filename('nasp', 'gonasp')
     if not os.path.exists(matrix_path):
         matrix_path = "gonasp"
     matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'8', 'mem_requested':'8', 'walltime':'48', 'queue':queue, 'args':args})
