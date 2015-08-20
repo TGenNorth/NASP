@@ -490,10 +490,15 @@ def _get_user_input(reference, output_folder):
         logging.info("ProportionFilter = %s", configuration["proportion_filter"])
 
     # matrix_path = os.path.join(run_path, "gonasp")
+    import sys
     import pkg_resources
-    matrix_path = pkg_resources.resource_filename('nasp', 'gonasp')
+    if sys.maxsize > 2**32:
+        # matrix_path = pkg_resources.resource_filename('nasp', 'gonasp_linux_64')
+        matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_64')
+    else:
+        matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_32')
     if not os.path.exists(matrix_path):
-        matrix_path = "gonasp"
+        matrix_path = "nasptool_linux_64"
     matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'8', 'mem_requested':'8', 'walltime':'48', 'queue':queue, 'args':args})
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
