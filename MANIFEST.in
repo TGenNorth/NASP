@@ -1,4 +1,4 @@
-include nasptool_linux_64
+include nasp/nasptool_linux_64
 
 include AUTHORS.rst
 include CONTRIBUTING.rst
