@@ -493,7 +493,6 @@ def _get_user_input(reference, output_folder):
     import sys
     import pkg_resources
     if sys.maxsize > 2**32:
-        # matrix_path = pkg_resources.resource_filename('nasp', 'gonasp_linux_64')
         matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_64')
     else:
         matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_32')
