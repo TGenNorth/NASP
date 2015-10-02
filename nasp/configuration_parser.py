@@ -437,7 +437,7 @@ def write_config(configuration):
 
     if "trim_reads" in configuration:
         node = ElementTree.SubElement(options_node, "TrimReads")
-        node.text = configuration["TrimReads"]
+        node.text = configuration["trim_reads"]
 
     #Create the Files section
     files_node = ElementTree.SubElement(root, "Files")

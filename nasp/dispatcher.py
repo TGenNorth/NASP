@@ -330,7 +330,6 @@ def _run_novoalign(read_tuple, aligner, samtools, job_submitter, index_job_id, r
 def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import re
     import os
-
     (name, read1) = read_tuple[0:2]
     read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
     paired_string = "paired" if read2 else "single"
@@ -341,7 +340,7 @@ def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, refere
     remove_temp = []
     reads = []
     for read in (read1, read2):
-        match = re.match('/^(.+)\.gz$/', read, re.IGNORECASE)
+        match = re.match('^(.+)\.gz$', read, re.IGNORECASE)
         if match:
             decompressed = os.path.join(os.path.join(output_folder, aligner_name), match.group(0))
             unzip.append("zcat %s > %s" % (read, decompressed))
@@ -513,12 +512,12 @@ def _trim_adapters(read_tuple, configuration):
         out_reads1 = [name+"_R1_trimmed.fastq", name+"_R1_unpaired.fastq"]
         out_reads2 = [name+"_R2_trimmed.fastq", name+"_R2_unpaired.fastq"]
         out_reads = [os.path.join(trim_dir, out_reads1[0]), os.path.join(trim_dir, out_reads2[0])]
-        command = "java -jar %s PE -threads %d %s %s %s %s %s %s %s" % (path, job_parms['num_cpus'], read1, read2, out_reads1[0], out_reads1[1], out_reads2[0], out_reads2[1], args)
+        command = "java -jar %s PE -threads %s %s %s %s %s %s %s %s" % (path, job_parms['num_cpus'], read1, read2, out_reads1[0], out_reads1[1], out_reads2[0], out_reads2[1], args)
     else:
         out_reads = [os.path.join(trim_dir, name+"_trimmed.fastq")]
-        command = "java -jar %s SE -threads %d %s %s ILLUMINACLIP:%s:2:30:10 %s MINLEN:%d" % (path, job_parms['num_cpus'], read1, out_reads[0], args)
+        command = "java -jar %s SE -threads %s %s %s %s" % (path, job_parms['num_cpus'], read1, out_reads[0], args)
     jobid = _submit_job(configuration["job_submitter"], command, job_parms)
-    return ((name, out_reads), jobid)
+    return (tuple([name] + out_reads), jobid)
 
 
 def _align_reads(read_tuple, configuration, index_job_id, reference):
