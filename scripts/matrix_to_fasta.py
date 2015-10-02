@@ -44,7 +44,7 @@ def matrix_to_fasta(matrix_in, prefix, type, last):
     reduced = [ ]
     out_fasta = open("%s.%s.fasta" % (prefix, type), "w")
     for line in open(matrix_in):
-        fields = line.split("\t")
+        fields = line.split()
         reduced.append(fields[1:last])
     test=map(list, zip(*reduced))
     for x in test:
@@ -76,11 +76,11 @@ def filter_matrix(matrix_in, last, filter_frequency):
                 all_counts = len(fields[1:last])
                 missing_counts = []
                 fixed_fields = []
-                for field in fields:
+                fixed_fields.append(fields[0])
+                for field in fields[1:last]:
                     fixed_fields.append(field.upper())
-                counter=collections.Counter(fixed_fields[1:last])
-                values=counter.values()
-                sorted(values, key=int)
+                for field in fields[last+1:-1]:
+                    fixed_fields.append(field)
                 """replace missing elements with a gap character"""
                 new_fields=[]
                 for fixed_field in fixed_fields:
@@ -96,11 +96,8 @@ def filter_matrix(matrix_in, last, filter_frequency):
                     if fixed_field == "-":
                         missing_counts.append("1")
                 totals_missing = int(all_counts)-int(len(missing_counts))
-                #print(totals_missing,all_counts,totals_missing/all_counts)
-                if (totals_missing/all_counts)>=float(filter_frequency): file_out.write("\t".join(new_fields))
-                if (totals_missing/all_counts)>=float(filter_frequency): lines.append(line)
-                #if "X" not in fields[1:last] and "N" not in fields[1:last] and "." not in fields[1:last] and len(values)>1: file_out.write(line,)
-                #if "X" not in fields[1:last] and "N" not in fields[1:last] and "." not in fields[1:last] and len(values)>1: lines.append(line)
+                if (totals_missing/all_counts)>=float(filter_frequency): file_out.write("\t".join(new_fields)+"\n")
+                if (totals_missing/all_counts)>=float(filter_frequency): lines.append("1")
     print("number of SNPs after filtering:", len(lines))
     matrix.close()
     file_out.close()

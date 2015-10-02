@@ -21,17 +21,18 @@ test_requirements = [
 
 setup(
     name='nasp',
-    version='0.9.9',
+    version='0.10.0',
     description='Northern Arizona SNP Pipeline',
     long_description=readme + '\n\n' + history,
     author='Darrin Lemmer',
     author_email='dlemmer@tgen.org',
     url='https://github.com/TGenNorth/nasp',
     packages=[
-        'nasp',
+        'nasp', 'nasp.vtm'
     ],
-    package_dir={'nasp':
-                 'nasp'},
+    package_dir={
+        'nasp': 'nasp',
+    },
     include_package_data=True,
     install_requires=requirements,
     license="Academic and Research License",
@@ -53,7 +54,8 @@ setup(
             'format_fasta = nasp.format_fasta:main',
             'find_duplicates = nasp.find_duplicates:main',
             'convert_external_genome = nasp.convert_external_genome:main',
-            'vcf_to_matrix = nasp.vcf_to_matrix:main'
+            'vcf_to_matrix = nasp.vcf_to_matrix:main',
+            'vtm = nasp.vtm.vtm:main'
         ]
     },
     scripts = [

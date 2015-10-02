@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.9"
+__version__ = "1.0.0"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -67,7 +67,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
         if notify:
             args += " --mail-type=END"
         submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --time=%s:00:00 --mail-type=FAIL -J \'%s\' %s %s %s" % (
-            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'], 
+            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'],
             job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
@@ -188,7 +188,7 @@ def _index_reference(configuration):
         else:
             print("Unknown aligner \'%s\' found, don't know how to index the reference for it. Skipping..." % name)
 
-    #if we are using GATK, we also need to create a Sequence Dictionary and samtools index of the reference        
+    #if we are using GATK, we also need to create a Sequence Dictionary and samtools index of the reference
     if next((v for i, v in enumerate(configuration["snpcallers"]) if re.search('gatk', v[0], re.IGNORECASE)), None):
         picard_path = configuration["picard"][1] or ""
         picard_memory = 2
@@ -241,7 +241,7 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
             command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
                 path, old_format_string, reference, read1, ncpus, output_file, args))
             command_parts.append(
-                "%s samse -r %s %s %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
+                "%s samse -r %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
         aligner_command = "\n".join(command_parts)
     bam_nickname = "%s-%s" % (name, aligner_name)
     samview_command = "%s view -S -b -h -" % sampath
@@ -463,10 +463,11 @@ def _run_samtools(nickname, bam_file, snpcaller, samtools, job_submitter, aligne
 def _find_dups(configuration, index_job_id, reference):
     import os
 
-    (name, path, args, job_parms) = configuration["dup_finder"]
+    (name, path, _, job_parms) = configuration["dup_finder"]
     command = "find_duplicates --nucmerpath %s --reference %s" % (path, reference)
     work_dir = os.path.dirname(reference)
     if not os.path.exists(work_dir):
+        # NOTE: This directory is implicitly created by _index_reference.
         os.makedirs(work_dir)
     final_file = os.path.join(work_dir, "duplicates.txt")
     job_parms['name'] = "nasp_%s" % name
@@ -494,6 +495,30 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
     return job_id, final_file
+
+
+def _trim_adapters(read_tuple, configuration):
+    import os
+    
+    (_, path, args, job_parms) = configuration["read_trimmer"]
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else None
+    trim_dir = os.path.join(configuration["output_folder"], 'trimmed')
+    if not os.path.exists(trim_dir):
+        os.makedirs(trim_dir)
+    #job_params = {'queue':'', 'mem_requested':6, 'num_cpus':4, 'walltime':8, 'args':''}
+    job_parms['name'] = "nasp_trim_%s" % name
+    job_parms['work_dir'] = trim_dir
+    if read2:
+        out_reads1 = [name+"_R1_trimmed.fastq", name+"_R1_unpaired.fastq"]
+        out_reads2 = [name+"_R2_trimmed.fastq", name+"_R2_unpaired.fastq"]
+        out_reads = [os.path.join(trim_dir, out_reads1[0]), os.path.join(trim_dir, out_reads2[0])]
+        command = "java -jar %s PE -threads %d %s %s %s %s %s %s %s" % (path, job_parms['num_cpus'], read1, read2, out_reads1[0], out_reads1[1], out_reads2[0], out_reads2[1], args)
+    else:
+        out_reads = [os.path.join(trim_dir, name+"_trimmed.fastq")]
+        command = "java -jar %s SE -threads %d %s %s ILLUMINACLIP:%s:2:30:10 %s MINLEN:%d" % (path, job_parms['num_cpus'], read1, out_reads[0], args)
+    jobid = _submit_job(configuration["job_submitter"], command, job_parms)
+    return ((name, out_reads), jobid)
 
 
 def _align_reads(read_tuple, configuration, index_job_id, reference):
@@ -594,7 +619,7 @@ def _index_bams(configuration, index_job_id):
 
 
 def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids):
-    import nasp.matrix_DTO as matrix_DTO
+    import nasp.vtm.matrix_DTO as matrix_DTO
     import os
 
     output_dir = configuration['output_folder']
@@ -616,7 +641,7 @@ def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fas
     dto_file = os.path.join(output_dir, "matrix_dto.xml")
     matrix_DTO.write_dto(matrix_parms, franken_fastas, vcf_files, dto_file)
     jobs_to_wait_for = ":".join(job_ids)
-    command = "%s --mode xml --dto-file %s --num-threads %s" % (path, dto_file, job_parms['num_cpus'])
+    command = "%s matrix --dto-file %s --num-threads %s" % (path, dto_file, job_parms['num_cpus'])
     job_parms['work_dir'] = output_dir
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'),
                          notify=True)
@@ -652,7 +677,10 @@ def begin(configuration):
                 job_ids.append(job_id)
                 vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
     for read_tuple in configuration["reads"]:
-        aligner_output = _align_reads(read_tuple, configuration, index_job_id, reference)
+        dependent_job_id = index_job_id
+        if configuration["trim_reads"] == "True":
+            (read_tuple, dependent_job_id) = _trim_adapters(read_tuple, configuration)
+        aligner_output = _align_reads(read_tuple, configuration, dependent_job_id, reference)
         snpcaller_output = _call_snps(aligner_output, configuration, reference)
         for (vcf_nickname, job_id, final_file, aligner, snpcaller) in snpcaller_output:
             if job_id:

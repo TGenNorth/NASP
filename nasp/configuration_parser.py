@@ -2,7 +2,7 @@
 # coding=utf-8
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.7"
+__version__ = "1.0.0"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -52,6 +52,8 @@ def _parse_options(options_node):
     configuration["job_submitter"] = options_node.findtext('JobSubmitter')
     if options_node.find('FilterMatrixFormat') is not None:
         configuration["filter_matrix_format"] = options_node.findtext('FilterMatrixFormat')
+    if options_node.find('TrimReads') is not None:
+        configuration["trim_reads"] = options_node.findtext('TrimReads')
 
 
 def _find_reads(folder, filepath):
@@ -246,7 +248,7 @@ def _get_application(app_node, name=None):
     """
     name = name or app_node.get('name')
     path = app_node.get('path')
-    args = app_node.findtext('AdditionalArgs', default="")
+    args = app_node.findtext('AdditionalArguments', default="")
     job_parms = {}
     job_node = app_node.find('JobParameters')
     if job_node is not None:
@@ -267,6 +269,8 @@ def _parse_applications(applications_node):
     if applications_node.find('Picard'):
         configuration["picard"] = _get_application(applications_node.find('Picard'), "Picard")
     configuration["samtools"] = _get_application(applications_node.find('Samtools'), "Samtools")
+    if applications_node.find('ReadTrimmer'):
+        configuration["read_trimmer"] = _get_application(applications_node.find('ReadTrimmer'), "ReadTrimmer")
     if applications_node.find('DupFinder'):
         configuration["dup_finder"] = _get_application(applications_node.find('DupFinder'), "DupFinder")
     if applications_node.find('Index'):
@@ -431,6 +435,10 @@ def write_config(configuration):
         node = ElementTree.SubElement(options_node, "FilterMatrixFormat")
         node.text = configuration["filter_matrix_format"]
 
+    if "trim_reads" in configuration:
+        node = ElementTree.SubElement(options_node, "TrimReads")
+        node.text = configuration["TrimReads"]
+
     #Create the Files section
     files_node = ElementTree.SubElement(root, "Files")
 
@@ -454,6 +462,8 @@ def write_config(configuration):
     applications_node = ElementTree.SubElement(root, "ExternalApplications")
 
     _write_application(applications_node, configuration["index"], "Index")
+    if "read_trimmer" in configuration:
+        _write_application(applications_node, configuration["read_trimmer"], "ReadTrimmer")
     if "bam_index" in configuration:
         _write_application(applications_node, configuration["bam_index"], "BamIndex")
     _write_application(applications_node, configuration["matrix_generator"], "MatrixGenerator")

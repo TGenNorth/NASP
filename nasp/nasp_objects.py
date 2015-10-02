@@ -228,7 +228,7 @@ class GenomeStatus(object):
                                                 ( max_chars_per_line * i ):( max_chars_per_line * ( i + 1 ) )]) + "\n")
                     i += 1
             else:
-                output_handle.write(''.join(self._status_data[current_contig] + "\n"))
+                output_handle.write(''.join(self._status_data[current_contig]) + "\n")
 
     def write_to_fasta_file(self, output_filename, contig_prefix="", max_chars_per_line=80):
         """
@@ -268,6 +268,7 @@ class Genome(GenomeStatus):
         """ Alias of get_value, for code clarity """
         return self.get_value( first_position, last_position, contig_name, filler_value)
 
+    # NOTE: contig_prefix is unused
     def _import_fasta_line(self, line_from_fasta, contig_prefix=""):
         """
         Assumes the string passed in is a line from a fasta file, and
@@ -291,6 +292,7 @@ class Genome(GenomeStatus):
             if data_match:
                 self.append_contig(list(data_match.group(1)))
 
+    # contig_prefix is used by vcf_to_matrix to discard the frankenfasta contig name prefix.
     def import_fasta_file(self, fasta_filename, contig_prefix=""):
         """ Read in a fasta file.
 
@@ -1149,7 +1151,7 @@ class GenomeCollection(CollectionStatistics):
         Includes per-sample counts, any/all counts across each set of
         sample-analyses, and any/all counts overall.
         """
-        sample_stat_array = ['was_called', 'passed_coverage_filter', 'passed_proportion_filter', 'quality_breadth', 
+        sample_stat_array = ['was_called', 'passed_coverage_filter', 'passed_proportion_filter', 'quality_breadth',
                              'called_reference', 'called_snp', 'called_degen']
         denominator_stat = 'reference_length'
         denominator_value = self.get_contig_stat(denominator_stat)

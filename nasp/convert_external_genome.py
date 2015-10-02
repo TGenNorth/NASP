@@ -106,19 +106,25 @@ def parse_delta_file(delta_filename, franken_genome, external_genome):
 
 
 def main():
+    import subprocess
     from nasp.nasp_objects import Genome, GenomeMeta
 
     commandline_args = _parse_args()
     external_nickname = commandline_args.name if commandline_args.name else GenomeMeta.generate_nickname_from_filename(
         commandline_args.external)
-    external_genome = Genome()
-    external_genome.import_fasta_file(commandline_args.external)
+    #external_genome = Genome()
+    #external_genome.import_fasta_file(commandline_args.external)
     generate_delta_file(commandline_args.nucmerpath, commandline_args.nucmerargs, commandline_args.deltafilterpath,
-                        commandline_args.deltafilterargs, external_nickname, commandline_args.reference, 
+                        commandline_args.deltafilterargs, external_nickname, commandline_args.reference,
                         commandline_args.external)
-    franken_genome = Genome()
-    parse_delta_file(( external_nickname + ".filtered.delta" ), franken_genome, external_genome)
-    franken_genome.write_to_fasta_file(external_nickname + ".frankenfasta", "franken::")
+    #franken_genome = Genome()
+    #parse_delta_file(( external_nickname + ".filtered.delta" ), franken_genome, external_genome)
+    #franken_genome.write_to_fasta_file(external_nickname + ".frankenfasta", "franken::")
+
+    import pkg_resources
+    nasptool_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_64')
+    with open(external_nickname + ".frankenfasta", 'w') as handle:
+        return_code = subprocess.call([nasptool_path, "frankenfasta", external_nickname + ".filtered.delta"], stdout=handle)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,3 @@
+[run]
+omit =
+    nasp/format_fasta.py

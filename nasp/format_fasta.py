@@ -16,14 +16,16 @@ def _parse_args():
     parser.add_argument("--outputfasta", required=True, help="Path to output fasta.")
     return parser.parse_args()
 
+def format_fasta(inputfasta, outputfasta):
+    from nasp.nasp_objects import Genome
+    fasta_data = Genome()
+    fasta_data.import_fasta_file(inputfasta)
+    fasta_data.write_to_fasta_file(outputfasta)
+
 
 def main():
-    from nasp.nasp_objects import Genome
-
     commandline_args = _parse_args()
-    fasta_data = Genome()
-    fasta_data.import_fasta_file(commandline_args.inputfasta)
-    fasta_data.write_to_fasta_file(commandline_args.outputfasta)
+    format_fasta(commandline_args.inputfasta, commandline_args.outputfasta)
 
 
 if __name__ == "__main__":
