@@ -1,4 +1,6 @@
 include nasp/nasptool_linux_64
+include nasp/nasptool_linux_32
+include nasp/illumina_adapters_all.fasta
 
 include AUTHORS.rst
 include CONTRIBUTING.rst
