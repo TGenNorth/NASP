@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.9.9"
+__version__ = "1.0.0"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -463,7 +463,7 @@ def _run_samtools(nickname, bam_file, snpcaller, samtools, job_submitter, aligne
 def _find_dups(configuration, index_job_id, reference):
     import os
 
-    (name, path, args, job_parms) = configuration["dup_finder"]
+    (name, path, _, job_parms) = configuration["dup_finder"]
     command = "find_duplicates --nucmerpath %s --reference %s" % (path, reference)
     work_dir = os.path.dirname(reference)
     if not os.path.exists(work_dir):
@@ -495,6 +495,30 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
     return job_id, final_file
+
+
+def _trim_adapters(read_tuple, configuration):
+    import os
+    
+    (_, path, args, job_parms) = configuration["read_trimmer"]
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else None
+    trim_dir = os.path.join(configuration["output_folder"], 'trimmed')
+    if not os.path.exists(trim_dir):
+        os.makedirs(trim_dir)
+    #job_params = {'queue':'', 'mem_requested':6, 'num_cpus':4, 'walltime':8, 'args':''}
+    job_parms['name'] = "nasp_trim_%s" % name
+    job_parms['work_dir'] = trim_dir
+    if read2:
+        out_reads1 = [name+"_R1_trimmed.fastq", name+"_R1_unpaired.fastq"]
+        out_reads2 = [name+"_R2_trimmed.fastq", name+"_R2_unpaired.fastq"]
+        out_reads = [os.path.join(trim_dir, out_reads1[0]), os.path.join(trim_dir, out_reads2[0])]
+        command = "java -jar %s PE -threads %d %s %s %s %s %s %s %s" % (path, job_parms['num_cpus'], read1, read2, out_reads1[0], out_reads1[1], out_reads2[0], out_reads2[1], args)
+    else:
+        out_reads = [os.path.join(trim_dir, name+"_trimmed.fastq")]
+        command = "java -jar %s SE -threads %d %s %s ILLUMINACLIP:%s:2:30:10 %s MINLEN:%d" % (path, job_parms['num_cpus'], read1, out_reads[0], args)
+    jobid = _submit_job(configuration["job_submitter"], command, job_parms)
+    return ((name, out_reads), jobid)
 
 
 def _align_reads(read_tuple, configuration, index_job_id, reference):
@@ -653,7 +677,10 @@ def begin(configuration):
                 job_ids.append(job_id)
                 vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
     for read_tuple in configuration["reads"]:
-        aligner_output = _align_reads(read_tuple, configuration, index_job_id, reference)
+        dependent_job_id = index_job_id
+        if configuration["trim_reads"] == "True":
+            (read_tuple, dependent_job_id) = _trim_adapters(read_tuple, configuration)
+        aligner_output = _align_reads(read_tuple, configuration, dependent_job_id, reference)
         snpcaller_output = _call_snps(aligner_output, configuration, reference)
         for (vcf_nickname, job_id, final_file, aligner, snpcaller) in snpcaller_output:
             if job_id:

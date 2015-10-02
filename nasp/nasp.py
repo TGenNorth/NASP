@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Darrin Lemmer"
-__version__ = "0.10.0"
+__version__ = "1.0.0"
 __email__ = "dlemmer@tgen.org"
 
 '''
@@ -46,7 +46,7 @@ def _parse_args():
     import argparse
 
     parser = argparse.ArgumentParser(prog="nasp",
-                                     description="This is the experimental \"Northern Arizona SNP Pipeline\", version %s" % nasp_version)
+                                     description="This is the \"Northern Arizona SNP Pipeline\", version %s" % nasp_version)
     parser.add_argument("reference_fasta", nargs="?", default="", help="Path to the reference fasta.")
     parser.add_argument("output_folder", nargs="?", default="", help="Folder to store the output files.")
     parser.add_argument("--config", help="Path to the configuration xml file.")
@@ -180,14 +180,15 @@ def _get_application_path(application):
 
 
 # TODO(jtravis): search CLASSPATH
+# NOTE: Wildcard characters are allowed in 'jarfile' as both fnmatch and glob will handle them
 def _get_java_path(jarfile):
     import fnmatch
-
     paths = ['/usr/share/java/']
     paths.extend(os.environ['PATH'].split(os.pathsep))
     for path in paths:
-        if os.path.exists(os.path.join(path, jarfile)):
-            return os.path.join(path, jarfile)
+        match_list = glob.glob(os.path.join(path, jarfile))
+        if match_list:
+            return match_list[0]
     # Didn't find it in path, check user's home directory
     for path, dirs, files in os.walk(os.path.expanduser("~")):
         for filename in fnmatch.filter(files, jarfile):
@@ -239,15 +240,15 @@ def _get_aligners(queue, args):
     aligner_list = []
     bwa_path = ""
     print(
-        "\nThis pipeline currently supports three aligners: BWA, Novoalign, and SNAP.\nYou can also provide pre-aligned BAM files, and you can choose as many options as you want.")
-    response = input("\nWould you like to run BWA samp/se [N]?* ")
-    if re.match('^[Yy]', response):
-        bwa_path = _get_application_path("bwa")
-        bwa_sampe_settings = _get_advanced_settings("BWA-sampe", bwa_path, "",
-                                                    {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
-                                                     'queue': queue, 'args': args})
-        aligner_list.append(bwa_sampe_settings)
-        logging.info(bwa_sampe_settings)
+        "\nThis pipeline currently supports four aligners: BWA, Bowtie2, Novoalign, and SNAP.\nYou can also provide pre-aligned BAM files, and you can choose as many options as you want.")
+#     response = input("\nWould you like to run BWA samp/se [N]?* ")
+#     if re.match('^[Yy]', response):
+#         bwa_path = _get_application_path("bwa")
+#         bwa_sampe_settings = _get_advanced_settings("BWA-sampe", bwa_path, "",
+#                                                     {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
+#                                                      'queue': queue, 'args': args})
+#         aligner_list.append(bwa_sampe_settings)
+#         logging.info(bwa_sampe_settings)
     response = input("\nWould you like to run BWA mem [Y]? ")
     if not re.match('^[Nn]', response):
         if not bwa_path:
@@ -265,15 +266,15 @@ def _get_aligners(queue, args):
                                                'args': args})
         aligner_list.append(bt2_settings)
         logging.info(bt2_settings)
-    response = input("\nWould you like to run Novoalign [Y]? ")
-    if not re.match('^[Nn]', response):
+    response = input("\nWould you like to run Novoalign [N]? ")
+    if re.match('^[Yy]', response):
         novo_path = _get_application_path("novoalign")
         novo_settings = _get_advanced_settings("Novoalign", novo_path, "-r all",
                                                {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
                                                 'queue': queue, 'args': args})
         aligner_list.append(novo_settings)
         logging.info(novo_settings)
-    response = input("\nWould you like to run SNAP [N]?* ")
+    response = input("\nWould you like to run SNAP [N]? ")
     if re.match('^[Yy]', response):
         snap_path = _get_application_path("snap")
         snap_settings = _get_advanced_settings("SNAP", snap_path, "",
@@ -330,13 +331,13 @@ def _get_job_submitter():
     queue = ""
     args = ""
     response = input(
-        "\nWhat system do you use for job management (PBS/TORQUE, SLURM, SGE*, and 'none' are currently supported) [PBS]? ")
+        "\nWhat system do you use for job management (PBS/TORQUE, SLURM, SGE/OGE, and 'none' are currently supported) [PBS]? ")
     while job_submitter == "invalid":
         if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE) or response == "":
             job_submitter = "PBS"
         elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
             job_submitter = "SLURM"
-        elif re.match('^SGE', response, re.IGNORECASE):
+        elif re.match('^(SGE|OGE)', response, re.IGNORECASE):
             job_submitter = "SGE"
         elif re.match('^none$', response, re.IGNORECASE):
             job_submitter = "NONE"
@@ -349,14 +350,35 @@ def _get_job_submitter():
     return job_submitter, queue, args
 
 
+def _get_trimming_parameters(queue, args):
+    import pkg_resources
+    trim_path = _get_java_path("trimmomatic*.jar")
+    adapter_file = pkg_resources.resource_filename('nasp', 'illumina_adapters_all.fasta')
+    response = input("  What adapter file are you using for trimming [%s]? " % adapter_file)
+    if response:
+        adapter_file = response
+    response = input("  Would you also like to perform quality trimming [N]? ")
+    if re.match('^[Yy]', response):
+        quality_string = 'SLIDINGWINDOW:5:20'
+        response = input("  What quality trimming parameters do you want to use [%s]? " % quality_string)
+        if response:
+            quality_string = response
+    min_length = "80"
+    response = input("  What is the minimum length read to keep after trimming [%s]? " % min_length)
+    if response:
+        min_length = response
+    arg_string = "ILLUMINACLIP:%s:2:30:10 %s MINLEN:%s" % (adapter_file, quality_string, min_length)
+    return _get_advanced_settings("ReadTrimmer", trim_path, arg_string,
+                                  {'num_cpus': '4', 'mem_requested': '6', 'walltime': '24', 'queue': queue, 'args': args})
+
+
 def _get_user_input(reference, output_folder):
     import sys
 
     configuration = {}
     cwd = os.getcwd()
 
-    print("Welcome to the experimental python NASP version %s." % nasp_version)
-    print("* Starred features are less well tested, and may not work.")
+    print("Welcome to NASP version %s." % nasp_version)
 
     if not output_folder:
         output_folder = input("\nWhere would you like output files to be written [nasp_results]? ")
@@ -447,6 +469,11 @@ def _get_user_input(reference, output_folder):
     configuration["reads"] = read_list
 
     if len(read_list) > 0:
+        response = input("\nWould you like to use Trimmomatic to trim your reads first [N]? ")
+        if re.match('^[Yy]', response):
+            configuration["trim_reads"] = "True"
+            configuration["read_trimmer"] = _get_trimming_parameters(queue, args)
+            logging.info("ReadTrimmer = %s", configuration["read_trimmer"])
         logging.info("Getting Aligners...")
         configuration["aligners"] = _get_aligners(queue, args)
     else:
