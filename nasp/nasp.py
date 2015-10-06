@@ -277,7 +277,8 @@ def _get_aligners(queue, args):
     response = input("\nWould you like to run SNAP [N]? ")
     if re.match('^[Yy]', response):
         snap_path = _get_application_path("snap")
-        snap_settings = _get_advanced_settings("SNAP", snap_path, "",
+        #Add -M option by default to make SNAP generate traditional CIGAR strings in the BAM output to be more compatible with SNP callers
+        snap_settings = _get_advanced_settings("SNAP", snap_path, "-M",
                                                {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
                                                 'queue': queue, 'args': args})
         aligner_list.append(snap_settings)
