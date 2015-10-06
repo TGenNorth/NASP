@@ -10,18 +10,19 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/TGenNorth/nasp/mummer"
+	"github.com/TGenNorth/NASP/mummer"
 )
 
 var cmdDuplicates = &Command{
 	UsageLine: "duplicates --type [range|fasta] reference.delta > duplicates.txt",
 	Short:     "identify duplicate regions in the reference",
 	Long: `
-Duplicates identifies duplicate regions in the reference genome contigs.
+duplicates identifies duplicate regions in the reference genome contigs.
 
 reference.delta is a delta encoded file from the nucmer aligner. It is created
 by aligning a reference assembly against itself to identify duplicate regions.
 	nucmer --maxmatch --nosimplify reference.fasta reference.fasta
+
 The result is passed through the delta-filter pairing each position with its
 best match.
 	delta-filter -q -r out.delta > reference.delta

@@ -91,8 +91,8 @@ func NewNaspFileFromFilepath(path string) NaspFile {
 
 type Dto struct {
 	Parameters `xml:"parameters"`
-	fastas     []NaspFile `xml:"files>frankenfasta"`
-	vcfs       []NaspFile `xml:"files>vcf"`
+	Fastas     []NaspFile `xml:"files>frankenfasta"`
+	Vcfs       []NaspFile `xml:"files>vcf"`
 	// All files, including files listed on the commandline
 	AllFiles []NaspFile
 }
@@ -198,24 +198,24 @@ func (d *Dto) mergeAllFiles(filepaths []string) error {
 			uniqueFilepaths[filepaths[i]] = NewNaspFileFromFilepath(filepaths[i])
 		}
 	}
-	for i := range d.vcfs {
-		if _, err := os.Stat(d.vcfs[i].Filepath); os.IsNotExist(err) {
-			return errNotExist(d.vcfs[i].Filepath)
+	for i := range d.Vcfs {
+		if _, err := os.Stat(d.Vcfs[i].Filepath); os.IsNotExist(err) {
+			return errNotExist(d.Vcfs[i].Filepath)
 		}
-		if _, ok := uniqueFilepaths[d.vcfs[i].Filepath]; ok {
-			log.Printf("Duplicate filepath: '%s'", d.vcfs[i].Filepath)
+		if _, ok := uniqueFilepaths[d.Vcfs[i].Filepath]; ok {
+			log.Printf("Duplicate filepath: '%s'", d.Vcfs[i].Filepath)
 		} else {
-			uniqueFilepaths[d.vcfs[i].Filepath] = d.vcfs[i]
+			uniqueFilepaths[d.Vcfs[i].Filepath] = d.Vcfs[i]
 		}
 	}
-	for i := range d.fastas {
-		if _, err := os.Stat(d.fastas[i].Filepath); os.IsNotExist(err) {
-			return errNotExist(d.fastas[i].Filepath)
+	for i := range d.Fastas {
+		if _, err := os.Stat(d.Fastas[i].Filepath); os.IsNotExist(err) {
+			return errNotExist(d.Fastas[i].Filepath)
 		}
-		if _, ok := uniqueFilepaths[d.fastas[i].Filepath]; ok {
-			log.Printf("Duplicate filepath: '%s'", d.fastas[i].Filepath)
+		if _, ok := uniqueFilepaths[d.Fastas[i].Filepath]; ok {
+			log.Printf("Duplicate filepath: '%s'", d.Fastas[i].Filepath)
 		} else {
-			uniqueFilepaths[d.fastas[i].Filepath] = d.fastas[i]
+			uniqueFilepaths[d.Fastas[i].Filepath] = d.Fastas[i]
 		}
 	}
 

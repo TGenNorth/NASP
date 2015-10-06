@@ -8,71 +8,154 @@ import (
 	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"strconv"
+	"strings"
 
-	"github.com/TGenNorth/nasp/command"
+	"github.com/TGenNorth/NASP/command"
 )
 
 var cmd = &command.Command{
-	UsageLine: "export [NASP matrix].tsv",
-	Short:     "convert NASP matrix output to VCF format",
+	UsageLine: "export --type [vcf|fasta] NASP_MATRIX > output",
+	Short:     "transform a NASP matrix to FASTA or VCF format",
 	Long: `
-	export takes a NASP matrix output file and writes it in VCF format to a file with the same name and a .vcf extension
+transform a NASP matrix to FASTA or VCF format
+
+The --type flag sets the output type (default: vcf)
 	`,
 }
 
+var typeFlag string
+
 func init() {
-	cmd.Run = run
+	// TODO: Update Run interface to be a function that returns an error
+	cmd.Run = func(cmd *command.Command, args []string) {
+		if err:= run(cmd, args); err != nil {
+			log.Fatal(err)
+		}
+	 }
+
+	cmd.Flag.StringVar(&typeFlag, "type", "vcf", "")
 
 	command.Register(cmd)
 }
 
-func run(cmd *command.Command, args []string) {
-	/*
-		defer profile.Start(&profile.Config{
-			CPUProfile: true,
-			//MemProfile:     true,
-			//BlockProfile:   true,
-			ProfilePath:    ".",
-			NoShutdownHook: true,
-		}).Stop()
-	*/
-
+func run(cmd *command.Command, args []string) (err error) {
 	if len(args) == 0 {
-		cmd.Usage()
+		return errors.New("export: insufficient arguments")
 	}
 
-	for _, matrixFilepath := range args {
-		if err := exportVcf(matrixFilepath); err != nil {
-			log.Println(err)
-			cmd.Usage()
-		}
+	file, err := os.Open(args[0])
+	if err != nil {
+		return err
 	}
+	defer file.Close()
+
+	switch strings.ToLower(typeFlag) {
+	default:
+		err = fmt.Errorf("export: unsupported output type: '%s'\n", typeFlag)
+	case "vcf":
+		err = exportVcf(os.Stdout, file)
+	case "fasta":
+		err = exportFasta(os.Stdout, file)
+	}
+
+	return err
 }
 
-func exportVcf(matrixFilepath string) error {
-	ext := filepath.Ext(matrixFilepath)
+func exportFasta(w io.Writer, rs io.ReadSeeker) error {
+	var filePosition int64
+	var lineWidth int
+	referenceColumn := make([]int64, 0)
+	linefeed := []byte("\n")
+	br := bufio.NewReader(rs)
+	bw := bufio.NewWriter(w)
+	defer bw.Flush()
 
-	infile, err := os.Open(matrixFilepath)
+	line, err := br.ReadBytes('\n')
+	filePosition = int64(len(line))
 	if err != nil {
 		return err
 	}
-	defer infile.Close()
+	header := make([]byte, len(line))
+	copy(header, line)
+	start := bytes.Index(header, []byte("Reference")) + len("Reference") + 1
+	end := bytes.Index(header, []byte("#SNPcall"))
+	identifiers := bytes.Split(header[start:end-1], []byte("\t"))
 
-	outfile, err := os.Create(matrixFilepath[:len(matrixFilepath)-len(ext)] + ".vcf")
-	if err != nil {
-		return err
+	// Transform the Reference column to a fasta contig by scanning the file
+	// line by line searching for the second (Reference) column.
+	//
+	// Track the file position of each reference call so later we can seek
+	// straight to the calls for all the remaining samples.
+	bw.WriteString(">Reference\n")
+	for {
+		line, err := br.ReadBytes('\n')
+		if err != nil {
+			if err != io.EOF {
+				return err
+			} else if len(line) == 0 {
+				break
+			}
+		}
+		// Find the reference column
+		idx := bytes.IndexByte(line, '\t')
+		if idx == -1 {
+			// TODO: err
+			log.Fatalf("%d, %s, %v\n", idx, line, err)
+		}
+		// The reference column is the character immediately following the first tab
+		bw.Write(line[idx+1 : idx+2])
+		lineWidth++
+		if lineWidth == 80 {
+			// Wrap the contig sequence every 80 characters
+			bw.Write(linefeed)
+			lineWidth = 0
+		}
+
+		referenceColumn = append(referenceColumn, filePosition+int64(idx+1))
+		filePosition += int64(len(line))
 	}
-	defer outfile.Close()
 
-	br := bufio.NewReader(infile)
-	bw := bufio.NewWriter(outfile)
+	// Transform each Sample Analysis column to a fasta contig.
+	// The calls are found as an offset from the position of the reference calls
+	lineWidth = 0
+	p := make([]byte, 1)
+	for i := range identifiers {
+		fmt.Fprintf(bw, "\n>%s\n", identifiers[i])
+		for _, filePosition := range referenceColumn {
+			rs.Seek(filePosition+int64(i*2), os.SEEK_SET)
+
+			n, err := rs.Read(p)
+			if n != 1 || err != nil {
+				return errors.New("export: TODO err msg")
+			}
+			bw.Write(p)
+
+			// Wrap sequence every 80 characters
+			lineWidth++
+			if lineWidth == 80 {
+				if _, err := bw.Write(linefeed); err != nil {
+					return err
+				}
+				lineWidth = 0
+			}
+		}
+	}
+
+	return nil
+}
+
+func exportVcf(w io.Writer, rs io.ReadSeeker) error {
+	br := bufio.NewReader(rs)
+	bw := bufio.NewWriter(w)
 	defer bw.Flush()
 
 	contigs, identifiers, err := collectVcfMetadata(br)
-	infile.Seek(0, os.SEEK_SET)
-	br.Reset(infile)
+	if err != nil {
+		return err
+	}
+	rs.Seek(0, os.SEEK_SET)
+	br.Reset(rs)
 
 	vcf := newVcf(bw, len(identifiers))
 	vcf.WriteMetadataAndHeader(contigs, identifiers)
