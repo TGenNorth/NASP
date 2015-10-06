@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"text/template"
 
 	"github.com/TGenNorth/NASP/command"
@@ -80,7 +81,7 @@ var helpTemplate = `{{if .Runnable}}usage: nasp {{.UsageLine}}
 
 // tmpl executes the given template text on data, writing the result to w.
 func tmpl(w io.Writer, text string, data interface{}) {
-	t := template.Must(template.New("root").Parse(text))
+	t := template.Must(template.New("root").Funcs(template.FuncMap{"trim": strings.TrimSpace}).Parse(text))
 	err := t.Execute(w, data)
 	if err != nil {
 		panic(err)

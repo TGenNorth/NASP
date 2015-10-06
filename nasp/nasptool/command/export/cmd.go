@@ -30,7 +30,8 @@ func init() {
 	// TODO: Update Run interface to be a function that returns an error
 	cmd.Run = func(cmd *command.Command, args []string) {
 		if err:= run(cmd, args); err != nil {
-			log.Fatal(err)
+			log.Println(err)
+			cmd.Usage()
 		}
 	 }
 
@@ -118,9 +119,9 @@ func exportFasta(w io.Writer, rs io.ReadSeeker) error {
 
 	// Transform each Sample Analysis column to a fasta contig.
 	// The calls are found as an offset from the position of the reference calls
-	lineWidth = 0
 	p := make([]byte, 1)
 	for i := range identifiers {
+		lineWidth = 0
 		fmt.Fprintf(bw, "\n>%s\n", identifiers[i])
 		for _, filePosition := range referenceColumn {
 			rs.Seek(filePosition+int64(i*2), os.SEEK_SET)
