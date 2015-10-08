@@ -517,16 +517,7 @@ def _get_user_input(reference, output_folder):
         configuration["proportion_filter"] = str(proportion_filter)
         logging.info("ProportionFilter = %s", configuration["proportion_filter"])
 
-    # matrix_path = os.path.join(run_path, "gonasp")
-    import sys
-    import pkg_resources
-    if sys.maxsize > 2**32:
-        matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_64')
-    else:
-        matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_32')
-    if not os.path.exists(matrix_path):
-        matrix_path = "nasptool_linux_64"
-    matrix_settings = _get_advanced_settings("MatrixGenerator", matrix_path, "", {'name':'nasp_matrix', 'num_cpus':'8', 'mem_requested':'8', 'walltime':'48', 'queue':queue, 'args':args})
+    matrix_settings = _get_advanced_settings("MatrixGenerator", gonasp_path(), "", {'name':'nasp_matrix', 'num_cpus':'8', 'mem_requested':'8', 'walltime':'48', 'queue':queue, 'args':args})
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
@@ -538,9 +529,52 @@ def _get_user_input(reference, output_folder):
     return configuration
 
 
+def gonasp_path():
+    import sys
+    import pkg_resources
+    if sys.maxsize > 2**32:
+        matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_64')
+    else:
+        matrix_path = pkg_resources.resource_filename('nasp', 'nasptool_linux_32')
+    if os.path.exists(matrix_path):
+        return matrix_path
+    else:
+        return "nasptool_linux_64"
+
+
+def guess_job_manager():
+    try:
+        import os
+        import shutil
+        # Order matters.
+        # SLURM includes a simple qsub wrapper
+        # TORQUE and SGE/OGE use variations of qsub
+        if shutil.which('sbatch'):
+            return 'SLURM'
+        elif os.environ.get('SGE_ROOT') is not None:
+            return 'SGE'
+        elif shutil.which('qsub'):
+            return 'PBS'
+        else:
+            return 'NONE'
+    except ImportError:
+        return 'NONE'
+
+
 def main():
+    import sys
     import nasp.dispatcher as dispatcher
     import nasp.configuration_parser as configuration_parser
+
+    # This is hack to forward commands to gonasp
+    if len(sys.argv) > 1 and sys.argv[1] in ['help', 'duplicates', 'frankenfasta', 'matrix', 'export']:
+        if sys.argv[1] == 'help' or any(arg in ['-h', '-help', '--help'] for arg in sys.argv):
+            import subprocess
+            subprocess.call([gonasp_path()] + sys.argv[1:])
+        else:
+            command = "{0} {1}".format(gonasp_path(), ' '.join(sys.argv[1:]))
+            dispatcher._submit_job(guess_job_manager(), command, {'name': 'nasp_' + sys.argv[1], 'num_cpus': '4', 'mem_requested': '4', 'walltime': '4', 'queue': '', 'args': '', 'work_dir': os.getcwd()})
+        return
 
     commandline_args = _parse_args()
     if commandline_args.config:

@@ -359,7 +359,7 @@ def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, refere
     samview_command = "%s view -S -b -h %s.sam" % (sampath, bam_nickname)
     samsort_command = "%s sort - %s" % (sampath, bam_nickname)
     samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
-    remove_temp.append("rm %s.sam" % bam_nickname) 
+    remove_temp.append("rm %s.sam" % bam_nickname)
     remove_temp_command = ";".join(remove_temp)
     command = "%s \n %s \n %s | %s \n %s \n %s" % (
         unzip_command, aligner_command, samview_command, samsort_command, samindex_command, remove_temp_command)
@@ -501,7 +501,7 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
 
 def _trim_adapters(read_tuple, configuration):
     import os
-    
+
     (_, path, args, job_parms) = configuration["read_trimmer"]
     (name, read1) = read_tuple[0:2]
     read2 = read_tuple[2] if len(read_tuple) >= 3 else None
@@ -650,6 +650,29 @@ def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fas
     return job_id
 
 
+def _export_matrices(configuration, matrix_job_id):
+    import os
+
+    gonasp_path = configuration["matrix_generator"][1]
+    matrix_folder = os.path.join(configuration['output_folder'], 'matrices')
+    job_parms = {'name': 'nasp_export', 'num_cpus': '4', 'mem_requested': '4', 'walltime': '4', 'queue': '', 'args': '', 'work_dir':  matrix_folder}
+    commands = []
+
+    # The command will be of the following form:
+    #   gonasp export --type fasta bestsnp.tsv > bestsnp.fasta &
+    #   gonasp export --type vcf bestsnp.tsv > bestsnp.vcf &
+    #   wait
+    # The '&' will launch each export commands as background tasks then the 'wait' will wait for them to finish
+    for type in ['vcf', 'fasta']:
+        for exported_matrix in ['bestsnp', 'missingdata']:
+            commands.append("{0} export --type {1} {2}.tsv > {2}.{1}".format(gonasp_path, type, exported_matrix))
+
+    commands.append('wait')
+    command = ' & '.join(commands)
+
+    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (matrix_job_id,), notify=True)
+
+
 def begin(configuration):
     (index_job_id, reference) = _index_reference(configuration)
     if not index_job_id:
@@ -691,7 +714,8 @@ def begin(configuration):
     for (name, vcf) in configuration["vcfs"]:
         vcf_files.append((name, "pre-aligned", "pre-called", vcf))
 
-    _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids)
+    matrix_job_id = _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids)
+    _export_matrices(configuration, matrix_job_id)
     _release_hold(configuration["job_submitter"], index_job_id)
 
 
