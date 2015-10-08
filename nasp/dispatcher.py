@@ -340,24 +340,27 @@ def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, refere
     remove_temp = []
     reads = []
     for read in (read1, read2):
-        match = re.match('^(.+)\.gz$', read, re.IGNORECASE)
+        filename = os.path.basename(read)
+        match = re.match('^(.+)\.gz$', filename, re.IGNORECASE)
         if match:
-            decompressed = os.path.join(os.path.join(output_folder, aligner_name), match.group(0))
+            decompressed = os.path.join(os.path.join(output_folder, aligner_name), match.group(1))
             unzip.append("zcat %s > %s" % (read, decompressed))
             reads.append(decompressed)
             remove_temp.append("rm %s" % decompressed)
         else:
             reads.append(read)
     read_string = " ".join(reads)
-    unzip_command = "\n".join(unzip)
-    remove_temp_command = "\n".join(remove_temp)
+    unzip_command = ";".join(unzip)
     ref_dir = os.path.join(os.path.join(output_folder, "reference"), aligner_name)
-    aligner_command = "%s %s %s %s -o %s-%s.sam %s" % (
-        path, paired_string, ref_dir, read_string, name, aligner_name, args)
+    ncpus = job_parms['num_cpus']
     bam_nickname = "%s-%s" % (name, aligner_name)
+    aligner_command = "%s %s %s %s -o %s.sam -t %s -b %s" % (
+        path, paired_string, ref_dir, read_string, bam_nickname, ncpus, args)
     samview_command = "%s view -S -b -h %s.sam" % (sampath, bam_nickname)
     samsort_command = "%s sort - %s" % (sampath, bam_nickname)
     samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
+    remove_temp.append("rm %s.sam" % bam_nickname)
+    remove_temp_command = ";".join(remove_temp)
     command = "%s \n %s \n %s | %s \n %s \n %s" % (
         unzip_command, aligner_command, samview_command, samsort_command, samindex_command, remove_temp_command)
     work_dir = os.path.join(output_folder, aligner_name)
@@ -498,7 +501,7 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
 
 def _trim_adapters(read_tuple, configuration):
     import os
-    
+
     (_, path, args, job_parms) = configuration["read_trimmer"]
     (name, read1) = read_tuple[0:2]
     read2 = read_tuple[2] if len(read_tuple) >= 3 else None
@@ -647,6 +650,29 @@ def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fas
     return job_id
 
 
+def _export_matrices(configuration, matrix_job_id):
+    import os
+
+    gonasp_path = configuration["matrix_generator"][1]
+    matrix_folder = os.path.join(configuration['output_folder'], 'matrices')
+    job_parms = {'name': 'nasp_export', 'num_cpus': '4', 'mem_requested': '4', 'walltime': '4', 'queue': '', 'args': '', 'work_dir':  matrix_folder}
+    commands = []
+
+    # The command will be of the following form:
+    #   gonasp export --type fasta bestsnp.tsv > bestsnp.fasta &
+    #   gonasp export --type vcf bestsnp.tsv > bestsnp.vcf &
+    #   wait
+    # The '&' will launch each export commands as background tasks then the 'wait' will wait for them to finish
+    for type in ['vcf', 'fasta']:
+        for exported_matrix in ['bestsnp', 'missingdata']:
+            commands.append("{0} export --type {1} {2}.tsv > {2}.{1}".format(gonasp_path, type, exported_matrix))
+
+    commands.append('wait')
+    command = ' & '.join(commands)
+
+    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (matrix_job_id,), notify=True)
+
+
 def begin(configuration):
     (index_job_id, reference) = _index_reference(configuration)
     if not index_job_id:
@@ -677,7 +703,7 @@ def begin(configuration):
                 vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
     for read_tuple in configuration["reads"]:
         dependent_job_id = index_job_id
-        if configuration["trim_reads"] == "True":
+        if "trim_reads" in configuration and configuration["trim_reads"] == "True":
             (read_tuple, dependent_job_id) = _trim_adapters(read_tuple, configuration)
         aligner_output = _align_reads(read_tuple, configuration, dependent_job_id, reference)
         snpcaller_output = _call_snps(aligner_output, configuration, reference)
@@ -688,7 +714,8 @@ def begin(configuration):
     for (name, vcf) in configuration["vcfs"]:
         vcf_files.append((name, "pre-aligned", "pre-called", vcf))
 
-    _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids)
+    matrix_job_id = _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids)
+    _export_matrices(configuration, matrix_job_id)
     _release_hold(configuration["job_submitter"], index_job_id)
 
 

@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecheney/profile"
+
 	//"github.com/davecheney/profile"
 )
 
@@ -49,15 +51,13 @@ func Run(numThreads int, dtoFile, refPath, dupPath, statsPath, matrixPath string
 	runtime.GOMAXPROCS(numThreads)
 
 	// Begin Development Profiling
-	/*
-		defer profile.Start(&profile.Config{
-			CPUProfile: true,
-			//MemProfile:     true,
-			//BlockProfile:   true,
-			ProfilePath:    ".",
-			NoShutdownHook: true,
-		}).Stop()
-	*/
+	defer profile.Start(&profile.Config{
+		CPUProfile: true,
+		//MemProfile:     true,
+		//BlockProfile:   true,
+		ProfilePath:    ".",
+		NoShutdownHook: true,
+	}).Stop()
 
 	t0 := time.Now()
 	defer func() {

@@ -6,7 +6,7 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/TGenNorth/nasp/command"
+	"github.com/TGenNorth/NASP/command"
 )
 
 var cmd = &command.Command{
