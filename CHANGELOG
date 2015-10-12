@@ -1,6 +1,16 @@
  NASP Changelog
 ================
 
+ 1.0.0:
+----------
+ * New significantly faster matrix generator written in GO
+ * Support for adapter/quality trimming of reads
+ * SNAP aligner now works (need to add '-rf BadCigar' option to GATK when using SNAP)
+ * No .'s in frankenfastas
+ * Sample statistics modified to make all stats affected by duplicated regions
+ * Various bug fixes
+ * SolSNP and NovoAlign not enabled by default
+
  0.9.9:
 ----------
  * Fixes to nucmer: properly pass additional arguments, increase walltime and memory allocation

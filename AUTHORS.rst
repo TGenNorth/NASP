@@ -10,4 +10,6 @@ Development Lead
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Jason Travis <jtravis@tgen.org>
+* David Smith <dsmith@tgen.org>
+* Jason Sahl <jsahl@tgen.org>
