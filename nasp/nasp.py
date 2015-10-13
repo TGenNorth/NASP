@@ -542,23 +542,23 @@ def gonasp_path():
         return "nasptool_linux_64"
 
 
-def guess_job_manager():
-    try:
-        import os
-        import shutil
-        # Order matters.
-        # SLURM includes a simple qsub wrapper
-        # TORQUE and SGE/OGE use variations of qsub
-        if shutil.which('sbatch'):
-            return 'SLURM'
-        elif os.environ.get('SGE_ROOT') is not None:
-            return 'SGE'
-        elif shutil.which('qsub'):
-            return 'PBS'
-        else:
-            return 'NONE'
-    except ImportError:
-        return 'NONE'
+# def guess_job_manager():
+#     try:
+#         import os
+#         import shutil
+#         # Order matters.
+#         # SLURM includes a simple qsub wrapper
+#         # TORQUE and SGE/OGE use variations of qsub
+#         if shutil.which('sbatch'):
+#             return 'SLURM'
+#         elif os.environ.get('SGE_ROOT') is not None:
+#             return 'SGE'
+#         elif shutil.which('qsub'):
+#             return 'PBS'
+#         else:
+#             return 'NONE'
+#     except ImportError:
+#         return 'NONE'
 
 
 def main():
@@ -568,12 +568,11 @@ def main():
 
     # This is hack to forward commands to gonasp
     if len(sys.argv) > 1 and sys.argv[1] in ['help', 'duplicates', 'frankenfasta', 'matrix', 'export']:
-        if sys.argv[1] == 'help' or any(arg in ['-h', '-help', '--help'] for arg in sys.argv):
-            import subprocess
-            subprocess.call([gonasp_path()] + sys.argv[1:])
-        else:
-            command = "{0} {1}".format(gonasp_path(), ' '.join(sys.argv[1:]))
-            dispatcher._submit_job(guess_job_manager(), command, {'name': 'nasp_' + sys.argv[1], 'num_cpus': '4', 'mem_requested': '4', 'walltime': '4', 'queue': '', 'args': '', 'work_dir': os.getcwd()})
+        if sys.argv[1] == 'help' or any(arg in ['-h', '-help', '--help'] for arg in sys.argv) or len(sys.argv) < 3:
+            print("Requesting nasp internal command usage message. Enter 'nasp --help' for the nasp pipeline usage message.")
+            print("Unlike the nasp pipeline, these commands will not be automatically submitted to your job manager")
+        import subprocess
+        subprocess.call([gonasp_path()] + sys.argv[1:])
         return
 
     commandline_args = _parse_args()
