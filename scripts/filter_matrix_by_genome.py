@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 
-"""filter a raw ISG matrix for a
+"""filter a NASP matrix for a
 list of genomes"""
 
 from optparse import OptionParser
 from collections import deque
 
-def filter_genomes(genomes, in_matrix):
-    #genomes_file = open(genomes, "rU")
+def filter_genomes(genomes, in_matrix, action):
     in_matrix = open(in_matrix, "rU")
-    #all_genomes = [ ]
     firstLine = in_matrix.readline()
     first_fields = firstLine.split()
+    #indexes the column right after sequence data
     last=first_fields.index("#SNPcall")
     all_genomes=first_fields[:last]
     genomes_file = open(genomes, "r").read().splitlines()
     to_keep = [ ]
     for x in all_genomes[1:]:
-        if x in genomes_file:
-            to_keep.append(all_genomes.index(x))
+        if "keep" in action:
+            if x in genomes_file:
+                to_keep.append(all_genomes.index(x))
+        else:
+            if x not in genomes_file:
+                to_keep.append(all_genomes.index(x))
     return to_keep
     in_matrix.close()
 
@@ -31,8 +34,8 @@ def filter_matrix(to_keep, in_matrix, prefix):
         print >> outfile, "\t".join(fields)
     outfile.close()
 
-def main(in_matrix, prefix, genomes):
-    to_keep=filter_genomes(genomes, in_matrix)
+def main(in_matrix, prefix, genomes, action):
+    to_keep=filter_genomes(genomes, in_matrix, action)
     filter_matrix(to_keep, in_matrix, prefix)
 
 if __name__ == "__main__":
@@ -55,8 +58,7 @@ if __name__ == "__main__":
     mandatories = ["in_matrix", "prefix", "genomes"]
     for m in mandatories:
         if not options.__dict__[m]:
-            # FIXME(jtravis): replace print with print()q
-            print "\nMust provide %s.\n" %m
+            print("\nMust provide %s.\n" %m)
             parser.print_help()
             exit(-1)
 
