@@ -38,7 +38,7 @@ def raw_matrix(matrix_in):
     for line in matrix:
         lines.append(line)
     print("Total SNPs:",len(lines))
-	
+
 def matrix_to_fasta(matrix_in, prefix, type, last):
     """converts an ISG matrix to fasta format"""
     reduced = [ ]
@@ -51,7 +51,7 @@ def matrix_to_fasta(matrix_in, prefix, type, last):
         out_fasta.write(">"+str(x[0])+"\n")
         out_fasta.write("".join(x[1:])+"\n")
     out_fasta.close()
-   
+
 def filter_matrix(matrix_in, last, filter_frequency):
     """filter an ISG matrix position if it contains either missing
     or ambiguous data.  Also removes positions if they are monomorphic"""
@@ -101,7 +101,7 @@ def filter_matrix(matrix_in, last, filter_frequency):
     print("number of SNPs after filtering:", len(lines))
     matrix.close()
     file_out.close()
-		
+
 def filter_singletons(last, tmp_matrix):
     """find positions in the matrix where there are at least 2 types of nucleotides
     in the alignment with a minimum frequency of 2 - this is the Mega definition
@@ -125,7 +125,7 @@ def filter_singletons(last, tmp_matrix):
     print("number of parsimony-informative SNPs:", len(lines))
     matrix.close()
     file_out.close()
-       
+
 def test_file(option, opt_str, value, parser):
     try:
         with open(value): setattr(parser.values, option.dest, value)
@@ -143,10 +143,10 @@ def main(matrix_in,prefix,filter_frequency):
     matrix_to_fasta("tmp2.matrix", prefix, "filtered_PI_snps_only", last)
     os.system("mv tmp.matrix clean_matrix.txt")
     os.system("mv tmp2.matrix clean_PI_matrix.txt")
-    
+
 if __name__ == "__main__":
     usage="usage: %prog [options]"
-    parser = OptionParser(usage=usage) 
+    parser = OptionParser(usage=usage)
     parser.add_option("-m", "--input_matrix", dest="matrix_in",
                       help="/path/to/isg_matrix [REQUIRED]",
                       action="callback", callback=test_file, type="string")
