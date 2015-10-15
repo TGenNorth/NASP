@@ -16,12 +16,15 @@ def filter_genomes(genomes, in_matrix, action):
     genomes_file = open(genomes, "r").read().splitlines()
     to_keep = [ ]
     for x in all_genomes[1:]:
-        if "keep" in action:
+        if "remove" in action:
             if x in genomes_file:
                 to_keep.append(all_genomes.index(x))
-        else:
+        elif "keep" in action:
             if x not in genomes_file:
                 to_keep.append(all_genomes.index(x))
+        else:
+            print("option not supported")
+            sys.exit()
     return to_keep
     in_matrix.close()
 
@@ -31,7 +34,7 @@ def filter_matrix(to_keep, in_matrix, prefix):
     for line in matrix:
         fields = line.split()
         deque((list.pop(fields, i) for i in sorted(to_keep, reverse=True)), maxlen=0)
-        print >> outfile, "\t".join(fields)
+        outfile.write("\t".join(fields)+"\n")
     outfile.close()
 
 def main(in_matrix, prefix, genomes, action):
@@ -42,13 +45,13 @@ if __name__ == "__main__":
     usage="usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option("-m", "--in_matrix", dest="in_matrix",
-                      help="/path/to/file [REQUIRED]",
+                      help="/path/to/NASP_matrix [REQUIRED]",
                       action="store", type="string")
     parser.add_option("-p", "--out_prefix", dest="prefix",
-                      help="/path/to/file [REQUIRED]",
+                      help="prefix for output files [REQUIRED]",
                       action="store", type="string")
     parser.add_option("-g", "--genomes", dest="genomes",
-                      help="/path/to/genomes_file [REQUIRED]",
+                      help="/path/to/genomes_file [new line delimited] [REQUIRED]",
                       action="store", type="string")
     parser.add_option("-a", "--actions", dest="action",
                       help="action to perform (keep, remove), defaults to keep",
