@@ -66,7 +66,6 @@ setup(
         'scripts/filter_matrix_by_coord.py',
         'scripts/filter_matrix_by_distance.py',
         'scripts/filter_matrix_by_genome.py',
-        'scripts/filter_matrix_remove_genomes.py',
         'scripts/matrix_to_fasta.py',
         'scripts/merge_matrices.py',
         'scripts/report_single_snps_single_isolate.py'
