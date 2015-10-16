@@ -33,7 +33,6 @@ def filter_matrix(in_matrix, prefix, coords, action):
                 out_file.write(line,)
         elif action == "remove":
             if fields[0] not in coords_file:
-                #lines.append(line)
                 out_file.write(line,)
             else:
                 lines.append(line)
@@ -72,20 +71,28 @@ def filter_missing_matrix(prefix, last):
     file_out.close()
 
 def filter_singletons(prefix, matrix_prefix, last):
-    """identify the number of autapomorphic SNPs in an ISG matrix"""
+    """find positions in the matrix where there are at least 2 types of nucleotides
+    in the alignment with a minimum frequency of 2 - this is the Mega definition
+    of Parsimony informative SNP)"""
     matrix=open("%s.%s" % (prefix, matrix_prefix))
+    file_out=open("%s.PI.matrix.txt" % prefix, "w")
     firstLine = matrix.readline()
-    next(matrix)
+    file_out.write(firstLine,)
     lines = [ ]
     for line in matrix:
-	fields=line.split("\t")
-	counter=collections.Counter(fields[2:last])
+        fields=line.split("\t")
+        counter=collections.Counter(fields[1:last])
         values=counter.values()
-        values.sort(key=int)
-	for i in range(2,5):
-		if len(values)==int(i) and values[int(i-2)]!=1: lines.append(line)
+        new_values=list(sorted(values, key=int))
+        if len(values)==1: sys.exc_clear()
+        else:
+            for i in range(2,5):
+                if len(values)==int(i) and values[i-2]>1: file_out.write(line,)
+                if len(values)==int(i) and values[i-2]>1: lines.append(line)
+        values=[]
     print("number of parsimony-informative SNPs:", len(lines))
     matrix.close()
+    file_out.close()
 
 def main(in_matrix, prefix, coords, action):
     last=get_index_range(in_matrix)
@@ -121,4 +128,3 @@ if __name__ == "__main__":
             exit(-1)
 
     main(options.in_matrix,options.prefix,options.coords,options.action)
-
