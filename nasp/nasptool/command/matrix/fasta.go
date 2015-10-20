@@ -210,8 +210,7 @@ func (r *Reference) NextContig() (string, error) {
 
 	rname, rerr = r.ref.NextContig()
 
-	// The duplicates file is optional. If absent, all positions will be
-	// assumed unique.
+	// The duplicates file is optional. If absent, all positions will be assumed unique.
 	if r.dup == nil {
 		return rname, rerr
 	}

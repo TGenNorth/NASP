@@ -17,12 +17,27 @@ import (
 	//_ "github.com/TGenNorth/NASP/command/snpcall"
 )
 
+// TODO: document --version flag is usage template
+// version is set at compile time when built with the following command:
+// go build -ldflags "-X main.version=$(git rev-parse --short HEAD)"
+var version string
+var versionFlag bool
+
 var commands = command.Commands
+
+func init() {
+	flag.BoolVar(&versionFlag, "version", false, "")
+}
 
 func main() {
 	flag.Usage = usage
 	flag.Parse()
 	log.SetFlags(0)
+
+	if versionFlag {
+		log.Printf("%s", version)
+		return
+	}
 
 	args := flag.Args()
 	if len(args) < 1 {
@@ -36,15 +51,13 @@ func main() {
 	}
 
 	for _, cmd := range commands {
-		if cmd.Name() == args[0] && cmd.Runnable() {
-			cmd.Flag.Usage = func() { cmd.Usage() }
-			if cmd.CustomFlags {
-				args = args[1:]
-			} else {
-				cmd.Flag.Parse(args[1:])
-				args = cmd.Flag.Args()
+		if cmd.Name() == args[0] {
+			cmd.Flag.Usage = func() { cmd.Usage(nil) }
+			cmd.Flag.Parse(args[1:])
+			args = cmd.Flag.Args()
+			if err := cmd.Run(cmd, args); err != nil {
+				cmd.Usage(err)
 			}
-			cmd.Run(cmd, args)
 			return
 		}
 	}
@@ -61,22 +74,15 @@ Usage:
 	nasp command [arguments]
 
 The commands are:
-{{range .}}{{if .Runnable}}
-	{{.Name | printf "%-11s"}} {{.Short}}{{end}}{{end}}
+{{range .}}
+	{{.Name | printf "%-11s"}} {{.Short}}{{end}}
 
 Use "nasp help [command]" for more information about a command.
-
-Additional help topics:
-{{range .}}{{if not .Runnable}}
-	{{.Name | printf "%-11s"}} {{.Short}}{{end}}{{end}}
-
-Use "nasp help [topic]" for more information about that topic.
-
 `
 
-var helpTemplate = `{{if .Runnable}}usage: nasp {{.UsageLine}}
+var helpTemplate = `usage: nasp {{.UsageLine}}
 
-{{end}}{{.Long | trim}}
+{{.Long | trim}}
 `
 
 // tmpl executes the given template text on data, writing the result to w.

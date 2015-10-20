@@ -3,7 +3,6 @@
 package matrix
 
 import (
-	"log"
 	"runtime"
 
 	"github.com/TGenNorth/NASP/command"
@@ -46,7 +45,9 @@ var (
 
 func init() {
 	// break init cycle
-	cmd.Run = runMatrix
+	cmd.Run = func(cmd *command.Command, args []string) error {
+		return Run(numThreads, dtoFile, refPath, dupPath, statsPath, matrixPath, minCoverage, minProportion, args...)
+	}
 	cmd.Flag.IntVar(&numThreads, "num-threads", runtime.NumCPU(), "Max number of CPUs that can be executing simultaneously")
 	cmd.Flag.StringVar(&dtoFile, "dto-file", "", "Path to the matrix_dto.xml file")
 	cmd.Flag.StringVar(&refPath, "reference-fasta", "", "Path to the reference.fasta against which samples are compared")
@@ -58,11 +59,4 @@ func init() {
 	cmd.Flag.BoolVar(&withAllRefPos, "withallrefpos", false, "Include the withallrefpos matrix")
 
 	command.Register(cmd)
-}
-
-func runMatrix(cmd *command.Command, args []string) {
-	if err := Run(numThreads, dtoFile, refPath, dupPath, statsPath, matrixPath, minCoverage, minProportion, args...); err != nil {
-		log.Println(err)
-		cmd.Usage()
-	}
 }

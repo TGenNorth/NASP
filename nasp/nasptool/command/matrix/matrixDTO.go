@@ -220,10 +220,8 @@ func (d *Dto) mergeAllFiles(filepaths []string) error {
 	}
 
 	d.AllFiles = make([]NaspFile, len(uniqueFilepaths))
-	i := 0
 	for _, v := range uniqueFilepaths {
-		d.AllFiles[i] = v
-		i++
+		d.AllFiles = append(d.AllFiles, v)
 	}
 
 	// The program will panic with a negative workgroup error if there is not

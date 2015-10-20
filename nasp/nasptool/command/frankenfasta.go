@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -75,13 +74,13 @@ func init() {
 	cmdFrankenfasta.Flag.StringVar(&frankenfastaSample, "sample", "", "")
 }
 
-func runFrankenfasta(cmd *Command, args []string) {
+func runFrankenfasta(cmd *Command, args []string) error {
 	for _, delta := range args {
 		if err := frankenfasta(delta); err != nil {
-			log.Println(err)
-			cmd.Usage()
+			return err
 		}
 	}
+	return nil
 }
 
 // TODO: document it will use the fasta named in the delta file
@@ -380,7 +379,6 @@ func frankenfasta(deltaFilename string) error {
 	defer fastaFile.Close()
 
 	external := make(fasta)
-	//log.Printf("Reading sample sequences from %s\n", delta.queryFilepath)
 	external.Unmarshal(fastaFile, delta)
 
 	franken := make(fasta)
@@ -407,7 +405,6 @@ func frankenfasta(deltaFilename string) error {
 			// TODO: replace with error type
 			return fmt.Errorf("nasp.frankenfasta: the query sequence '%s' in %s was not found in %s\n", delta.records[i].header.querySequence, deltaFilename, delta.queryFilepath)
 		}
-		//log.Println(delta.records[i].header.querySequence)
 
 		alignments := delta.records[i].alignments
 		for _, alignment := range alignments {
@@ -420,9 +417,6 @@ func frankenfasta(deltaFilename string) error {
 				qStart++
 			}
 
-			//log.Printf("%#v\n", alignment)
-
-			//for dIdx, d := range alignment.distances {
 			for _, d := range alignment.distances {
 				var refEnd, qEnd int64
 				var absDist int64
@@ -438,11 +432,9 @@ func frankenfasta(deltaFilename string) error {
 					} else {
 						qStart++
 					}
-					//log.Println(dIdx, "d=", d, "refStart=", refStart, "qStart=", qStart, "isQueryReversed=", isQueryReversed)
 					continue
 				case d == 1:
 					frankenSequence[refStart] = '.'
-					//log.Println(dIdx, "d=", d, "refStart=", refStart, "qStart=", qStart, "isQueryReversed=", isQueryReversed)
 					refStart++
 					continue
 				case d == 0:
@@ -465,7 +457,6 @@ func frankenfasta(deltaFilename string) error {
 				if isQueryReversed {
 					// Positions are read from end to beginning and reverse complemented
 					qEnd = qStart - absDist
-					//log.Println(dIdx, "d=", d, "absDist=", absDist, "refLen=", len(frankenSequence), "qLen=", len(sequence), "refStart=", refStart, "refEnd=", refEnd, "rDiff=", refEnd-refStart, "qStart=", qStart, "qEnd=", qEnd, "qDiff=", qStart-qEnd, "isQueryReversed=", isQueryReversed)
 					segment := reverseComplement(sequence[qEnd:qStart])
 					if isAlignmentOverlap {
 						mergeMarkingConflictsWithN(frankenSequence[refStart:refEnd], segment)
@@ -475,7 +466,6 @@ func frankenfasta(deltaFilename string) error {
 				} else {
 					// Positions are read from beginning to end
 					qEnd = qStart + absDist
-					//log.Println(dIdx, "d=", d, "absDist", absDist, "refLen=", len(frankenSequence), "qLen=", len(sequence), "refStart=", refStart, "refEnd=", refEnd, "rDiff=", refEnd-refStart, "qStart=", qStart, "qEnd=", qEnd, "qDiff=", qEnd-qStart, "isQueryReversed=", isQueryReversed)
 					if isAlignmentOverlap {
 						mergeMarkingConflictsWithN(frankenSequence[refStart:refEnd], sequence[qStart:qEnd])
 					} else {
@@ -501,8 +491,6 @@ func frankenfasta(deltaFilename string) error {
 
 				refStart = refEnd
 				qStart = qEnd
-
-				//log.Println("end refStart=", refStart, "qStart=", qStart)
 			}
 		}
 

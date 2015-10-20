@@ -189,6 +189,23 @@ func (d *Delta) ReadFrom(r io.Reader) (n int64, err error) {
 			}
 		case len(fields) == 1:
 			// Distance is a cumulative offset to the next insert/delete
+			var distances []int
+
+			distance := parseInt([]byte(fields[0]))
+
+			if distance == 0 {
+				break
+			}
+
+			for scanner.Scan() {
+				distance = parseInt(scanner.Bytes())
+
+				if distance == 0 {
+					break
+				} else {
+					distances = append(distances, distance)
+				}
+			}
 			if err := record.appendDistance(fields[0]); err != nil {
 				return n, err
 			}
@@ -198,4 +215,27 @@ func (d *Delta) ReadFrom(r io.Reader) (n int64, err error) {
 	d.Records = append(d.Records, record)
 
 	return n, nil
+}
+
+func parseInt(b []byte) (n int) {
+	var isNegative bool
+
+	if len(b) == 0 {
+		return 0
+	}
+
+	if b[0] == '-' {
+		isNegative = true
+		b = b[1:]
+	}
+
+	for i := range b {
+		n = n*10 + int(b[i]-'0')
+	}
+
+	if isNegative {
+		return -n
+	}
+
+	return n
 }

@@ -2,6 +2,7 @@ package command
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -31,7 +32,7 @@ The --type flag sets the output type (default: fasta)
 
 If --type is fasta, duplicates uses the delta to create a fasta-style output
 where the nucleotide sequences are replaced with a binary sequence such that
-'0' indicates a unique position and '1' indicates a duplicates position:
+'0' indicates a unique position and '1' indicates a potential duplicated position:
 
 	>Contig Description
 	00000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -45,7 +46,9 @@ where the nucleotide sequences are replaced with a binary sequence such that
 If --type is range, for each duplicate region duplicates outputs a line containing
 the contig name, start position, and end position.
 
-	Contig Description 500 1000
+	ContigA_Description 203 847
+	ContigA_Description 45678 49697
+	ContigB_Description 483 503
 `,
 }
 
@@ -56,15 +59,14 @@ func init() {
 	cmdDuplicates.Flag.StringVar(&typeFlag, "type", "fasta", "")
 }
 
-func runDuplicates(cmd *Command, args []string) {
+func runDuplicates(cmd *Command, args []string) error {
 	if len(args) != 1 {
-		log.Println("duplicates requires a delta file")
-		cmdDuplicates.Usage()
+		return errors.New("duplicates requires a delta file")
 	}
 
 	delta, err := os.Open(args[0])
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer delta.Close()
 
@@ -74,15 +76,18 @@ func runDuplicates(cmd *Command, args []string) {
 
 	switch typeFlag {
 	default:
-		log.Fatal("")
-		cmdDuplicates.Usage()
+		return errors.New("TODO")
 	case "fasta":
-		duplicates(br)
+		if err := duplicates(br); err != nil {
+			log.Fatal(err)
+		}
 	case "range":
 		r := make(region)
 		r.ReadFrom(br)
 		r.WriteTo(bw)
 	}
+
+	return nil
 }
 
 /*

@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/davecheney/profile"
-
-	//"github.com/davecheney/profile"
 )
 
 const (
@@ -24,27 +22,6 @@ const (
 
 var NUM_SAMPLES int
 var t0 = time.Now()
-
-/*
-var refPath = flag.String("reference-fasta", "", "Path to the reference.fasta against which samples are compared")
-var dupPath = flag.String("reference-dups", "", "Path to the duplicates.txt file marking duplicated positions")
-var matrixPath = flag.String("matrix-folder", "", "Path to the output folder for matrices")
-var statsPath = flag.String("stats-folder", "", "Path to the output folder for statistics")
-var minCoverage = flag.Int("minimum-coverage", -1, "Filter positions below this coverage/depth threshold")
-var minProportion = flag.Float64("minimum-proportion", -1.0, "Filter positions below this proportion threshold")
-var dtoFile = flag.String("dto-file", "", "Path to the matrix_dto.xml file")
-var numThreads = flag.Int("num-threads", runtime.NumCPU(), "Max number of CPUs that can be executing simultaneously")
-var _ = flag.String("mode", "", "NoOp - deprecated flag for backwards compatibility")
-
-var keepLastDuplicate = flag.Bool("keep-last", false, "If a VCF has multiple records for the same position, keep the last one")
-var manualSort = flag.Bool("manual-sort", false, "Debug for developer")
-
-func main() {
-	flag.Parse()
-
-	Run(*numThreads, *dtoFile, *refPath, *dupPath, *statsPath, *matrixPath, *minCoverage, *minProportion, flag.Args()...)
-}
-*/
 
 func Run(numThreads int, dtoFile, refPath, dupPath, statsPath, matrixPath string, minCoverage int, minProportion float64, files ...string) error {
 	var wg sync.WaitGroup
@@ -74,10 +51,7 @@ func Run(numThreads int, dtoFile, refPath, dupPath, statsPath, matrixPath string
 	sort.Sort(analyses)
 	log.Println("Samples indexed", time.Now().Sub(t0))
 
-	names := make([]string, len(analyses))
-	for i := range analyses {
-		names[i] = analyses[i].Name()
-	}
+	names := analyses.Names()
 
 	NUM_SAMPLES = len(analyses)
 
@@ -148,7 +122,7 @@ func readPositions(queue chan Chunk, statsChan chan SampleStats, reference *Refe
 				return fmt.Errorf("Error scanning reference contig %s: %s", name, err.Error())
 			}
 
-			refLength += len(ref)
+			refLength += int64(len(ref))
 
 			// calls is a chunk of calls that can be min(remaining sample contig length, defaultBufSize)
 			sampleChunk, err = analyses.ReadPositions(len(ref))
@@ -176,12 +150,6 @@ func readPositions(queue chan Chunk, statsChan chan SampleStats, reference *Refe
 // Put 1 callsPool
 func analyzePositions(ch chan []*Position, statsChan chan SampleStats, ref, dup []byte, sampleChunks *SampleChunk, minCoverage int, minProportion float64) {
 	defer close(ch)
-	/*
-		defer func() {
-			fmt.Println("Shutdown NumGoroutine", runtime.NumGoroutine())
-			close(ch)
-		}()
-	*/
 
 	stats := statsPool.Get().(SampleStats)
 	// Clear old values if this is a recycled object.
@@ -211,6 +179,15 @@ type SampleAnalysis interface {
 // the identifier field.
 type SampleAnalyses []SampleAnalysis
 
+func (s SampleAnalyses) Names() []string {
+	names := make([]string, len(s))
+	for i := range s {
+		names[i] = s[i].Name()
+	}
+
+	return names
+}
+
 // Get 1 callsPool
 // TODO: struct { calls, cov, prop }
 func (s SampleAnalyses) ReadPositions(n int) (*SampleChunk, error) {
@@ -222,16 +199,6 @@ func (s SampleAnalyses) ReadPositions(n int) (*SampleChunk, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//switch err {
-		//default:
-		//log.Fatal(err)
-		//sampleChunkPool.Put(sampleChunk)
-		// TODO: Panic?
-		//return nil, err
-		//case bufio.ErrBufferFull:
-		//	log.Fatal(err)
-		//	break
-		//case nil, io.EOF:
 		sampleChunk.calls[i] = sampleChunk.calls[i][:len(calls)]
 		copy(sampleChunk.calls[i], calls)
 		sampleChunk.coverages[i] = sampleChunk.coverages[i][:len(coverages)]

@@ -1,9 +1,3 @@
-// The subcommand design pattern is based on the Go command.
-// All other source code is copyright TGenNorth.
-
-// Copyright 2011 The Go Authors.  All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
 package command
 
 import (
@@ -17,7 +11,7 @@ import (
 type Command struct {
 	// Run runs the command.
 	// The args are the arguments after the command name.
-	Run func(cmd *Command, args []string)
+	Run func(cmd *Command, args []string) error
 
 	// UsageLine is the one-line usage message.
 	// The first word in the line is taken to be the command name.
@@ -31,10 +25,6 @@ type Command struct {
 
 	// Flag is a set of flags specific to this command.
 	Flag flag.FlagSet
-
-	// CustomFlags indicates that the command will do its own
-	// flag parsing.
-	CustomFlags bool
 }
 
 // Name returns the command's name: the first word in the usage line.
@@ -47,16 +37,13 @@ func (c *Command) Name() string {
 	return name
 }
 
-func (c *Command) Usage() {
+func (c *Command) Usage(err error) {
 	fmt.Fprintf(os.Stderr, "usage: %s\n\n", c.UsageLine)
 	fmt.Fprintf(os.Stderr, "%s\n", strings.TrimSpace(c.Long))
-	os.Exit(2)
-}
-
-// Runnable reports whether the command can be run; otherwise
-// it is a documentation pseudo-command such as importpath.
-func (c *Command) Runnable() bool {
-	return c.Run != nil
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\n%s\n", err)
+	}
+	os.Exit(1)
 }
 
 // Commands lists the available commands and help topics.

@@ -28,21 +28,14 @@ var typeFlag string
 
 func init() {
 	// TODO: Update Run interface to be a function that returns an error
-	cmd.Run = func(cmd *command.Command, args []string) {
-		if err:= run(cmd, args); err != nil {
-			log.Println(err)
-			cmd.Usage()
-		}
-	 }
-
+	cmd.Run = run
 	cmd.Flag.StringVar(&typeFlag, "type", "vcf", "")
-
 	command.Register(cmd)
 }
 
 func run(cmd *command.Command, args []string) (err error) {
 	if len(args) == 0 {
-		return errors.New("export: insufficient arguments")
+		return errors.New("export: requires a NASP matrix .tsv file")
 	}
 
 	file, err := os.Open(args[0])
@@ -212,34 +205,43 @@ func (v *vcf) WriteMetadataAndHeader(contigs []contigmeta, identifiers [][]byte)
 	return nil
 }
 
+// ALT_MONOMORPHISM is the value of the VCF ALT column when there are no SNPS
+// This is expected norm, so avoid allocating for this case
+var ALT_MONOMORPHISM = []byte(".")
+
 // LocusID\tReference\t<sample analysis columns>\t#SNPcall\t#Indelcall\t#Refcall\t#CallWasMade\t#PassedDepthFilter\t#PassedProportionFilter\t#A\t#C\t#G\t#T\t#Indel\t#NXdegen\tContig\tPosition\tInDupRegion\tSampleConsensus\tCallWasMade\tPassedDepthFilter\tPassedProportionFilter\tPattern
 // <contig name>::<position>
 // TODO: implement io.Writer interface
 func (v *vcf) Write(line []byte) (n int64, err error) {
+	const ONE = "1"
 	var start, end int
+	var ns uint
 
 	sampleColumns, isAllPassFilters, err := v.translateSampleAnalysisColumns(line)
 	if err != nil {
 		return 0, err
 	}
 
+	// The Matrix first column, LocusID, is the contig name and position
+	// delimited by '::'. Therefore, the VCF #CHROM column is everything up
+	// until the '::' delimiter
 	end = bytes.IndexByte(line, ':')
 
 	// VCF #CHROM column
 	v.w.Write(line[:end])
 	v.w.WriteByte('\t')
 
-	// Starting from the end of the contig name we found earlier and adding 2
-	// to skip the '::' find the position from the LocusID column
-	start = end + 2
+	// Starting from the end of the contig name we found earlier and skipping
+	// the '::', find the position from the LocusID column
+	start = end + len("::")
 	end = start + bytes.IndexByte(line[start:], '\t')
 
 	// Starting after the tab following the LocusID column, the callRegion is
 	// the columns of nucleotide calls between the LocusID and #SNPcall columns.
-	startCallRegion := end + 1
+	startCallRegion := end + len("\t")
 	// endCallRegion is derived starting from the Reference column counting
 	// all the sample columns and delimiting tab characters.
-	endCallRegion := startCallRegion + 2*v.numSamples
+	endCallRegion := startCallRegion + 2*v.numSamples + 1
 	alts := v.alts(line[startCallRegion:endCallRegion])
 
 	// VCF POS column
@@ -263,16 +265,40 @@ func (v *vcf) Write(line []byte) (n int64, err error) {
 
 	// VCF INFO
 	v.w.WriteString("AN=")
-	v.w.WriteString(strconv.Itoa(len(alts)))
+	if alts[0] == '.' {
+		v.w.WriteString(ONE)
+		ns = 0
+	} else {
+		v.w.WriteString(strconv.Itoa(len(alts) + 1))
+		ns = uint(len(alts))
+	}
 	v.w.WriteString(";NS=")
+	// Find the #SNPcall column
 	start = endCallRegion + 2
+	// Find the #Indelcall column
+	start += bytes.IndexByte(line[start:], '\t') + 1
+	// Find the #Refcall column
+	start += bytes.IndexByte(line[start:], '\t') + 1
+	// Find the end of #Refcall
 	end = start + bytes.IndexByte(line[start:], '\t')
-	// Copy #SNPcall column
-	v.w.Write(line[start:end])
+	ns += parseUint(line[start:end])
+	v.w.WriteString(strconv.Itoa(int(ns)))
 
 	v.w.Write(sampleColumns)
 
 	return 0, nil
+}
+
+func parseUint(p []byte) (n uint) {
+	for _, digit := range p {
+		if digit >= '0' && digit <= '9' {
+			n *= 10
+			n += uint(digit - '0')
+		} else {
+			panic(fmt.Sprintf("Failed to parse '%s' as an integer"))
+		}
+	}
+	return n
 }
 
 // alts assumes callRegion is a slice of the tab delimited call columns from a
@@ -287,7 +313,7 @@ func (v *vcf) alts(callRegion []byte) []byte {
 		}
 	}
 	if len(alts) == 0 {
-		return append(alts, '.')
+		return ALT_MONOMORPHISM
 	}
 	return alts[:len(alts)-1]
 }
@@ -304,10 +330,10 @@ func (v *vcf) alts(callRegion []byte) []byte {
 // It is assumes the columns are delimited by one tab character.
 func (v *vcf) translateSampleAnalysisColumns(matrixLine []byte) (buf []byte, isAllPassFilters bool, err error) {
 	const (
-		nocall   = ":NoCall\t"
-		covfail  = ":CovFail\t"
-		propfail = ":PropFail\t"
-		pass     = ":PASS\t"
+		nocall   = ":NoCall"
+		covfail  = ":CovFail"
+		propfail = ":PropFail"
+		pass     = ":PASS"
 	)
 	// Counting from the end of the line, calculate the regions of the remaining
 	// matrix columns based on the number of samples.
@@ -361,9 +387,8 @@ func (v *vcf) translateSampleAnalysisColumns(matrixLine []byte) (buf []byte, isA
 			buf = append(buf, pass...)
 		}
 	}
-	// The above loop ended the line with a \t. Since this is the last character,
-	// replace it with a '\n' to terminate the line.
-	buf[len(buf)-1] = '\n'
+	// End the line with a linefeed
+	buf = append(buf, '\n')
 
 	return buf, isAllPassFilters, nil
 }
@@ -403,9 +428,17 @@ func collectVcfMetadata(r io.Reader) (contigs []contigmeta, identifiers [][]byte
 	buffer := scanner.Bytes()
 
 	start := len("LocusID\tReference\t")
+	if !bytes.Equal(buffer[:start], []byte("LocusID\tReference\t")) {
+		log.Println("export: expected the first two columns of the input matrix to be LocusID and Reference; the output could be incorrect")
+	}
+
 	end := bytes.Index(buffer, []byte("\t#SNPcall"))
 	if end == -1 {
 		return nil, nil, errors.New("export: #SNPcall header column not found. Expected the sample identifiers to be the columns between the LocusID and #SNPcall column")
+	}
+	snpIndRef := []byte("\t#SNPcall\t#Indelcall\t#Refcall")
+	if !bytes.Equal(buffer[end:end+len(snpIndRef)], snpIndRef) {
+		log.Printf("export: expected the input matrix columns following the sample analyses to match '%s'; the output could be incorrect\n", bytes.Replace(snpIndRef, []byte("\t"), []byte(" "), -1))
 	}
 
 	// Copy the header identifiers into a new backing array so they will persist
