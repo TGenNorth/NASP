@@ -6,14 +6,12 @@ from a SNP matrix created by NASP"""
 from __future__ import print_function
 from optparse import OptionParser
 
-
 def get_field_index(matrix_in):
     """find where the sequence data stops"""
     firstLine = open(matrix_in).readline()
     first_fields = firstLine.split()
     last = first_fields.index("#SNPcall")
     return last
-
 
 def get_genome_index(matrix_in, genome_name):
     """find the index of your genome of interest"""
@@ -22,26 +20,25 @@ def get_genome_index(matrix_in, genome_name):
     my_genome = first_fields.index(genome_name)
     return my_genome
 
-
 def get_singleton_snps(matrix_in, my_genome, last):
     """find those lines in your matrix, where a unique
     SNP state is observed in your genome of interest"""
-    # matrix = open(matrix_in, "rU")
     firstLine = open(matrix_in).readline()
     output = open("unique_snps.txt", "w")
-    #output.write(firstLine,)
     for line in open(matrix_in):
-        hits = []
-        fields = line.split()
-        for x in fields[1:last]:
-            if fields[my_genome] != "-" or fields[my_genome] != "X" or fields[my_genome] != "N":
-                if x == fields[my_genome]:
-                    hits.append("1")
-        if int(len(hits)) == 1:
-            output.write(fields[0])
+        if line.startswith("LocusID"):
+            pass
         else:
-            continue
-    #matrix.close()
+            hits = []
+            fields = line.split()
+            for x in fields[1:last]:
+                if fields[my_genome] != "-" or fields[my_genome] != "X" or fields[my_genome] != "N":
+                    if x == fields[my_genome]:
+                        hits.append("1")
+            if int(len(hits)) == 1:
+                output.write(fields[0]+"\n")
+            else:
+                continue
     output.close()
 
 
@@ -53,7 +50,6 @@ def test_file(option, opt_str, value, parser):
         print('%s file cannot be opened' % option)
         import sys
         sys.exit()
-
 
 def main(matrix_in, genome_name):
     last = get_field_index(matrix_in)
