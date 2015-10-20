@@ -117,7 +117,7 @@ func exportFasta(w io.Writer, rs io.ReadSeeker) error {
 		lineWidth = 0
 		fmt.Fprintf(bw, "\n>%s\n", identifiers[i])
 		for _, filePosition := range referenceColumn {
-			rs.Seek(filePosition+int64(i*2), os.SEEK_SET)
+			rs.Seek(filePosition+int64((i+1)*2), os.SEEK_SET)
 
 			n, err := rs.Read(p)
 			if n != 1 || err != nil {
