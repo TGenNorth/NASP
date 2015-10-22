@@ -642,11 +642,10 @@ def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fas
         matrix_parms['filter-matrix-format'] = configuration['filter_matrix_format']
     dto_file = os.path.join(output_dir, "matrix_dto.xml")
     matrix_DTO.write_dto(matrix_parms, franken_fastas, vcf_files, dto_file)
-    jobs_to_wait_for = ":".join(job_ids)
+    jobs_to_wait_for = (":".join(job_ids), 'afterany') if job_ids else None
     command = "%s matrix --dto-file %s --num-threads %s" % (path, dto_file, job_parms['num_cpus'])
     job_parms['work_dir'] = output_dir
-    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (jobs_to_wait_for, 'afterany'),
-                         notify=True)
+    job_id = _submit_job(configuration["job_submitter"], command, job_parms, jobs_to_wait_for, notify=True)
     return job_id
 
 

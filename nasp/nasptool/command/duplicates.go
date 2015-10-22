@@ -263,13 +263,13 @@ func (reg region) ReadFrom(r io.Reader) (nBytes int64, err error) {
 			}
 		}
 
-		reg[delta.Records[i].Header.ReferenceSequence] = ranges
+		reg[delta.Records[i].Header.ReferenceSequence] = mergeOverlappingRanges(ranges)
 	}
 
 	return nBytes, nil
 }
 
-func (reg region) mergeRanges(ranges [][2]int64) [][2]int64 {
+func mergeOverlappingRanges(ranges [][2]int64) [][2]int64 {
 	var merge [][2]int64 = make([][2]int64, 0, len(ranges))
 	var start, end int64
 

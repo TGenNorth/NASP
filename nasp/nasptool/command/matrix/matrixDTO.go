@@ -219,7 +219,7 @@ func (d *Dto) mergeAllFiles(filepaths []string) error {
 		}
 	}
 
-	d.AllFiles = make([]NaspFile, len(uniqueFilepaths))
+	d.AllFiles = make([]NaspFile, 0, len(uniqueFilepaths))
 	for _, v := range uniqueFilepaths {
 		d.AllFiles = append(d.AllFiles, v)
 	}
