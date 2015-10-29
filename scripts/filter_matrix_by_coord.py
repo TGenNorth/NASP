@@ -109,7 +109,7 @@ if __name__ == "__main__":
                       help="/path/to/file [REQUIRED]",
                       action="store", type="string")
     parser.add_option("-p", "--out_prefix", dest="prefix",
-                      help="/path/to/file [REQUIRED]",
+                      help="prefix for output files [REQUIRED]",
                       action="store", type="string")
     parser.add_option("-c", "--in_coords", dest="coords",
                       help="/path/to/file [REQUIRED]",
