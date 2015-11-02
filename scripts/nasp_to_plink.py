@@ -26,52 +26,64 @@ def get_field_index(matrix_in):
 def transpose_matrix(matrix, last):
     out_matrix = open("tmp.matrix", "w")
     reduced = [ ]
-    for line in open(matrix, "U"):
+    my_matrix = open(matrix, "rU")
+    firstLine = my_matrix.readline()
+    first_fields = firstLine.split("\t")
+    reduced.append(first_fields)
+    for line in my_matrix:
         values = []
         line=line.strip("\n")
         fields = line.split("\t")
         for field in fields[:last]:
-            values.append(field)
+            values.append(field.upper())
         reduced.append(values)
     test=map(list, zip(*reduced))
     for x in test:
         out_matrix.write("\t".join(x)+"\n")
     out_matrix.close()
 
-def create_ped_file(matrix, groups_file, prefix):
+def create_ped_file(matrix, groups_file, prefix, last):
     outfile = open("%s.ped" % prefix, "w")
     groups_dict = {}
     for line in open(groups_file, "U"):
         group_fields = line.split()
         str1=group_fields[0]
         str2=group_fields[1]
-        groups_dict.update({str1:str2})
-    for line in open(matrix, "U"):
-        if line.startswith("LocusID"):
+        if str1 == "0":
             pass
-        elif line.startswith("Reference"):
-            fields = line.split()
+        else:
+            groups_dict.update({str1:str2})
+    ref_fields = []
+    for line in open(matrix, "rU"):
+        fields = line.split()
+        if fields[0] == "LocusID":
+            pass
+        elif fields[0] == "Reference":
+            split_fields = line.split()
+            for ref_field in split_fields:
+                ref_fields.append(ref_field)
         else:
             sample_list = []
             fixed_line = line.strip()
             sample_fields = fixed_line.split()
-            # added the arbitrary:   1   0   0   1
-            sample_list.append(sample_fields[0]+'\t'+'1'+'\t'+'0'+'\t'+'0'+'\t'+'1')
-            num_samples = len(fields)
-            try:
-                my_group_info = groups_dict.get(sample_fields[0])
-            except:
-                print("names don't match between matrix and groups file, exiting!")
-                sys.exit()
-            sample_list.append(my_group_info)
-            for i in range(1,num_samples):
-                if sample_fields[i] == fields[i]:
-                    sample_list.append("A"+"\t"+"A")
-                elif sample_fields[i] == 'X' or sample_fields[i] == 'N':
-                    sample_list.append("0"+"\t"+"0")
-                else:
-                    sample_list.append("C"+"\t"+"C")
-            outfile.write("\t".join(sample_list)+"\n")
+            if sample_fields[0] in groups_dict:
+                # added the arbitrary:   1   0   0   1
+                sample_list.append(sample_fields[0]+'\t'+'1'+'\t'+'0'+'\t'+'0'+'\t'+'1')
+                num_samples = len(fields)
+                try:
+                    my_group_info = groups_dict.get(sample_fields[0])
+                except:
+                    print("names don't match between matrix and groups file, exiting!")
+                    sys.exit()
+                sample_list.append(my_group_info)
+                for i in range(1,num_samples):
+                    if sample_fields[i] == ref_fields[i]:
+                        sample_list.append("A"+"\t"+"A")
+                    elif sample_fields[i] == 'X' or sample_fields[i] == 'N':
+                        sample_list.append("0"+"\t"+"0")
+                    else:
+                        sample_list.append("C"+"\t"+"C")
+                outfile.write("\t".join(sample_list)+"\n")
 
 def create_map_file(matrix, prefix):
     outfile = open('%s.map' % prefix,'w')
@@ -160,7 +172,7 @@ def parse_plink_file(plink_out, alpha):
 def main(nasp_matrix, groups_file, prefix, alpha):
     last = get_field_index(nasp_matrix)
     transpose_matrix(nasp_matrix, last)
-    create_ped_file("tmp.matrix", groups_file, prefix)
+    create_ped_file("tmp.matrix", groups_file, prefix, last)
     create_map_file(nasp_matrix, prefix)
     ab = subprocess.call(['which', 'plink'])
     if ab == 0:
@@ -207,13 +219,13 @@ def main(nasp_matrix, groups_file, prefix, alpha):
                 sim_unaffected = []
                 outfile = open("random_genome_ids.txt", "a")
                 """make sure we have a unique ped file for each iteration"""
-                os.system("rm plink.ped")
+                os.system("rm %s.ped" % prefix)
                 for genome in all_genomes:
                     if genome not in sim_affected:
                         sim_unaffected.append(genome)
                 outfile.write("\t".join(sim_affected)+"\n")
                 make_temp_groups_file(sim_affected, sim_unaffected)
-                create_ped_file("tmp.matrix", "tmp.map", prefix)
+                create_ped_file("tmp.matrix", "tmp.map", prefix, last)
                 subprocess.check_call("plink --noweb --adjust --file %s --assoc --out out > /dev/null 2>&1" % prefix, shell=True)
                 positive_hits = parse_plink_file("out.assoc.adjusted", alpha)
                 total_random_hits.append(positive_hits)
