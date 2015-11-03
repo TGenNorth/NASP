@@ -199,7 +199,12 @@ def _get_java_path(jarfile):
             return os.path.join(path, filename)
     #Let's ask the user
     jar_path = input("\nUnable to find '%s', please enter the full path to '%s': " % (jarfile, jarfile))
-    while not os.access(jar_path, os.R_OK):
+    while not os.access(jar_path, os.R_OK) or not os.path.isfile(jar_path):
+        # If the user entered a directory path instead of a complete path, check if the file exists in the directory
+        if os.path.isdir(jar_path):
+            for path in os.listdir(jar_path):
+                if path.endswith(os.pathsep + jarfile):
+                    return path
         jar_path = input(
             "\n'%s' either does not exist or you don't have permission to run it, please enter the full path to '%s': " % (
             jar_path, jarfile))
@@ -411,10 +416,9 @@ def _get_user_input(reference, output_folder):
 
     if not reference:
         reference = input("\nWhere is the reference fasta file you would like to use? ")
+        while not os.access(reference, os.R_OK) or not os.path.isfile(reference):
+            reference = input("\n'%s' either does not exist or you don't have permission to access it, please enter the path to the reference fasta file you would like to use: " % reference)
     reference = _expand_path(reference)
-    if not os.path.exists(reference):
-        print("\nCannot continue because reference file %s does not seem to exist!" % reference)
-        quit()
     configuration["reference"] = _create_file_tuple(reference)
     logging.info("Reference = %s", configuration["reference"])
 
@@ -494,7 +498,20 @@ def _get_user_input(reference, output_folder):
         (configuration["snpcallers"], using_gatk) = _get_snpcallers(queue, args)
 
         if using_gatk:
-            picard_path = _get_java_path("CreateSequenceDictionary.jar")
+            paths = os.environ['PATH'].split(os.pathsep)
+            paths.append('/usr/share/java/')
+            for path in paths:
+                try:
+                    match_list = [f for f in os.listdir(path) if f.endswith(os.pathsep + 'picard') or f.endswith(os.pathsep + 'picard.jar')]
+                    if match_list:
+                        # Newer versions of picard replaced have CreateSequenceDictionary as a sub-command
+                        picard_path = match_list[0] + " CreateSequenceDictionary"
+                        break
+                except FileNotFoundError:
+                    # The PATH variable includes a non-existent path
+                    pass
+            else:
+                picard_path = _get_java_path("CreateSequenceDictionary.jar")
             configuration["picard"] = ("Picard", os.path.dirname(picard_path), "", {})
             logging.info("Picard = %s", configuration["picard"])
     else:

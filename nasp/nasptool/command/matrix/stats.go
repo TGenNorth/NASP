@@ -159,7 +159,7 @@ func (s SampleStats) WriteStats(identifiers []string, statsFolder string) {
 	}
 	bw := bufio.NewWriter(file)
 	defer bw.Flush()
-	bw.Write([]byte("Sample\tSample::Analysis\tundetermined\tundetermined (%)\tfailed_coverage_filter\tfailed_coverage_filter (%)\tfailed_proportion_filter\tfailed_proportion_filter (%)\tquality_breadth\tquality_breadth (%)\tcalled_reference\tcalled_reference (%)\tcalled_snp\tcalled_snp (%)\tcalled_degen\tcalled_degen (%)\n\n"))
+	bw.Write([]byte("Sample\tSample::Analysis\twas_called\twas_called (%)\tfailed_coverage_filter\tfailed_coverage_filter (%)\tfailed_proportion_filter\tfailed_proportion_filter (%)\tquality_breadth\tquality_breadth (%)\tcalled_reference\tcalled_reference (%)\tcalled_snp\tcalled_snp (%)\tcalled_degen\tcalled_degen (%)\n\n"))
 
 	// Whole Genome any summary
 	buf = s.statLine(buf, s[len(s)-2])
@@ -205,18 +205,20 @@ func (s SampleStats) WriteStats(identifiers []string, statsFolder string) {
 
 func (s SampleStats) statLine(buf []byte, stat SampleStat) []byte {
 	buf = buf[:0]
-	buf = strconv.AppendInt(buf, refLength-stat.wasCalled, 10)
+	buf = strconv.AppendInt(buf, stat.wasCalled, 10)
 	buf = append(buf, '\t')
-	buf = strconv.AppendFloat(buf, float64(refLength-stat.wasCalled)/float64(refLength)*100, 'f', 2, 64)
+	buf = strconv.AppendFloat(buf, float64(stat.wasCalled)/float64(refLength)*100, 'f', 2, 64)
 	buf = append(buf, '%', '\t')
-	buf = strconv.AppendInt(buf, refLength-stat.passedCoverageFilter, 10)
+	buf = strconv.AppendInt(buf, stat.wasCalled-stat.passedCoverageFilter, 10)
 	buf = append(buf, '\t')
-	buf = strconv.AppendFloat(buf, float64(refLength-stat.passedCoverageFilter)/float64(refLength)*100, 'f', 2, 64)
+	buf = strconv.AppendFloat(buf, float64(stat.wasCalled-stat.passedCoverageFilter)/float64(refLength)*100, 'f', 2, 64)
 	buf = append(buf, '%', '\t')
-	buf = strconv.AppendInt(buf, refLength-stat.passedProportionFilter, 10)
+	buf = strconv.AppendInt(buf, stat.wasCalled-stat.passedProportionFilter, 10)
 	buf = append(buf, '\t')
 	buf = strconv.AppendFloat(buf, float64(refLength-stat.passedProportionFilter)/float64(refLength)*100, 'f', 2, 64)
-	buf = append(buf, '%', '\t')
+	buf = append(buf, '%', '\t', '\t') // Blank column
+	buf = strconv.AppendInt(buf, refLength, 10)
+	buf = append(buf, '\t')
 	buf = strconv.AppendInt(buf, stat.qualityBreadth, 10)
 	buf = append(buf, '\t')
 	buf = strconv.AppendFloat(buf, float64(stat.qualityBreadth)/float64(refLength)*100, 'f', 2, 64)
