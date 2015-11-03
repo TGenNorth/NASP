@@ -355,6 +355,7 @@ def _get_trimming_parameters(queue, args):
     import pkg_resources
     trim_path = _get_java_path("trimmomatic*.jar")
     adapter_file = pkg_resources.resource_filename('nasp', 'illumina_adapters_all.fasta')
+    quality_string = ''
     response = input("  What adapter file are you using for trimming [%s]? " % adapter_file)
     if response:
         adapter_file = response
