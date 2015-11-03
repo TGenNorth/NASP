@@ -7,6 +7,7 @@ from optparse import OptionParser
 import fileinput
 import itertools
 import collections
+import sys
 
 def get_index_range(in_matrix):
     matrix=open(in_matrix, "rU")
