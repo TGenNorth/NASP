@@ -61,7 +61,7 @@ if __name__ == "__main__":
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option("-m", "--input_matrix", dest="matrix_in",
-                      help="/path/to/isg_matrix [REQUIRED]",
+                      help="/path/to/NASP_matrix [REQUIRED]",
                       action="callback", callback=test_file, type="string")
     parser.add_option("-g", "--genome_name", dest="genome_name",
                       help="genome to look for singleton SNPs [REQUIRED]",
