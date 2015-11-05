@@ -148,7 +148,7 @@ def _get_external_fastas(cwd, exclude):
         path = input("Where are these files located [%s]? " % cwd)
         path = _expand_path(path) if path else cwd
         logging.info("Looking for external fastas in %s...", path)
-        fasta_list = _find_files(path, "fasta")
+        fasta_list = _find_files(path, "(?:fa|fna|fas|fasta)$")
         # remove the reference from the fasta_list if it is in there
         for fasta_tuple in fasta_list:
             fasta = fasta_tuple[1]
