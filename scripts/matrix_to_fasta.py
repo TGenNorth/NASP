@@ -116,11 +116,11 @@ def filter_singletons(last, tmp_matrix):
         counter=collections.Counter(fields[1:last])
         values=counter.values()
         new_values=list(sorted(values, key=int))
-        if len(values)==1: sys.exc_clear()
+        if len(new_values)==1: sys.exc_clear()
         else:
             for i in range(2,5):
-                if len(values)==int(i) and values[i-2]>1: file_out.write(line,)
-                if len(values)==int(i) and values[i-2]>1: lines.append(line)
+                if len(new_values)==int(i) and new_values[i-2]>1: file_out.write(line,)
+                if len(new_values)==int(i) and new_values[i-2]>1: lines.append(line)
         values=[]
     print("number of parsimony-informative SNPs:", len(lines))
     matrix.close()
