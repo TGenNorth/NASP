@@ -98,7 +98,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
         logging.debug("submit_command = %s", submit_command)
         output = subprocess.getoutput("echo \"%s\" | %s" % (command, submit_command))
         logging.debug("output = %s" % output)
-        job_match = re.search('^.*(\d+).*$', output)
+        job_match = re.search('^.*(\d+?).*$', output)
         if job_match:
             jobid = job_match.group(1)
         else:
