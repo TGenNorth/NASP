@@ -9,8 +9,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/davecheney/profile"
 )
 
 const (
@@ -27,14 +25,16 @@ func Run(numThreads int, dtoFile, refPath, dupPath, statsPath, matrixPath string
 	var wg sync.WaitGroup
 	runtime.GOMAXPROCS(numThreads)
 
-	// Begin Development Profiling
-	defer profile.Start(&profile.Config{
-		CPUProfile: true,
-		//MemProfile:     true,
-		//BlockProfile:   true,
-		ProfilePath:    ".",
-		NoShutdownHook: true,
-	}).Stop()
+	/*
+		// Begin Development Profiling
+		defer profile.Start(&profile.Config{
+			CPUProfile: true,
+			//MemProfile:     true,
+			//BlockProfile:   true,
+			ProfilePath:    ".",
+			NoShutdownHook: true,
+		}).Stop()
+	*/
 
 	t0 := time.Now()
 	defer func() {

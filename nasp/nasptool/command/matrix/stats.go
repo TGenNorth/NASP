@@ -204,18 +204,49 @@ func (s SampleStats) WriteStats(identifiers []string, statsFolder string) {
 }
 
 func (s SampleStats) statLine(buf []byte, stat SampleStat) []byte {
+	// Jason Sahl, in the 2015-11-03 informatics meeting, suggested the sample
+	// stats coverage/proportion filters should show the number of positions
+	// that failed the filter instead of the number that passed. In addition,
+	// the number should be relative to the number of called positions.
+	//
+	// Because fastas contain no coverage/proportion information, they are
+	// treated as if all positions pass coverage/proportion. Since all positions
+	// pass coverage/proportion, but not all positions are called the stats file
+	// can show a fasta with a negative number of failed coverage/proportion
+	// positions.
+	//
+	// The counters are set to zero to handle this scenario.
+	var failedCoveragePercent, failedProportionPercent float64
+	failedCoverage := stat.wasCalled - stat.passedCoverageFilter
+	failedProportion := stat.wasCalled - stat.passedProportionFilter
+	if failedCoverage < 0 {
+		failedCoverage = 0
+	}
+	if failedProportion < 0 {
+		failedProportion = 0
+	}
+
+	if stat.wasCalled == 0 {
+		// NAN guard
+		failedCoveragePercent = 0.0
+		failedProportionPercent = 0.0
+	} else {
+		failedCoveragePercent = float64(failedCoverage) / float64(stat.wasCalled)
+		failedProportionPercent = float64(failedCoverage) / float64(stat.wasCalled)
+	}
+
 	buf = buf[:0]
 	buf = strconv.AppendInt(buf, stat.wasCalled, 10)
 	buf = append(buf, '\t')
 	buf = strconv.AppendFloat(buf, float64(stat.wasCalled)/float64(refLength)*100, 'f', 2, 64)
 	buf = append(buf, '%', '\t')
-	buf = strconv.AppendInt(buf, stat.wasCalled-stat.passedCoverageFilter, 10)
+	buf = strconv.AppendInt(buf, failedCoverage, 10)
 	buf = append(buf, '\t')
-	buf = strconv.AppendFloat(buf, float64(stat.wasCalled-stat.passedCoverageFilter)/float64(refLength)*100, 'f', 2, 64)
+	buf = strconv.AppendFloat(buf, failedCoveragePercent, 'f', 2, 64)
 	buf = append(buf, '%', '\t')
-	buf = strconv.AppendInt(buf, stat.wasCalled-stat.passedProportionFilter, 10)
+	buf = strconv.AppendInt(buf, failedProportion, 10)
 	buf = append(buf, '\t')
-	buf = strconv.AppendFloat(buf, float64(refLength-stat.passedProportionFilter)/float64(refLength)*100, 'f', 2, 64)
+	buf = strconv.AppendFloat(buf, failedProportionPercent, 'f', 2, 64)
 	buf = append(buf, '%', '\t', '\t') // Blank column
 	buf = strconv.AppendInt(buf, refLength, 10)
 	buf = append(buf, '\t')
