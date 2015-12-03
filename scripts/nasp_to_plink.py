@@ -184,8 +184,8 @@ def main(nasp_matrix, groups_file, prefix, alpha):
     else:
         print("plink isn't in your PATH and won't be run")
         sys.exit()
-    """this part of the script looks for the effect of random associations"""
-    """first, I need to parse the reference plink file"""
+    """this part of the script looks for the effect of random associations
+    first, I need to parse the reference plink file"""
     sig_hits = parse_plink_file("reference.assoc", alpha)
     if sig_hits == 0:
         print("No sig hits found, exiting..")
