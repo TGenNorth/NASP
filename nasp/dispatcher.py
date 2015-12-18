@@ -701,10 +701,13 @@ def begin(configuration):
                 job_ids.append(job_id)
                 vcf_files.append((vcf_nickname, aligner, snpcaller, final_file))
     for read_tuple in configuration["reads"]:
-        dependent_job_id = index_job_id
+        dependent_job_id = None
         if "trim_reads" in configuration and configuration["trim_reads"] == "True":
             (read_tuple, dependent_job_id) = _trim_adapters(read_tuple, configuration)
-        aligner_output = _align_reads(read_tuple, configuration, dependent_job_id, reference)
+        dependencies = index_job_id
+        if dependent_job_id:
+            dependencies += ":"+dependent_job_id
+        aligner_output = _align_reads(read_tuple, configuration, dependencies, reference)
         snpcaller_output = _call_snps(aligner_output, configuration, reference)
         for (vcf_nickname, job_id, final_file, aligner, snpcaller) in snpcaller_output:
             if job_id:
