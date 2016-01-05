@@ -1,5 +1,8 @@
-ACADEMIC AND RESEARCH LICENSE 
-© 2014, The Translational Genomics Research Institute. All rights reserved.
+Academic and Research License 
+=============================
+
+.. include:: <isonum.txt>
+|copy| 2014, The Translational Genomics Research Institute. All rights reserved.
 
 1. License.  The Translational Genomics Research Institute (“TGen”) hereby grants you a non-exclusive, non-transferable right to use the NASP software and any related documentation (collectively, the "Software"), subject to the terms and conditions of this Academic and Research License (“License”). You should carefully read this License before using the Software. YOUR DOWNLOAD AND USE OF THE SOFTWARE INDICATES YOUR ACCEPTANCE OF THIS LICENSE AND ALL OF THE FOLLOWING TERMS AND CONDITIONS.
 

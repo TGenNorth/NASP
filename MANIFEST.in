@@ -5,8 +5,10 @@ include nasp/illumina_adapters_all.fasta
 include AUTHORS.rst
 include CONTRIBUTING.rst
 include HISTORY.rst
-include LICENSE
+include LICENSE.rst
 include README.rst
+
+include docs/images
 
 recursive-include tests *
 recursive-exclude * __pycache__

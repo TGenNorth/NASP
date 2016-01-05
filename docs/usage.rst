@@ -2,7 +2,7 @@
 Usage
 =====
 
-The nasp_ program is the pipeline. While you can run the other programs also listed in this section directly, they are
+The nasp_ program is the pipeline. While you can run the other programs listed in this section directly, they are
 primarily internal functions of the nasp pipeline.
 
 .. Internal hyperlink target
@@ -236,7 +236,7 @@ vcf_to_matrix_ will write the following matrices to the output matrices/ folder 
 
 .. [3]: Created only if requested in the prompts__.
 
-.. image:: MatricesVennDiagram.png
+.. image:: images/MatricesVennDiagram.png
    :alt: vcf_to_matrix output matrices venn diagram
    :width: 50 %
    :align: right
@@ -366,11 +366,11 @@ Click the image to view it in detail.
 .. NOTE: By setting the width to 99% the image will be as large as possible, yet still wrapped by link tags when rendered
     as an HTML page so the user can click the image to view it in detail.
 
-.. image:: StatisticsFlowchart.png
+.. image:: images/StatisticsFlowchart.png
    :alt: Relationship flowchart between the statistics
    :width: 99 %
 
-.. image:: StatisticsFlowchartFilters.png
+.. image:: images/StatisticsFlowchartFilters.png
    :alt: Relationship flowchart between the statistics filters
    :width: 99 %
 

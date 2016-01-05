@@ -69,7 +69,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Northern Arizona SNP Pipeline'
-copyright = u'2014, Darrin Lemmer'
+copyright = u'2014, TGen North'
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
