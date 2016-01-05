@@ -11,7 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   installation
+   install
    usage
    contributing
    authors

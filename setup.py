@@ -28,7 +28,8 @@ setup(
     author_email='dlemmer@tgen.org',
     url='https://github.com/TGenNorth/nasp',
     packages=[
-        'nasp', 'nasp.vtm'
+        'nasp'
+        #, 'nasp.vtm'
     ],
     package_dir={
         'nasp': 'nasp',
@@ -59,7 +60,6 @@ setup(
             'find_duplicates = nasp.find_duplicates:main',
             'convert_external_genome = nasp.convert_external_genome:main',
             'vcf_to_matrix = nasp.vcf_to_matrix:main',
-            'vtm = nasp.vtm.vtm:main'
         ]
     },
     scripts = [

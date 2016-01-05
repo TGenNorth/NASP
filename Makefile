@@ -58,6 +58,11 @@ release: clean
 	python setup.py sdist upload
 	python setup.py bdist_wheel upload
 
+
+#python setup.py register -r https://testpypi.python.org/pypi
+testpypi:
+	python setup.py sdist upload -r https://testpypi.python.org/pypi
+
 dist: clean
 	python setup.py sdist
 	python setup.py bdist_wheel
