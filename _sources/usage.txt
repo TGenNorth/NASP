@@ -2,7 +2,7 @@
 Usage
 =====
 
-The nasp_ program is the pipeline. While you can run the other programs also listed in this section directly, they are
+The nasp_ program is the pipeline. While you can run the other programs listed in this section directly, they are
 primarily internal functions of the nasp pipeline.
 
 .. Internal hyperlink target
@@ -159,6 +159,7 @@ matrices in the output `matrices/` folder. See vcf_to_matrix_ for output details
 
     Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]?
 
+
 format_fasta
 ------------
 Reformats a fasta to be split 80 characters per line, with system line-endings.::
@@ -182,34 +183,9 @@ Scans the reference genome for duplicate regions using the NUCmer aligner.::
 --nucmerpath NUCMERPATH  Path to the 'nucmer' executable.
 --reference REFERENCE  Path to the reference fasta file.
 
-.. Internal hyperlink target
-.. _vcf_to_matrix:
-
-vcf_to_matrix
--------------
-
-::
-
-    vcf_to_matrix --mode=xml --num-threads=1 --dto-file DTO_FILE
-
-.. TODO: Is there a delimiter between the --input-files flag list of INPUT_FILES?
-
-Options:
-
-.. foo -h, --help  show this help message and exit.
-
---mode mode  Data passing mode
-       MODE  can be either 'commandline' or 'xml'.
---reference-fasta file  Path to input reference fasta file.
---reference-dups file  Path to input reference dups file.
---input-files files  Path to input VCF/fasta files for matrix conversion.
-              INPUT_FILES is a list of file paths
---matrix-folder path  Name of folder to write output matries to.
---stats-folder path  Name of folder to write statistics files to.
---minimum-coverage number  Minimum coverage depth at a position.
---minimum-proportion number  Minimum proportion of reads that must match the call at a position.
---num-threads number  Number of threads to use when processing input.
---dto-file file  Path to a matrix_dto XML file that defines all the parameters.
+.. include:: ./usage/frankenfasta.rst
+.. include:: ./usage/matrix.rst
+.. include:: ./usage/vcf_to_matrix.rst
 
 Matrices
 ~~~~~~~~
@@ -236,7 +212,7 @@ vcf_to_matrix_ will write the following matrices to the output matrices/ folder 
 
 .. [3]: Created only if requested in the prompts__.
 
-.. image:: MatricesVennDiagram.png
+.. image:: images/MatricesVennDiagram.png
    :alt: vcf_to_matrix output matrices venn diagram
    :width: 50 %
    :align: right
@@ -366,11 +342,11 @@ Click the image to view it in detail.
 .. NOTE: By setting the width to 99% the image will be as large as possible, yet still wrapped by link tags when rendered
     as an HTML page so the user can click the image to view it in detail.
 
-.. image:: StatisticsFlowchart.png
+.. image:: images/StatisticsFlowchart.png
    :alt: Relationship flowchart between the statistics
    :width: 99 %
 
-.. image:: StatisticsFlowchartFilters.png
+.. image:: images/StatisticsFlowchartFilters.png
    :alt: Relationship flowchart between the statistics filters
    :width: 99 %
 

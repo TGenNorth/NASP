@@ -20,26 +20,10 @@ nasp.convert_external_genome module
     :undoc-members:
     :show-inheritance:
 
-nasp.dependency module
-----------------------
-
-.. automodule:: nasp.dependency
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 nasp.dispatcher module
 ----------------------
 
 .. automodule:: nasp.dispatcher
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-nasp.expensive loop module
---------------------------
-
-.. automodule:: nasp.expensive loop
     :members:
     :undoc-members:
     :show-inheritance:
