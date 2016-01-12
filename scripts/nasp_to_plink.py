@@ -9,7 +9,6 @@ import sys
 import subprocess
 import random
 
-
 def test_file(option, opt_str, value, parser):
     try:
         with open(value): setattr(parser.values, option.dest, value)
@@ -79,11 +78,12 @@ def create_ped_file(matrix, groups_file, prefix, last):
                 for i in range(1,num_samples):
                     if sample_fields[i] == ref_fields[i]:
                         sample_list.append("A"+"\t"+"A")
-                    elif sample_fields[i] == 'X' or sample_fields[i] == 'N':
+                    elif sample_fields[i] == 'X' or sample_fields[i] == 'N' or sample_fields[i] == '-':
                         sample_list.append("0"+"\t"+"0")
                     else:
                         sample_list.append("C"+"\t"+"C")
                 outfile.write("\t".join(sample_list)+"\n")
+     outfile.close()
 
 def create_map_file(matrix, prefix):
     outfile = open('%s.map' % prefix,'w')
@@ -105,6 +105,7 @@ def create_map_file(matrix, prefix):
                 chromo_number = chromosome.get(coord_split[0])
             map_line.append(str(chromo_number)+'\t'+fields[0]+'\t'+'0'+'\t'+my_coord)
             outfile.write("\n".join(map_line)+"\n")
+    outfile.close()
 
 def make_groups_dict(groups_file):
     groups_dict = {}
