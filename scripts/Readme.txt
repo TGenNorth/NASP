@@ -56,4 +56,26 @@ Example:
 
 python ../scripts/filter_matrix_by_genome.py -m bestsnp.tsv -p filtered -g to_prune.txt -a keep
 
+-Output file:
 
+-Filtered_genomes.matrix: New NASP matrix with genomes removed or kept
+
+4. filter_matrix_by_coord.py
+
+-What does it do?
+
+Given a NASP matrix and a set of coordinates, this script will produce a new matrix with only
+those coordinates either kept or removed
+
+Example:
+
+python ../scripts/filter_matrix_by_coord.py -i bestsnp.tsv -p filtered -c snp_coords.txt -a remove
+Number of SNPs matching in your list: 1
+number of SNPs after missing regions removed: 1748
+number of parsimony-informative SNPs: 1488
+
+5. annotate_NASP.py
+
+-What does it do?
+
+Provides functional information on a set of SNPs using SNPEff

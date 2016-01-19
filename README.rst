@@ -44,14 +44,14 @@ interface) using the format:
 INSTALLATION:
 -------------
 
-See the included "INSTALL" document.
+See the main page for documentation (http://tgennorth.github.io/NASP/).
 
 DEPENDENCIES:
 -------------
 
 For information about external tools that are required, or can be
 utilized, and those versions that have been tested to work with NASP,
-refer to the included "INSTALL" document.
+refer to the main NASP page (http://tgennorth.github.io/NASP/)
 
 LICENSE:
 --------
