@@ -183,9 +183,9 @@ Scans the reference genome for duplicate regions using the NUCmer aligner.::
 --nucmerpath NUCMERPATH  Path to the 'nucmer' executable.
 --reference REFERENCE  Path to the reference fasta file.
 
-.. include:: ./usage/frankenfasta.rst
-.. include:: ./usage/matrix.rst
-.. include:: ./usage/vcf_to_matrix.rst
+.. include:: usage/frankenfasta.rst
+.. include:: usage/matrix.rst
+.. .. include:: usage/vcf_to_matrix.rst
 
 Matrices
 ~~~~~~~~
