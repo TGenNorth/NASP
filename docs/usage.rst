@@ -46,8 +46,7 @@ prompts.::
 The following are examples of the nasp commandline prompts::
 
     $ nasp
-    Welcome to the experimental python NASP version 0.9.8.
-    * Starred features are less well tested, and may not work.
+    Welcome to NASP version 1.0.0.
 
 NASP will write all the files it creates including any vcf, bam, fasta, tsv, etc to this output folder::
 
@@ -68,7 +67,7 @@ If you select `none` for the job manager, nasp will run the analysis in the back
 load. If possible, it is better to use a job manager as the analysis can take a long time consuming a lot of computer resources. The
 defaults queue and commandline arguments should be sufficient.::
 
-    What system do you use for job management (PBS/TORQUE, SLURM, SGE*, and 'none' are currently supported) [PBS]?
+    What system do you use for job management (PBS/TORQUE, SLURM, SGE/OGE, and 'none' are currently supported) [PBS]?
       Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []?
       What additional arguments do you need to pass to the job management system []?
 
@@ -84,7 +83,12 @@ fastq.gz read files::
     Do you have read files you wish to include [Y]?
     Where are these files located [/home/tgen/NASP]? ./examples/example_1
 
-.. TODO: Details?
+    Would you like to use Trimmomatic to trim your reads first [N]? Y 
+        What adapter file are you using for trimming?
+        Would you also like to perform quality trimming [N]? Y
+        What quality trimming parameters do you want to use [SLIDINGWINDOW:5:20]? 
+        What is the minimum length read to keep after trimming [80]?
+    Would you like to set advanced ReadTrimmer settings [N]?
 
 ::
 
@@ -157,7 +161,7 @@ matrices in the output `matrices/` folder. See vcf_to_matrix_ for output details
 
 ::
 
-    Do you want to create a matrix that includes the high-quality positions with just reference calls (might be big and slow) [N]?
+    Do you want to create a matrix that includes all reference positions, but with low-quality calls masked [N]?
 
 format_fasta
 ------------
