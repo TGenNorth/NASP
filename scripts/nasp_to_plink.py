@@ -83,7 +83,7 @@ def create_ped_file(matrix, groups_file, prefix, last):
                     else:
                         sample_list.append("C"+"\t"+"C")
                 outfile.write("\t".join(sample_list)+"\n")
-     outfile.close()
+    outfile.close()
 
 def create_map_file(matrix, prefix):
     outfile = open('%s.map' % prefix,'w')

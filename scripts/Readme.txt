@@ -78,4 +78,73 @@ number of parsimony-informative SNPs: 1488
 
 -What does it do?
 
-Provides functional information on a set of SNPs using SNPEff
+Provides functional information on a set of SNPs using snpEff (tested version is 4.2). For the script to work, you will
+need the name of the snpEff database and a mapping file that correlates the names of your input
+FASTA with the names in the snpEff database
+
+Example
+
+-First, I need to find the corresponding snpEff database for Y. pestis CO92:
+
+java -jar ~/tools/snpEff/snpEff.jar databases | grep "CO92"
+Yersinia_pestis_CO92_uid57621                               	Yersinia_pestis_CO92_uid57621
+
+-Then we will need to identify how snpEff identifies their chromosomes:
+
+java -jar ~/tools/snpEff/snpEff.jar eff -v Yersinia_pestis_CO92_uid57621 bestsnp.vcf
+
+-This information is printed to the top of the output:
+
+# Number of chromosomes      : 4
+# Chromosomes                : Format 'chromo_name size codon_table'
+#               'NC_003143'     4653728 Standard
+#               'NC_003134'     96210   Standard
+#               'NC_003131'     70305   Standard
+#               'NC_003132'     9612    Standard
+#-----------------------------------------------
+
+-Now you must create a mapping file that contains your names and snpEff's names, if they differ:
+
+gi|16120353|ref|NC_003143.1|	NC_003143
+gi|5834685|emb|AL117211.1|	NC_003134
+gi|5832423|emb|AL117189.1|	NC_003131
+gi|5763810|emb|AL109969.1|	NC_003132
+
+-Now you can annotate your matrix:
+
+python ../scripts/annotate_NASP.py -i bestsnp.tsv -v bestsnp.vcf -s ~/tools/snpEff/snpEff.jar -r Yersinia_pestis_CO92_uid57621 -m map.txt
+
+-The output is a new NASP matrix ("annotated_bestsnp.tsv") with three extra columns: type    locus   ncbi_id
+
+6. nasp_to_plink.py
+
+-What does it do?
+
+If provided a groups file, this script creates the input files for Plink (tested version is 1.07), runs Plink, then randomly shuffles the genomes into groups and
+calculates how many signficant SNPs are identified between phenotypes
+
+Example:
+
+The groups files looks like:
+
+Reference 0
+Genome1 1
+Genome2 1
+Genome3 2
+Genome4 2
+
+-"1" is unaffected, "2" is affected, and "0" is unknown
+
+python ../scripts/nasp_to_plink.py -m bestsnp.tsv -g groups.txt -p test
+/common/contrib/bin/plink
+Running Plink
+Finished
+True number of associated SNPs at alpha(0.05): 270
+Average number of random hits: 43.2222222222
+#random iterations better than or equal to true: 4
+p-value: 0.040404040404
+
+-Output files:
+
+1. reference.assoc : These are SNPs that are positively associated at the given alpha
+2. random_genome_ids.txt : The IDs of genomes selected at random in p-value iterations
