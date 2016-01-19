@@ -159,7 +159,7 @@ func (s SampleStats) WriteStats(identifiers []string, statsFolder string) {
 	}
 	bw := bufio.NewWriter(file)
 	defer bw.Flush()
-	bw.Write([]byte("Sample\tSample::Analysis\twas_called\twas_called (%)\tfailed_coverage_filter\tfailed_coverage_filter (%)\tfailed_proportion_filter\tfailed_proportion_filter (%)\tquality_breadth\tquality_breadth (%)\tcalled_reference\tcalled_reference (%)\tcalled_snp\tcalled_snp (%)\tcalled_degen\tcalled_degen (%)\n\n"))
+	bw.Write([]byte("Sample\tSample::Analysis\twas_called\twas_called (%)\tfailed_coverage_filter\tfailed_coverage_filter (%)\tfailed_proportion_filter\tfailed_proportion_filter (%)\t\treference_length\tquality_breadth\tquality_breadth (%)\tcalled_reference\tcalled_reference (%)\tcalled_snp\tcalled_snp (%)\tcalled_degen\tcalled_degen (%)\n\n"))
 
 	// Whole Genome any summary
 	buf = s.statLine(buf, s[len(s)-2])

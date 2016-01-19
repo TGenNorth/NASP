@@ -249,7 +249,7 @@ func writeMaster(chunks chan Chunk, matrixFolder, statsFolder string, names []st
 	//missingdataVcf := newVcf(filepath.Join(matrixFolder, "missingdata.vcf"), names, []string{})
 
 	if isWithAllRefPos {
-		withallref = writeCloser(newMatrix(filepath.Join(matrixFolder, "withallrefpos.tsv"), namesHeader))
+		withallref = writeCloser(newMatrix(filepath.Join(matrixFolder, "master_masked.tsv"), namesHeader))
 	} else {
 		withallref = devNull{}
 	}

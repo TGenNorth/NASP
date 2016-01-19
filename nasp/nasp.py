@@ -539,7 +539,7 @@ def _get_user_input(reference, output_folder):
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
-    include_allref_pos = input("\nDo you want to create a matrix that includes all reference positions, but with low-quality calls masked [N]? ")
+    include_allref_pos = input("\nDo you want to create a master_masked matrix that includes all positions and low-quality positions that failed the coverage or proportion filter are masked with an 'N' [N]? ")
     if re.match('^[Yy]', include_allref_pos):
         configuration["filter_matrix_format"] = "include_allref_pos"
         logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])

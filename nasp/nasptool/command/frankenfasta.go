@@ -272,7 +272,7 @@ func (d *delta) ReadFrom(r io.Reader) (n int64, err error) {
 				d.records = append(d.records, record)
 			}
 			record = &deltaRecord{}
-			if record.header.unmarshal(fields); err != nil {
+			if err := record.header.unmarshal(fields); err != nil {
 				return n, err
 			}
 		case len(fields) == 7:
@@ -321,13 +321,16 @@ func (f fasta) WriteTo(w io.Writer) {
 	}
 }
 
-func (f fasta) Unmarshal(r io.Reader, delta delta) {
+func (f fasta) Unmarshal(r io.Reader, delta delta) error {
 	var isReferenceAligned bool
 	var currentContig string
 	var sequence []byte
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return err
+		}
 		line := scanner.Bytes()
 		if len(line) > 0 && line[0] == '>' {
 			// Add the contig sequence before starting a new one
@@ -357,6 +360,8 @@ func (f fasta) Unmarshal(r io.Reader, delta delta) {
 	if _, ok := f[currentContig]; !ok && isReferenceAligned {
 		f[currentContig] = sequence
 	}
+
+	return nil
 }
 
 func frankenfasta(deltaFilename string) error {
@@ -379,7 +384,9 @@ func frankenfasta(deltaFilename string) error {
 	defer fastaFile.Close()
 
 	external := make(fasta)
-	external.Unmarshal(fastaFile, delta)
+	if err := external.Unmarshal(fastaFile, delta); err != nil {
+		return err
+	}
 
 	franken := make(fasta)
 
