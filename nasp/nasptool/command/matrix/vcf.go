@@ -478,7 +478,7 @@ func (v vcfRecord) findSampleSubfield(subfield []byte) int {
 
 	// If FORMAT is empty, the loop will never run and coverage will be 0
 	// instead of -1 indicating not found.
-	if len(v[format]) < 1 {
+	if len(v[format]) == 0 {
 		return -1
 	}
 
@@ -514,8 +514,21 @@ func (v vcfRecord) findSampleSubfield(subfield []byte) int {
 	for i := 0; i < nField; i++ {
 		idx := bytes.IndexByte(v[sample][start:], ':')
 		if idx == -1 {
-			// TODO: replace with error?
-			panic(fmt.Errorf("Expected to find subfield %d in the SAMPLE column corresponding to the FORMAT column %s subfield.\nRecord: %s", nField, subfield, v))
+			// The field was declared in the FORMAT column without a corresponding
+			// value in the SAMPLE column. This was originally assumed to be an
+			// indication of a parse error, however, a VCF file produced by
+			// bowtie2/varscan triggered the error for positions that were not
+			// called.
+			//
+			// According to the VCFv4.2 specification:
+			// "Trailing fields can be dropped (with the exception of the
+			// GT field, which should always be present if specified in the
+			// FORMAT field)."
+			//
+			// Instead of triggering an error, the field will be treated as
+			// not found.
+			//panic(fmt.Errorf("Expected to find subfield %d in the SAMPLE column corresponding to the FORMAT column %s subfield.\nRecord: %s", nField, subfield, v))
+			return -1
 		}
 		start += idx + 1
 	}

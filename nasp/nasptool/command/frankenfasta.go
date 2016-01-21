@@ -242,6 +242,7 @@ func (d *delta) ReadFrom(r io.Reader) (n int64, err error) {
 
 	// The first line is the reference and query fasta filepaths separated by a space
 	if !scanner.Scan() {
+		// FIXME: Check for scanner.Err()
 		return n, ErrUnexpectedFormat
 	}
 
@@ -251,6 +252,7 @@ func (d *delta) ReadFrom(r io.Reader) (n int64, err error) {
 
 	// The second line specifies the alignment data type
 	if !scanner.Scan() {
+		// FIXME: Check for scanner.Err()
 		return n, ErrUnexpectedFormat
 	}
 
@@ -286,6 +288,9 @@ func (d *delta) ReadFrom(r io.Reader) (n int64, err error) {
 				return n, err
 			}
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		return n, err
 	}
 
 	d.records = append(d.records, record)
@@ -328,9 +333,6 @@ func (f fasta) Unmarshal(r io.Reader, delta delta) error {
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		if err := scanner.Err(); err != nil {
-			return err
-		}
 		line := scanner.Bytes()
 		if len(line) > 0 && line[0] == '>' {
 			// Add the contig sequence before starting a new one
@@ -356,6 +358,9 @@ func (f fasta) Unmarshal(r io.Reader, delta delta) error {
 			copy(sequence[len(sequence)-len(line):], line)
 		}
 		// else ignore contigs that did not align to the reference
+	}
+	if err := scanner.Err(); err != nil {
+		return err
 	}
 	if _, ok := f[currentContig]; !ok && isReferenceAligned {
 		f[currentContig] = sequence
