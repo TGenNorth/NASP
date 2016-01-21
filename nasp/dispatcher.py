@@ -490,7 +490,7 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     new_fasta = os.path.join(work_dir, os.path.basename(fasta))
     command_parts = ["format_fasta --inputfasta %s --outputfasta %s" % (fasta, new_fasta),
                      "convert_external_genome --nucmerpath %s --nucmerargs \'%s\' --deltafilterpath %s --deltafilterargs \'%s\' --reference %s --external %s --name %s" % (
-                         nucmer_path, nucmer_args, path, args, reference, fasta, name)]
+                         nucmer_path, nucmer_args, path, args, reference, new_fasta, name)]
     command = "\n".join(command_parts)
     final_file = os.path.join(work_dir, "%s.frankenfasta" % name)
     job_parms['name'] = "nasp_%s_%s" % (tool, name)
