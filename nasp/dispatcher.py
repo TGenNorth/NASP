@@ -328,7 +328,6 @@ def _run_novoalign(read_tuple, aligner, samtools, job_submitter, index_job_id, r
 
 
 def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
-    import re
     import os
     (name, read1) = read_tuple[0:2]
     read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
@@ -336,33 +335,19 @@ def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, refere
     sampath = samtools[1]
     (path, args, job_parms) = aligner[1:4]
     aligner_name = "snap"
-    unzip = []
-    remove_temp = []
     reads = []
     for read in (read1, read2):
-        filename = os.path.basename(read)
-        match = re.match('^(.+)\.gz$', filename, re.IGNORECASE)
-        if match:
-            decompressed = os.path.join(os.path.join(output_folder, aligner_name), match.group(1))
-            unzip.append("zcat %s > %s" % (read, decompressed))
-            reads.append(decompressed)
-            remove_temp.append("rm %s" % decompressed)
-        else:
-            reads.append(read)
+        reads.append(read)
     read_string = " ".join(reads)
-    unzip_command = ";".join(unzip)
     ref_dir = os.path.join(os.path.join(output_folder, "reference"), aligner_name)
     ncpus = job_parms['num_cpus']
     bam_nickname = "%s-%s" % (name, aligner_name)
-    aligner_command = "%s %s %s %s -o %s.sam -t %s -b %s" % (
-        path, paired_string, ref_dir, read_string, bam_nickname, ncpus, args)
-    samview_command = "%s view -S -b -h %s.sam" % (sampath, bam_nickname)
+    aligner_command = "%s %s %s %s -t %s -b %s -o -sam -" % (
+        path, paired_string, ref_dir, read_string, ncpus, args)
+    samview_command = "%s view -S -b -h -" % (sampath)
     samsort_command = "%s sort - %s" % (sampath, bam_nickname)
     samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
-    remove_temp.append("rm %s.sam" % bam_nickname)
-    remove_temp_command = ";".join(remove_temp)
-    command = "%s \n %s \n %s | %s \n %s \n %s" % (
-        unzip_command, aligner_command, samview_command, samsort_command, samindex_command, remove_temp_command)
+    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
     work_dir = os.path.join(output_folder, aligner_name)
     if not os.path.exists(work_dir):
         os.makedirs(work_dir)
