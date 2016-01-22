@@ -150,18 +150,18 @@ fastq.gz read files::
     If you do not want filtering based on proportion, enter 0.
     What is the minimum acceptable proportion [0.9]?
 
-See vcf_to_matrix_ for commandline arguments you can pass to the MatrixGenerator. This is not typically required.::
+See matrix_ for commandline arguments you can pass to the MatrixGenerator. This is not typically required.::
 
     Would you like to set advanced MatrixGenerator settings [N]?
 
-In addition to the statistics, bestsnp, missing data, and master matrices, vcf_to_matrix, will create withallrefpos
-matrices in the output `matrices/` folder. See vcf_to_matrix_ for output details.
+In addition to the statistics, bestsnp, missing data, and master matrices, nasp matrix, will create master_masked
+matrices in the output `matrices/` folder. See matrix_ for output details.
 
 .. _create_withallrefpos_matrix_prompt:
 
 ::
 
-    Do you want to create a matrix that includes all reference positions, but with low-quality calls masked [N]?
+    Do you want to create a master_masked matrix that includes all positions with low-quality positions that failed the coverage or proportion filter masked with an 'N' [N]?
 
 format_fasta
 ------------
@@ -186,51 +186,30 @@ Scans the reference genome for duplicate regions using the NUCmer aligner.::
 --nucmerpath NUCMERPATH  Path to the 'nucmer' executable.
 --reference REFERENCE  Path to the reference fasta file.
 
+
+.. include:: usage/frankenfasta.rst
+
 .. Internal hyperlink target
-.. _vcf_to_matrix:
+.. _matrix:
 
-vcf_to_matrix
--------------
-
-::
-
-    vcf_to_matrix --mode=xml --num-threads=1 --dto-file DTO_FILE
-
-.. TODO: Is there a delimiter between the --input-files flag list of INPUT_FILES?
-
-Options:
-
-.. foo -h, --help  show this help message and exit.
-
---mode mode  Data passing mode
-       MODE  can be either 'commandline' or 'xml'.
---reference-fasta file  Path to input reference fasta file.
---reference-dups file  Path to input reference dups file.
---input-files files  Path to input VCF/fasta files for matrix conversion.
-              INPUT_FILES is a list of file paths
---matrix-folder path  Name of folder to write output matries to.
---stats-folder path  Name of folder to write statistics files to.
---minimum-coverage number  Minimum coverage depth at a position.
---minimum-proportion number  Minimum proportion of reads that must match the call at a position.
---num-threads number  Number of threads to use when processing input.
---dto-file file  Path to a matrix_dto XML file that defines all the parameters.
+.. include:: usage/matrix.rst
 
 Matrices
 ~~~~~~~~
 
-vcf_to_matrix_ will write the following matrices to the output matrices/ folder in tsv, snpfasta, and vcf formats:
+matrix_ will write the following matrices to the output matrices/ folder in tsv, snpfasta, and vcf formats:
 
-+-----------------------+-------------------------------------------------------------------------+
-| Matrix                | Meaning                                                                 |
-+=======================+=========================================================================+
-| Master Matrix         | All positions                                                           |
-+-----------------------+-------------------------------------------------------------------------+
-| Withallrefpos         | Positions that passed the `General Stats`_ quality_breadth filter [3]_  |
-+-----------------------+-------------------------------------------------------------------------+
-| Best SNP              | SNPs that passed the `General Stats`_ quality_breadth filter            |
-+-----------------------+-------------------------------------------------------------------------+
-| Missing Data          | Positions that passed the `General Stats`_ quality_breadth filter       |
-+-----------------------+-------------------------------------------------------------------------+
++-----------------------+-------------------------------------------------------------------------------+
+| Matrix                | Meaning                                                                       |
++=======================+===============================================================================+
+| Master Matrix         | All positions                                                                 |
++-----------------------+-------------------------------------------------------------------------------+
+| Master Masked         | Positions that failed the coverage or proportion filter are masked with an 'N |
++-----------------------+-------------------------------------------------------------------------------+
+| Best SNP              | SNPs that passed the `General Stats`_ quality_breadth filter                  |
++-----------------------+-------------------------------------------------------------------------------+
+| Missing Data          | Positions that passed the `General Stats`_ quality_breadth filter             |
++-----------------------+-------------------------------------------------------------------------------+
 
 .. NOTE: The double underscore is an anonymous link to the _create_withallrefpos_matrix_prompt anchor. This trick was
     used so the anchor could be verbose, but not the displayed link. The anonymous reference should be kept close to its
@@ -240,7 +219,7 @@ vcf_to_matrix_ will write the following matrices to the output matrices/ folder 
 
 .. [3]: Created only if requested in the prompts__.
 
-.. image:: images/MatricesVennDiagram.png
+.. .. image:: images/MatricesVennDiagram.png
    :alt: vcf_to_matrix output matrices venn diagram
    :width: 50 %
    :align: right
@@ -268,7 +247,7 @@ The conventions used for what data is stored are as follows:
 Statistics
 ~~~~~~~~~~
 
-vcf_to_matrix_ collects sample analysis statistics and stores them as TSV files in the output statistics/ folder.
+matrix_ collects sample analysis statistics and stores them as TSV files in the output statistics/ folder.
 The tables below list and describe their columns.
 
 General Stats include statistics gathered for all samples relative to the reference genome.
@@ -507,7 +486,7 @@ Running NASP with the example data and default options on a PBS cluster results 
 Most of the files are either from the external analysis programs or STDIN and STDOUT files created by the PBS cluster
 for each job. The files in this example created directly by NASP include:
 
-- The matrices and statistics folders from vcf_to_matrix_
+- The matrices and statistics folders from the matrix_ script
 - runlog.txt which includes the terminal commands used to run the external analysis programs
 - nasp_results-config.xml
 - matrix_dto.xml
