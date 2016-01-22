@@ -81,7 +81,6 @@
             
             
                 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../authors.html">Credits</a></li>
@@ -415,7 +414,7 @@
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">novo_settings</span><span class="p">)</span>
     <span class="n">response</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Would you like to run SNAP [N]? &quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-        <span class="n">snap_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s2">&quot;snap&quot;</span><span class="p">)</span>
+        <span class="n">snap_path</span> <span class="o">=</span> <span class="n">_get_application_path</span><span class="p">(</span><span class="s2">&quot;snap_aligner&quot;</span><span class="p">)</span>
         <span class="c1">#Add -M option by default to make SNAP generate traditional CIGAR strings in the BAM output to be more compatible with SNP callers</span>
         <span class="n">snap_settings</span> <span class="o">=</span> <span class="n">_get_advanced_settings</span><span class="p">(</span><span class="s2">&quot;SNAP&quot;</span><span class="p">,</span> <span class="n">snap_path</span><span class="p">,</span> <span class="s2">&quot;-M&quot;</span><span class="p">,</span>
                                                <span class="p">{</span><span class="s1">&#39;num_cpus&#39;</span><span class="p">:</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s1">&#39;mem_requested&#39;</span><span class="p">:</span> <span class="s1">&#39;10&#39;</span><span class="p">,</span> <span class="s1">&#39;walltime&#39;</span><span class="p">:</span> <span class="s1">&#39;36&#39;</span><span class="p">,</span>
@@ -632,21 +631,8 @@
         <span class="p">(</span><span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;snpcallers&quot;</span><span class="p">],</span> <span class="n">using_gatk</span><span class="p">)</span> <span class="o">=</span> <span class="n">_get_snpcallers</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">using_gatk</span><span class="p">:</span>
-            <span class="n">paths</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PATH&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)</span>
-            <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;/usr/share/java/&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">match_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span> <span class="o">+</span> <span class="s1">&#39;picard&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span> <span class="o">+</span> <span class="s1">&#39;picard.jar&#39;</span><span class="p">)]</span>
-                    <span class="k">if</span> <span class="n">match_list</span><span class="p">:</span>
-                        <span class="c1"># Newer versions of picard replaced have CreateSequenceDictionary as a sub-command</span>
-                        <span class="n">picard_path</span> <span class="o">=</span> <span class="n">match_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; CreateSequenceDictionary&quot;</span>
-                        <span class="k">break</span>
-                <span class="k">except</span> <span class="n">FileNotFoundError</span><span class="p">:</span>
-                    <span class="c1"># The PATH variable includes a non-existent path</span>
-                    <span class="k">pass</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">picard_path</span> <span class="o">=</span> <span class="n">_get_java_path</span><span class="p">(</span><span class="s2">&quot;CreateSequenceDictionary.jar&quot;</span><span class="p">)</span>
-            <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;picard&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Picard&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">picard_path</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">picard_path</span> <span class="o">=</span> <span class="n">_get_java_path</span><span class="p">(</span><span class="s2">&quot;picard.jar&quot;</span><span class="p">)</span>
+            <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;picard&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Picard&quot;</span><span class="p">,</span> <span class="n">picard_path</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="p">{})</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Picard = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;picard&quot;</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;snpcallers&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -673,7 +659,7 @@
     <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;matrix_generator&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix_settings</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;MatrixGenerator = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;matrix_generator&quot;</span><span class="p">])</span>
 
-    <span class="n">include_allref_pos</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Do you want to create a matrix that includes all reference positions, but with low-quality calls masked [N]? &quot;</span><span class="p">)</span>
+    <span class="n">include_allref_pos</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Do you want to create a master_masked matrix that includes all positions with low-quality positions that failed the coverage or proportion filter masked with an &#39;N&#39; [N]? &quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;^[Yy]&#39;</span><span class="p">,</span> <span class="n">include_allref_pos</span><span class="p">):</span>
         <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;filter_matrix_format&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;include_allref_pos&quot;</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;FilterMatrixFormat = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">configuration</span><span class="p">[</span><span class="s2">&quot;filter_matrix_format&quot;</span><span class="p">])</span>

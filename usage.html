@@ -32,7 +32,7 @@
   
     <link rel="top" title="Northern Arizona SNP Pipeline 1.0.0 documentation" href="index.html"/>
         <link rel="next" title="Contributing" href="contributing.html"/>
-        <link rel="prev" title="Installation" href="install.html"/> 
+        <link rel="prev" title="Welcome to Northern Arizona SNP Pipeline’s documentation!" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -82,12 +82,12 @@
             
             
                 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="">Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#nasp">nasp</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#format-fasta">format_fasta</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#find-duplicates">find_duplicates</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#frankenfasta">frankenfasta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#matrix">matrix</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#matrices">Matrices</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#statistics">Statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#example-statistics">Example Statistics</a></li>
@@ -300,13 +300,13 @@ If you do not want filtering based on proportion, enter 0.
 What is the minimum acceptable proportion [0.9]?
 </pre></div>
 </div>
-<p>See <a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> for commandline arguments you can pass to the MatrixGenerator. This is not typically required.:</p>
+<p>See <a class="reference internal" href="#matrix">matrix</a> for commandline arguments you can pass to the MatrixGenerator. This is not typically required.:</p>
 <div class="highlight-python"><div class="highlight"><pre>Would you like to set advanced MatrixGenerator settings [N]?
 </pre></div>
 </div>
-<p>In addition to the statistics, bestsnp, missing data, and master matrices, vcf_to_matrix, will create withallrefpos
-matrices in the output <cite>matrices/</cite> folder. See <a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> for output details.</p>
-<div class="highlight-python" id="create-withallrefpos-matrix-prompt"><div class="highlight"><pre>Do you want to create a matrix that includes all reference positions, but with low-quality calls masked [N]?
+<p>In addition to the statistics, bestsnp, missing data, and master matrices, nasp matrix, will create master_masked
+matrices in the output <cite>matrices/</cite> folder. See <a class="reference internal" href="#matrix">matrix</a> for output details.</p>
+<div class="highlight-python" id="create-withallrefpos-matrix-prompt"><div class="highlight"><pre>Do you want to create a master_masked matrix that includes all positions with low-quality positions that failed the coverage or proportion filter masked with an &#39;N&#39; [N]?
 </pre></div>
 </div>
 </div>
@@ -361,66 +361,106 @@ matrices in the output <cite>matrices/</cite> folder. See <a class="reference in
 </tbody>
 </table>
 </div>
-<div class="section" id="vcf-to-matrix">
-<span id="id2"></span><h2>vcf_to_matrix<a class="headerlink" href="#vcf-to-matrix" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre>vcf_to_matrix --mode=xml --num-threads=1 --dto-file DTO_FILE
+<div class="section" id="frankenfasta">
+<h2>frankenfasta<a class="headerlink" href="#frankenfasta" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>usage: nasp frankenfasta [filtered mummer delta]
 </pre></div>
 </div>
-<p>Options:</p>
+<p>Frankenfasta creates a fasta 1-to-1 position aligned with a reference fasta
+by combining a sample fasta with a nucmer alignment delta file.</p>
+<p>How it works:</p>
+<p>To start with, a list of reference fasta contigs and their lengths are read from
+the delta file. This is used to create a fasta where all positions are masked
+with &#8216;X&#8217;.:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;Contig Description
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+</pre></div>
+</div>
+<p>The delta alignments are used to copy positions from the sample fasta into their
+corresponding positions in the reference fasta.:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;Contig Description
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXAAAAAAAXAAXXAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAGTTACTTTCATTAATAGAGCAAAATTTATTAATTATACTTTTTACACAAAAAACAAAGAGAGGATCGACCTTTTC
+TATTCATTCTTTAAACTACAGATTCTTTATAAAAAAATTTAACGACGTTGAGAGTAGACATGAGCGAAAGCACGGGTAGT
+AGCACGCTTCAACTTGGATTGAGCGGCCTTGAGGTCATCAGCTTGAGCATCGTCAGCGGTGAGTTCCATCAATTCCATGG
+CTTCAGCGAGAGCAGTTTCAATGGCTTCACGGTCACCACGACGGAGCTTCATGTTGACGTTAGGGTCAGAGATGTTGTTC
+TCAACTTGGTAGACGTAAGATTCAAGATCTTGCTTGGCTTGTACAACGGCTTCACGTTGCTTGTCAGATTCAGCATTCTT
+TTCAGCATCTTGAACCATACGTTCGATATCAGCAGCAGAGAGACGAGTAGAGTTGGAGATGGTGACATCAGCCTTGCGAC
+CAGTGGTCTTGTCTTGAGCAGTGACCTTCAAGATACCATTGGCATCCAAGTCAAAGGTACAGAGAAGTTCAGGGGTACCA
+CGGGGAGCAGGGATAAGACCAGAGAGAGAGAACTCACCGAGAAGGTTGTTTTCCTTGGTCATCAAACGTTCACCTTCGTA
+GACAGGGAAAGTGACAGTGGTTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+</pre></div>
+</div>
+<p>&#8216;X&#8217; indicates the absence of calls. Either no sequence aligned to the position,
+or it was a deletion.</p>
+<p>&#8216;N&#8217; indicates uncertain calls. Two alignments with different calls may have mapped
+to the same position.</p>
+<p>Pre-release versions of NASP used a &#8216;.&#8217; to differentiate deletions from missing
+data.</p>
+</div>
+<div class="section" id="matrix">
+<span id="id2"></span><h2>matrix<a class="headerlink" href="#matrix" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre>usage: nasp matrix --dto-file matrix_dto.xml
+</pre></div>
+</div>
+<p>Matrix aggregates the VCF and Frankenfasta files from the NASP pipeline into .tsv matrix and stats file summaries
+which may be parsed for further analysis.</p>
+<p>Given the &#8211;dto-file flag, all other flags are optional overrides.
+A reference fasta and vcf/frankenfasta files are always required, either from
+the dto or listed on the command line.</p>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group">
-<kbd><span class="option">--mode <var>mode</var></span></kbd></td>
-<td>Data passing mode
-MODE  can be either &#8216;commandline&#8217; or &#8216;xml&#8217;.</td></tr>
+<kbd><span class="option">--dto-file</span></kbd></td>
+<td>Path to the matrix_dto.xml file</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--num-threads</span></kbd></td>
+<td>Max number of CPUs that can be executing simultaneously (default: all)</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--reference-fasta <var>file</var></span></kbd></td>
+<kbd><span class="option">--reference-fasta</span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Path to input reference fasta file.</td></tr>
+<tr><td>&nbsp;</td><td>Path to the reference.fasta against which samples are compared</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--reference-dups <var>file</var></span></kbd></td>
+<kbd><span class="option">--reference-dups</span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Path to input reference dups file.</td></tr>
+<tr><td>&nbsp;</td><td>Path to the duplicates.txt file marking duplicated positions</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--stats-folder</span></kbd></td>
+<td>Path to the output folder for statistics (default: ./)</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--input-files <var>files</var></span></kbd></td>
+<kbd><span class="option">--matrix-folder</span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Path to input VCF/fasta files for matrix conversion.
-INPUT_FILES is a list of file paths</td></tr>
+<tr><td>&nbsp;</td><td>Path to the output folder for matrices (default: ./)</td></tr>
 <tr><td class="option-group" colspan="2">
-<kbd><span class="option">--matrix-folder <var>path</var></span></kbd></td>
+<kbd><span class="option">--minimum-coverage</span></kbd></td>
 </tr>
-<tr><td>&nbsp;</td><td>Name of folder to write output matries to.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--stats-folder <var>path</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Name of folder to write statistics files to.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--minimum-coverage <var>number</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Minimum coverage depth at a position.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--minimum-proportion <var>number</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Minimum proportion of reads that must match the call at a position.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--num-threads <var>number</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Number of threads to use when processing input.</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">--dto-file <var>file</var></span></kbd></td>
-</tr>
-<tr><td>&nbsp;</td><td>Path to a matrix_dto XML file that defines all the parameters.</td></tr>
+<tr><td>&nbsp;</td><td>Filter positions below this coverage/depth threshold (default: 0)</td></tr>
 </tbody>
 </table>
+<p>&#8211;minimum-proportion Filter positions below this proportion threshold (default: 0.0)
+&#8211;withallrefpos      Include the withallrefpos.tsv matrix</p>
 <div class="section" id="matrices">
 <h3>Matrices<a class="headerlink" href="#matrices" title="Permalink to this headline">¶</a></h3>
-<p><a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> will write the following matrices to the output matrices/ folder in tsv, snpfasta, and vcf formats:</p>
+<p><a class="reference internal" href="#matrix">matrix</a> will write the following matrices to the output matrices/ folder in tsv, snpfasta, and vcf formats:</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="24%" />
-<col width="76%" />
+<col width="23%" />
+<col width="77%" />
 </colgroup>
 <thead valign="bottom">
 <tr class="row-odd"><th class="head">Matrix</th>
@@ -431,8 +471,8 @@ INPUT_FILES is a list of file paths</td></tr>
 <tr class="row-even"><td>Master Matrix</td>
 <td>All positions</td>
 </tr>
-<tr class="row-odd"><td>Withallrefpos</td>
-<td>Positions that passed the <a class="reference internal" href="#general-stats">General Stats</a> quality_breadth filter <a href="#id16"><span class="problematic" id="id17"><span id="id3"></span>[3]_</span></a></td>
+<tr class="row-odd"><td>Master Masked</td>
+<td>Positions that failed the coverage or proportion filter are masked with an &#8216;N</td>
 </tr>
 <tr class="row-even"><td>Best SNP</td>
 <td>SNPs that passed the <a class="reference internal" href="#general-stats">General Stats</a> quality_breadth filter</td>
@@ -442,7 +482,6 @@ INPUT_FILES is a list of file paths</td></tr>
 </tr>
 </tbody>
 </table>
-<a class="reference internal image-reference" href="_images/MatricesVennDiagram.png"><img alt="vcf_to_matrix output matrices venn diagram" class="align-right" src="_images/MatricesVennDiagram.png" style="width: 50%;" /></a>
 <dl class="docutils">
 <dt>The conventions used for what data is stored are as follows:</dt>
 <dd><dl class="first last docutils">
@@ -477,7 +516,7 @@ INPUT_FILES is a list of file paths</td></tr>
 </div>
 <div class="section" id="statistics">
 <h3>Statistics<a class="headerlink" href="#statistics" title="Permalink to this headline">¶</a></h3>
-<p><a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a> collects sample analysis statistics and stores them as TSV files in the output statistics/ folder.
+<p><a class="reference internal" href="#matrix">matrix</a> collects sample analysis statistics and stores them as TSV files in the output statistics/ folder.
 The tables below list and describe their columns.</p>
 <p>General Stats include statistics gathered for all samples relative to the reference genome.</p>
 <table border="1" class="docutils" id="general-stats">
@@ -516,13 +555,13 @@ The tables below list and describe their columns.</p>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>all_passed_coverage</td>
-<td>Number of positions that passed the coverage filter in all samples. <a class="footnote-reference" href="#id11" id="id5">[1]</a></td>
+<td>Number of positions that passed the coverage filter in all samples. <a class="footnote-reference" href="#id10" id="id4">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>all_passed_coverage (%)</td>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>all_passed_proportion</td>
-<td>Maximum number of positions that passed the proportion filter in all samples. <a class="footnote-reference" href="#id11" id="id6">[1]</a></td>
+<td>Maximum number of positions that passed the proportion filter in all samples. <a class="footnote-reference" href="#id10" id="id5">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>all_passed_proportion (%)</td>
 <td>Percentage of above.</td>
@@ -578,19 +617,19 @@ The tables below list and describe their columns.</p>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>passed_coverage_filter</td>
-<td>Number of positions that passed the coverage filter. <a class="footnote-reference" href="#id11" id="id7">[1]</a></td>
+<td>Number of positions that passed the coverage filter. <a class="footnote-reference" href="#id10" id="id6">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>passed_coverage_filter (%)</td>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>passed_proportion_filter</td>
-<td>Number of positions that passed the proportion filter. <a class="footnote-reference" href="#id11" id="id8">[1]</a></td>
+<td>Number of positions that passed the proportion filter. <a class="footnote-reference" href="#id10" id="id7">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>passed_proportion_filter (%)</td>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>quality_breadth</td>
-<td>Number of positions called A/C/G/T and passed all filters. <a class="footnote-reference" href="#id11" id="id9">[1]</a></td>
+<td>Number of positions called A/C/G/T and passed all filters. <a class="footnote-reference" href="#id10" id="id8">[1]</a></td>
 </tr>
 <tr class="row-odd"><td>quality_breadth (%)</td>
 <td>Percentage of above.</td>
@@ -608,23 +647,23 @@ The tables below list and describe their columns.</p>
 <td>Percentage of above.</td>
 </tr>
 <tr class="row-even"><td>called_dgen</td>
-<td>Number of positions not called A/C/G/T. <a class="footnote-reference" href="#id12" id="id10">[2]</a></td>
+<td>Number of positions not called A/C/G/T. <a class="footnote-reference" href="#id11" id="id9">[2]</a></td>
 </tr>
 <tr class="row-odd"><td>called_dgen (%)</td>
 <td>Percentage of above.</td>
 </tr>
 </tbody>
 </table>
+<table class="docutils footnote" frame="void" id="id10" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id4">1</a>, <a class="fn-backref" href="#id5">2</a>, <a class="fn-backref" href="#id6">3</a>, <a class="fn-backref" href="#id7">4</a>, <a class="fn-backref" href="#id8">5</a>)</em> If the filter could not be checked for a known reason, such as with a FASTA file, it is assumed to have passed.</td></tr>
+</tbody>
+</table>
 <table class="docutils footnote" frame="void" id="id11" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id5">1</a>, <a class="fn-backref" href="#id6">2</a>, <a class="fn-backref" href="#id7">3</a>, <a class="fn-backref" href="#id8">4</a>, <a class="fn-backref" href="#id9">5</a>)</em> If the filter could not be checked for a known reason, such as with a FASTA file, it is assumed to have passed.</td></tr>
-</tbody>
-</table>
-<table class="docutils footnote" frame="void" id="id12" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id10">[2]</a></td><td>Includes degeneracies, unknown, and uncalled</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#id9">[2]</a></td><td>Includes degeneracies, unknown, and uncalled</td></tr>
 </tbody>
 </table>
 <p>The pseudo-flowcharts below reflect relationships between the statistics where each terminal node is a statistics column.
@@ -634,8 +673,8 @@ Click the image to view it in detail.</p>
 </div>
 <div class="section" id="example-statistics">
 <h3>Example Statistics<a class="headerlink" href="#example-statistics" title="Permalink to this headline">¶</a></h3>
-<table border="1" class="docutils" id="id13">
-<caption><span class="caption-text">general_stats.tsv</span><a class="headerlink" href="#id13" title="Permalink to this table">¶</a></caption>
+<table border="1" class="docutils" id="id12">
+<caption><span class="caption-text">general_stats.tsv</span><a class="headerlink" href="#id12" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="5%" />
 <col width="5%" />
@@ -729,8 +768,8 @@ Click the image to view it in detail.</p>
 <p>The [any] and [all] rows track statistics collected for any and all analysis combinations on each sample. The first two
 [any] and [all] rows are special because they track statistics collected for any and all analysis combinations for all
 samples.</p>
-<table border="1" class="docutils" id="id14">
-<caption><span class="caption-text">sample_stats.tsv</span><a class="headerlink" href="#id14" title="Permalink to this table">¶</a></caption>
+<table border="1" class="docutils" id="id13">
+<caption><span class="caption-text">sample_stats.tsv</span><a class="headerlink" href="#id13" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="6%" />
 <col width="6%" />
@@ -979,7 +1018,7 @@ samples.</p>
 <p>Most of the files are either from the external analysis programs or STDIN and STDOUT files created by the PBS cluster
 for each job. The files in this example created directly by NASP include:</p>
 <ul class="simple">
-<li>The matrices and statistics folders from <a class="reference internal" href="#vcf-to-matrix">vcf_to_matrix</a></li>
+<li>The matrices and statistics folders from the <a class="reference internal" href="#matrix">matrix</a> script</li>
 <li>runlog.txt which includes the terminal commands used to run the external analysis programs</li>
 <li>nasp_results-config.xml</li>
 <li>matrix_dto.xml</li>
@@ -1001,7 +1040,7 @@ for each job. The files in this example created directly by NASP include:</p>
         <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="install.html" class="btn btn-neutral" title="Installation" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral" title="Welcome to Northern Arizona SNP Pipeline’s documentation!" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
