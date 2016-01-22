@@ -190,14 +190,14 @@ def _index_reference(configuration):
 
     #if we are using GATK, we also need to create a Sequence Dictionary and samtools index of the reference
     if next((v for i, v in enumerate(configuration["snpcallers"]) if re.search('gatk', v[0], re.IGNORECASE)), None):
-        picard_path = configuration["picard"][1] or ""
+        #picard_path = configuration["picard"][1] or ""
+        picard_path = configuration["picard"][1]
         picard_memory = 2
         if configuration["picard"][3]:
             picard_memory = configuration["picard"][3]['mem_requested'] or 2
-        dict_generator = os.path.join(picard_path, "CreateSequenceDictionary.jar")
         samtools_path = configuration["samtools"][1] or "samtools"
         out_file = os.path.join(ref_folder, "reference.dict")
-        index_commands.append("java -Xmx%sG -jar %s R=%s O=%s" % (picard_memory, dict_generator, reference, out_file))
+        index_commands.append("java -Xmx%sG -jar %s CreateSequenceDictionary R=%s O=%s" % (picard_memory, picard_path, reference, out_file))
         index_commands.append("%s faidx %s" % (samtools_path, reference))
 
     command = "\n".join(index_commands)
@@ -589,6 +589,7 @@ def _index_bams(configuration, index_job_id):
     output_folder = configuration["output_folder"]
     job_parms = configuration["bam_index"][3]
     sampath = configuration["samtools"][1]
+    picard_path = configuration["picard"][1] or ""
     bam_folder = os.path.join(output_folder, "bams")
     if not os.path.exists(bam_folder):
         os.makedirs(bam_folder)
@@ -597,7 +598,23 @@ def _index_bams(configuration, index_job_id):
     for (name, bam) in alignments:
         new_file = os.path.join(bam_folder, "%s.bam" % name)
         bam_files.append((name, new_file))
-        command_parts.append("ln -s -f %s %s" % (bam, new_file))
+        # GATK requires bams have a ReadGroup header. If one if not present,
+        # assign a default value.
+        command_parts.append((
+            "if ! {samtools} view -H {in_bam} | grep \"^@RG\"; then\n"
+            " java -jar {picard} AddOrReplaceReadGroups"
+            " INPUT={in_bam}"
+            " OUTPUT={out_bam}"
+            " SORT_ORDER=coordinate"
+            " ID=1"
+            " SM={sample_name}"
+            " LB={sample_name}"
+            " PL=illumina"
+            " PU=1\n"
+            "else\n"
+            " ln -s -f {in_bam} {out_bam}\n"
+            "fi"
+        ).format(samtools=sampath, picard=picard_path, out_bam=bam, in_bam=new_file, sample_name=os.path.splitext(bam)[0]))
         command_parts.append("%s index %s" % (sampath, new_file))
     command = "\n".join(command_parts)
     job_parms['work_dir'] = bam_folder
@@ -639,7 +656,7 @@ def _export_matrices(configuration, matrix_job_id):
 
     gonasp_path = configuration["matrix_generator"][1]
     matrix_folder = os.path.join(configuration['output_folder'], 'matrices')
-    job_parms = {'name': 'nasp_export', 'num_cpus': '4', 'mem_requested': '4', 'walltime': '4', 'queue': '', 'args': '', 'work_dir':  matrix_folder}
+    job_parms = {'name': 'nasp_export', 'num_cpus': '4', 'mem_requested': '4', 'walltime': '8', 'queue': '', 'args': '', 'work_dir':  matrix_folder}
     commands = []
 
     # The command will be of the following form:
@@ -654,7 +671,7 @@ def _export_matrices(configuration, matrix_job_id):
     commands.append('wait')
     command = ' & '.join(commands)
 
-    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (matrix_job_id,), notify=True)
+    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (matrix_job_id,), notify=False)
 
 
 def begin(configuration):

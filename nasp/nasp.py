@@ -498,21 +498,8 @@ def _get_user_input(reference, output_folder):
         (configuration["snpcallers"], using_gatk) = _get_snpcallers(queue, args)
 
         if using_gatk:
-            paths = os.environ['PATH'].split(os.pathsep)
-            paths.append('/usr/share/java/')
-            for path in paths:
-                try:
-                    match_list = [f for f in os.listdir(path) if f.endswith(os.pathsep + 'picard') or f.endswith(os.pathsep + 'picard.jar')]
-                    if match_list:
-                        # Newer versions of picard replaced have CreateSequenceDictionary as a sub-command
-                        picard_path = match_list[0] + " CreateSequenceDictionary"
-                        break
-                except FileNotFoundError:
-                    # The PATH variable includes a non-existent path
-                    pass
-            else:
-                picard_path = _get_java_path("CreateSequenceDictionary.jar")
-            configuration["picard"] = ("Picard", os.path.dirname(picard_path), "", {})
+            picard_path = _get_java_path("picard.jar")
+            configuration["picard"] = ("Picard", picard_path, "", {})
             logging.info("Picard = %s", configuration["picard"])
     else:
         configuration["snpcallers"] = []
@@ -539,7 +526,7 @@ def _get_user_input(reference, output_folder):
     configuration["matrix_generator"] = matrix_settings
     logging.info("MatrixGenerator = %s", configuration["matrix_generator"])
 
-    include_allref_pos = input("\nDo you want to create a master_masked matrix that includes all positions and low-quality positions that failed the coverage or proportion filter are masked with an 'N' [N]? ")
+    include_allref_pos = input("\nDo you want to create a master_masked matrix that includes all positions with low-quality positions that failed the coverage or proportion filter masked with an 'N' [N]? ")
     if re.match('^[Yy]', include_allref_pos):
         configuration["filter_matrix_format"] = "include_allref_pos"
         logging.info("FilterMatrixFormat = %s", configuration["filter_matrix_format"])
