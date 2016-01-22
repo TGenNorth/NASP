@@ -74,7 +74,21 @@ Number of SNPs matching in your list: 1
 number of SNPs after missing regions removed: 1748
 number of parsimony-informative SNPs: 1488
 
-5. annotate_NASP.py
+5. filter_matrix_by_distance.py
+
+-What does it do?
+
+Given a NASP SNP matrix, corresponding reference fasta, and a minimum distance, this script will produce 
+a new matrix with only SNPs that are guaranteed to be at least that distance apart from each other.
+This can be used to create a random sampling of SNPs that are spread throughout the genome.
+
+Example:
+
+python ../scripts/filter_matrix_by_distance.py -m bestsnp.tsv -r reference.fasta -p prefix -d 5000
+bestsnp.tsv has been filtered for SNPs that are at least 5000 bases apart. Output is in 
+prefix_distance_filtered.matrix and prefix_distance_filtered.fasta
+
+6. annotate_NASP.py
 
 -What does it do?
 
@@ -116,7 +130,7 @@ python ../scripts/annotate_NASP.py -i bestsnp.tsv -v bestsnp.vcf -s ~/tools/snpE
 
 -The output is a new NASP matrix ("annotated_bestsnp.tsv") with three extra columns: type    locus   ncbi_id
 
-6. nasp_to_plink.py
+7. nasp_to_plink.py
 
 -What does it do?
 
