@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strconv"
 )
@@ -230,7 +231,14 @@ func (v *Vcf) indexContigs() error {
 	if line, err = v.br.ReadSlice('\t'); err != nil {
 		// TODO: The file should not be empty.
 		// The file should have at least one contig position.
-		panic(fmt.Errorf("%s: %s\n", v.identifier, err.Error()))
+		//panic(fmt.Errorf("%s: %s\n", v.identifier, err.Error()))
+		// It was requested the matrix proceed even if the VCF is empty due to
+		// a bad alignment.
+		// This means we can no longer detect issues earlier in the pipeline
+		// that lead to an empty VCF to be created (particularly an issue with
+		// VarScan).
+		log.Printf("%s contains no records", v.identifier)
+		return nil
 	}
 	priorContigName = append(priorContigName, line...)
 	filePosition += int64(len(priorContigName))
