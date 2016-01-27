@@ -4,8 +4,6 @@ Installation
 Install
 -------
 
-.. note:: NASP requires Python 3. If your default version is Python 2, you should be able to use the Python 3 version explicitly by replacing the below 'pip' commands with 'pip3'
-
 If you have virtualenvwrapper installed::
 
 	$ mkvirtualenv nasp
@@ -17,9 +15,11 @@ If you have venv installed::
 	$ source my_env/bin/activate
 	$ pip install nasp
 
-At the command line::
+.. note:: NASP requires Python 3. If Python 2 is your default version, you should be able to run the Python 3 versions of mkvirtualenv/pyvenv explicitly::
 
-	$ easy_install nasp
+        $ pyvenv-3.4 my_env
+        $ source my_env/bin/activate
+        $ pip install nasp
 
 Using the “module load” system:
 If you have configured a module system on your high-performance compute cluster, you can create a NASP module for your users to load. Refer to your operating system documentation for specifics. Do not forget to include the software dependencies, as described below.
