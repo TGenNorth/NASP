@@ -4,22 +4,32 @@ Installation
 Install
 -------
 
-If you have virtualenvwrapper installed::
+.. note:: NASP requires Python 3.
 
-	$ mkvirtualenv nasp
-	$ pip install nasp
 
-If you have venv installed::
+To install system-wide::
 
-	$ pyvenv my_env
-	$ source my_env/bin/activate
-	$ pip install nasp
+    $ pip install nasp
 
-.. note:: NASP requires Python 3. If Python 2 is your default version, you should be able to run the Python 3 versions of mkvirtualenv/pyvenv explicitly::
+.. _python documentation: https://packaging.python.org/en/latest/installing/
 
-        $ pyvenv-3.4 my_env
-        $ source my_env/bin/activate
-        $ pip install nasp
+One of the ways to install NASP as a user is in a python virtual environment. See the `python documentation`_ for alternative methods::
+
+    $ pyvenv my_env
+    $ source my_env/bin/activate
+    $ pip install nasp
+
+If Python 2 is your default version, you should be able to run the Python 3 versions of pyvenv/pip explicitly::
+
+    $ pyvenv-3.4 my_env
+    $ source my_env/bin/activate
+    $ pip install nasp
+
+The readline module is an optional dependency to enable tab-autocomplete when entering filepaths in NASP::
+    
+    $ pip install readline
+
+To learn more about installing python packages checkout the `python documentation`_
 
 Using the “module load” system:
 If you have configured a module system on your high-performance compute cluster, you can create a NASP module for your users to load. Refer to your operating system documentation for specifics. Do not forget to include the software dependencies, as described below.

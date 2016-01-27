@@ -144,26 +144,31 @@
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="install">
 <h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
-<p>If you have virtualenvwrapper installed:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ mkvirtualenv nasp
-$ pip install nasp
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">NASP requires Python 3.</p>
+</div>
+<p>To install system-wide:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install nasp
 </pre></div>
 </div>
-<p>If you have venv installed:</p>
+<p>One of the ways to install NASP as a user is in a python virtual environment. See the <a class="reference external" href="https://packaging.python.org/en/latest/installing/">python documentation</a> for alternative methods:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ pyvenv my_env
 $ source my_env/bin/activate
 $ pip install nasp
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p>NASP requires Python 3. If Python 2 is your default version, you should be able to run the Python 3 versions of mkvirtualenv/pyvenv explicitly:</p>
-<div class="last highlight-python"><div class="highlight"><pre>$ pyvenv-3.4 my_env
+<p>If Python 2 is your default version, you should be able to run the Python 3 versions of pyvenv/pip explicitly:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pyvenv-3.4 my_env
 $ source my_env/bin/activate
 $ pip install nasp
 </pre></div>
 </div>
+<p>The readline module is an optional dependency to enable tab-autocomplete when entering filepaths in NASP:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install readline
+</pre></div>
 </div>
+<p>To learn more about installing python packages checkout the <a class="reference external" href="https://packaging.python.org/en/latest/installing/">python documentation</a></p>
 <p>Using the “module load” system:
 If you have configured a module system on your high-performance compute cluster, you can create a NASP module for your users to load. Refer to your operating system documentation for specifics. Do not forget to include the software dependencies, as described below.</p>
 </div>
