@@ -4,6 +4,8 @@ Installation
 Install
 -------
 
+.. note:: NASP requires Python 3. If your default version is Python 2, you should be able to use the Python 3 version explicitly by replacing the below 'pip' commands with 'pip3'
+
 If you have virtualenvwrapper installed::
 
 	$ mkvirtualenv nasp
