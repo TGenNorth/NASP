@@ -614,7 +614,7 @@ def _index_bams(configuration, index_job_id):
             "else\n"
             " ln -s -f {in_bam} {out_bam}\n"
             "fi"
-        ).format(samtools=sampath, picard=picard_path, out_bam=bam, in_bam=new_file, sample_name=os.path.splitext(bam)[0]))
+        ).format(samtools=sampath, picard=picard_path, out_bam=new_file, in_bam=bam, sample_name=os.path.splitext(bam)[0]))
         command_parts.append("%s index %s" % (sampath, new_file))
     command = "\n".join(command_parts)
     job_parms['work_dir'] = bam_folder
