@@ -92,11 +92,12 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             args += " -m e"
         mem_needed = float(job_parms['mem_requested']) * 1024 * 1024
         # Apparently the number of processors a job uses is controlled by the queue it is running on in SGE, so there is no way to request a specific number of CPUs??
-        submit_command = "qsub -V -wd \'%s\' -l h_data=%s,h_rt=%s:00:00 -m a -N \'%s\' %s %s %s" % (
+        submit_command = "qsub -V -wd \'%s\' -l h_data=%s,h_rt=%s:00:00 -m a -N \'%s\' -b y %s %s %s" % (
             job_parms["work_dir"], mem_needed, job_parms['walltime'], job_parms['name'], waitfor,
             queue, args)
         logging.debug("submit_command = %s", submit_command)
-        output = subprocess.getoutput("echo \"%s\" | %s" % (command, submit_command))
+        #output = subprocess.getoutput("echo \"%s\" | %s" % (command, submit_command))
+        output = subprocess.getoutput("%s %s" % (submit_command, command))
         logging.debug("output = %s" % output)
         job_match = re.search('^\D*(\d+)\s.*$', output)
         if job_match:
@@ -656,7 +657,9 @@ def _export_matrices(configuration, matrix_job_id):
 
     gonasp_path = configuration["matrix_generator"][1]
     matrix_folder = os.path.join(configuration['output_folder'], 'matrices')
-    job_parms = {'name': 'nasp_export', 'num_cpus': '4', 'mem_requested': '4', 'walltime': '8', 'queue': '', 'args': '', 'work_dir':  matrix_folder}
+    job_parms = configuration["matrix_generator"][3]
+    job_parms['name'] = "nasp_export"
+    job_parms['work_dir'] = matrix_folder
     commands = []
 
     # The command will be of the following form:
@@ -664,9 +667,9 @@ def _export_matrices(configuration, matrix_job_id):
     #   gonasp export --type vcf bestsnp.tsv > bestsnp.vcf &
     #   wait
     # The '&' will launch each export commands as background tasks then the 'wait' will wait for them to finish
-    for type in ['vcf', 'fasta']:
+    for file_type in ['vcf', 'fasta']:
         for exported_matrix in ['bestsnp', 'missingdata']:
-            commands.append("{0} export --type {1} {2}.tsv > {2}.{1}".format(gonasp_path, type, exported_matrix))
+            commands.append("{0} export --type {1} {2}.tsv > {2}.{1}".format(gonasp_path, file_type, exported_matrix))
 
     commands.append('wait')
     command = ' & '.join(commands)
