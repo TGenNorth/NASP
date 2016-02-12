@@ -79,6 +79,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
     elif job_submitter == "SGE":
+        command = re.sub('\n', '; ', command)
         waitfor = ""
         if waitfor_id:
             waitfor = "-hold_jid %s" % (re.sub(":", ",", waitfor_id[0]))
