@@ -88,9 +88,9 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             queue = "-q %s" % job_parms["queue"]
         args = job_parms["args"]
         if hold:
-            args += " -h"
+            args = "-h " + args
         if notify:
-            args += " -m e"
+            args = "-m e " + args
         mem_needed = float(job_parms['mem_requested']) * 1024 * 1024
         # Apparently the number of processors a job uses is controlled by the queue it is running on in SGE, so there is no way to request a specific number of CPUs??
         submit_command = "qsub -V -wd \'%s\' -l h_data=%s,h_rt=%s:00:00 -m a -N \'%s\' -b y %s %s %s" % (
@@ -98,7 +98,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             queue, args)
         logging.debug("submit_command = %s", submit_command)
         #output = subprocess.getoutput("echo \"%s\" | %s" % (command, submit_command))
-        output = subprocess.getoutput("%s %s" % (submit_command, command))
+        output = subprocess.getoutput("%s \"%s\"" % (submit_command, command))
         logging.debug("output = %s" % output)
         job_match = re.search('^\D*(\d+)\s.*$', output)
         if job_match:
