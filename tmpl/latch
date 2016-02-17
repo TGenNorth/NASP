@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# This file deliberately left blank.
+# On the version of PBS/Torque this script was tested with,
+# it was not possible for a job to depend on more than one job array.
+# The latch script is a stop-gap whereas each latch job can depend on a job array
+# By setting the individual latch scripts as a dependencies a job can then, by extension,
+# depend on the job arrays.

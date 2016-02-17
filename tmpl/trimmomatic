@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+# http://www.usadellab.org/cms/?page=trimmomatic
+
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+set_read1_and_read2 "untrimmed"
+
+# trim path
+read1_filename=${read1##*/}
+read2_filename=${read2##*/}
+
+# trim extension
+read1_filename=${read1_filename%.gz}
+read2_filename=${read2_filename%.gz}
+
+read1_filename=${read1_filename%.fastq}
+read2_filename=${read2_filename%.fastq}
+
+read1_filename=${read1_filename%.fq}
+read2_filename=${read2_filename%.fq}
+
+trimmomatic="$(get_program_path "trimmomatic")"
+if [ -n "$read2" ]; then
+	java \
+		-jar "$trimmomatic" \
+		PE \
+		-threads "$ncpu" \
+		-phred33 \
+		"$read1" "$read2" \
+		"${workdir}/trimmed/${read1_filename}.fastq.gz" "${workdir}/trimmed/${read1_filename}_unpaired.fastq.gz" \
+		"${workdir}/trimmed/${read2_filename}.fastq.gz" "${workdir}/trimmed/${read2_filename}_unpaired.fastq.gz" \
+		ILLUMINACLIP:${trimmomatic_pe_adapter_fasta}:2:30:10 \
+		LEADING:3 \
+		TRAILING:3 \
+		SLIDINGWINDOW:4:15 \
+		MINLEN:36
+else
+	java \
+		-jar "$trimmomatic" \
+		SE \
+		-threads "$ncpu" \
+		-phred33 \
+		"$read1" "${workdir}/trimmed/${read1_filename}.fastq.gz" \
+		ILLUMINACLIP:${trimmomatic_se_adapter_fasta}:2:30:10 \
+		LEADING:3 \
+		TRAILING:3 \
+		SLIDINGWINDOW:4:15 \
+		MINLEN:36
+fi

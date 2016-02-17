@@ -1,0 +1,430 @@
+#!/bin/bash
+#
+# version: 0.0.1
+
+# stop on the first error and do not allow undefined variables
+set -euo pipefail
+# print all commands and variables if DEBUG is set to a non-empty string
+[ -n "${DEBUG:-}" ] && set -x
+
+
+################################################################################
+################################################################################
+####################                                 ###########################
+####################   BEGIN USER EDITABLE SECTION   ###########################
+
+declare -lr trim_reads={{.TrimReads}}
+declare -lr ignore_duplicate_positions={{.IgnoreDuplicatePositions}}
+declare -lr create_matrix={{.CreateMatrix}}
+
+reference="{{.Reference}}"
+
+declare -ar fastas=({{range .Fastas}}
+    "{{.}}"{{end}}
+)
+
+declare -ar bams=({{range .Bams}}
+    "{{.}}"{{end}}
+)
+
+declare -ar vcfs=({{range .Vcfs}}
+    "{{.}}"{{end}}
+)
+
+declare -ar single_reads=({{range .SingleReads}}
+    "{{.}}"{{end}}
+)
+
+declare -ar paired_reads=({{range .PairedReads}}
+    "{{.}}"{{end}}
+)
+
+
+################################################################################
+# Supported aligners: {{range $key, $value := .SupportedAligners}}{{$key}} {{end}}
+################################################################################
+declare -alr aligners=( {{range $key, $value := .Aligners}}"{{$key}}" {{end}})
+
+
+################################################################################
+# Supported snpcallers: {{range $key, $value := .SupportedSnpcallers}}{{$key}} {{end}}
+################################################################################
+declare -alr snpcallers=( {{range $key, $value := .Snpcallers}}"{{$key}}" {{end}})
+
+
+################################################################################
+# Program paths
+################################################################################
+{{range $key, $value := .ProgramPaths}}{{$key}}="{{$value}}"
+{{end}}
+
+declare -Alr program_paths=({{range $key, $value := .ProgramPaths}}
+ [{{$key}}]="{{$value}}"{{end}}
+)
+
+# scheduler_flags are key:value pairs. The key is the name of a script in the
+# job_scripts/ directory. The value is the flags that will be passed along with
+# the script to the job scheduler when the job is submitted.
+#
+# scheduler flags are single quoted to delay evaluating any variables until just
+# before the job is submitted.
+declare -Ar scheduler_flags=({{range $key, $value := .SchedulerFlags}}
+    [{{$key}}]='{{$value}}'{{end}}
+)
+
+# TODO:
+trimmomatic_pe_adapter_fasta="${trimmomatic%/*}/adapters/TruSeq3-PE-2.fa"
+trimmomatic_se_adapter_fasta="${trimmomatic%/*}/adapters/TruSeq3-SE.fa"
+
+
+
+
+
+####################    END USER EDITABLE SECTION    ###########################
+####################                                 ###########################
+################################################################################
+################################################################################
+
+
+
+
+# ncpu is the number of processors requested for the job
+declare -i ncpu=${PBS_NUM_PPN:-${SLURM_JOB_CPUS_PER_NODE:-1}}
+
+# index is the index of the current job array task. It is used to determine
+# which file(s) from the paired_reads/unpaired_reads/bams/fastas arrays will
+# be used in the current job.
+declare -i index=${SGE_TASK_ID:-${PBS_ARRAYID:-${SLURM_ARRAY_TASK_ID:-0}}}
+
+# The indexing jobs will create several files in the reference fasta directory.
+# To avoid clobering the source directory, a symbolic link is created in the
+# output directory.
+if [ -L "${workdir}/reference/reference.fasta" ]; then
+	reference="${workdir}/reference/reference.fasta"
+fi
+
+
+################################################################################
+# check_file_exists will exit if the given file does not exist, is empty, or
+# cannot be read.
+#
+# Globals:
+#   None
+# Arguments:
+#   1: Filepath
+# Returns:
+#   None
+################################################################################
+check_file_exists() {
+	if ! [ -f "${1-}" ]; then
+		>&2 echo "file not found: ${1-}"
+		exit 1
+	fi
+
+	if ! [ -s "${1-}" ]; then
+		>&2 echo "file is empty: ${1-}"
+		exit 1
+	fi
+
+	if ! [ -r "${1-}" ]; then
+		>&2 echo "file missing read permission: ${1-}"
+		exit 1
+	fi
+}
+
+################################################################################
+# command_exists returns true if the executable is found in $PATH.
+# This is similar to running the 'which' command without launching a new process
+#
+# Globals:
+#   None
+# Arguments:
+#   1: executable name
+# Returns:
+#   None
+################################################################################
+command_exists() {
+	local command=${1:?}
+	command -v "$command" >/dev/null 2>&1
+	return $?
+}
+
+################################################################################
+# set_read1_and_read2 sets read1 and read2 variables based on the current job
+# scheduler task index.
+#
+# It is assumed single_reads is an array where each element is a read/fastq file
+#
+# It is assumed paired_reads is an array where each pair of elements is a read1
+# followed immediately by its corresponding read2:
+#   paired_reads[0]="/path/to/read1.fastq.gz"
+#   paired_reads[1]="/path/to/read2.fastq.gz"
+#   paired_reads[2]="/path/to/another_read1.fastq.gz"
+#   paired_reads[3]="/path/to/another_read2.fastq.gz"
+#
+# It is assumed the first N elements of index correspond to the N elements of
+# single_reads and the remaining M element if index correspond to the M read
+# pairs of paired_reads.
+#
+# Globals:
+#   paired_reads
+#   single_reads
+#   index
+#   trim_reads
+# Arguments:
+#   1: Any value, such as "untrimmed" will return the untrimmed read paths
+# Returns:
+#   read1
+#   read2
+################################################################################
+set_read1_and_read2() {
+	local num_single_reads="${#single_reads[@]}"
+
+	if [ "$index" -ge "$num_single_reads" ]; then
+		read1=${paired_reads[$(( 2 * (index - num_single_reads) ))]}
+		read2=${paired_reads[$(( 2 * (index - num_single_reads) + 1))]}
+		check_file_exists "$read1"
+		check_file_exists "$read2"
+	else
+		read1=${single_reads[$index]}
+		check_file_exists "$read1"
+	fi
+
+	# If the reads were trimmed and no argument is given, set read1/read2 to
+	# the corresponding trimmed read(s) path.
+	if [ -z "${1-}" ] && [ "$trim_reads" = "true" ]; then
+		read1=${workdir}/trimmed/${read1##*/}
+		read2=${workdir}/trimmed/${read2##*/}
+		check_file_exists "$read1"
+		[ -n "$read2" ] && check_file_exists "$read2"
+	fi
+}
+
+################################################################################
+# Globals:
+#   None
+# Arguments:
+#   1: Name of the aligner that is/was used to generate
+# Returns:
+#   read1
+#   read2
+#   sample_name
+#   bam
+################################################################################
+set_read1_and_read2_and_sample_name_and_bam() {
+	local aligner="${1:?}"
+
+	set_read1_and_read2
+
+	sample_name=$(illumina_sample_name "$read1")
+	bam="${workdir}/bams/${sample_name}-$aligner.bam"
+}
+
+
+################################################################################
+# illumina_sample_name returns the sample_name portion of a given FASTQ assuming
+# it follows the Illumina naming scheme:
+# <sample name>_<barcode sequence>_L<lane (0-padded to 3 digits)>_R<read number>_<set number (0-padded to 3 digits>.fastq.gz
+#
+# See http://support.illumina.com/help/SequencingAnalysisWorkflow/Content/Vault/Informatics/Sequencing_Analysis/CASAVA/swSEQ_mCA_FASTQFiles.htm
+#
+# Globals:
+#   None
+# Arguments:
+#   1: FASTQ file following the Illumina naming scheme
+# Returns:
+#   None
+################################################################################
+illumina_sample_name() {
+	local fastq=${1-}
+	fastq=${fastq##*/}       # trim path
+	fastq=${fastq%.gz}       # trim file extension
+	fastq=${fastq%.fq}
+	fastq=${fastq%.fastq}
+	echo "${fastq%_R*}"      # trim everything after the read number
+}
+
+
+################################################################################
+# bam_path
+#
+# Globals:
+#   index
+#   aligner
+# Arguments:
+#   None
+# Returns:
+#   None
+###############################################################################
+bam_path() {
+	if [ "${aligner:?}" = "prealigned" ]; then
+		# TODO: attempt to classify bam files
+		local bam=${bams[$index]}
+	else
+		set_read1_and_read2
+		local sample_name=$(illumina_sample_name "$read1")
+		local bam=${workdir}/bams/${sample_name}-${aligner}.bam
+	fi
+
+	check_file_exists "$bam"
+
+	echo "$bam"
+}
+
+################################################################################
+# release
+# TODO: remove/unused
+#
+# Globals:
+#   None
+# Arguments:
+#   1: comma delimited list of job IDs. eg. 42,43,44,45
+# Returns:
+#   None
+###############################################################################
+release() {
+	local dependencies="${1:?}"
+
+	# TODO: what if there are no dependencies
+	if command_exists scontrol; then
+		scontrol release "$dependencies"
+	elif command_exists qrls; then
+		if [ -z "$SGE_ROOT" ]; then
+			qrls -h u "$dependencies"
+		else
+			# Torques version of qrls takes a
+			qrls -h u "${dependencies/,/ }"
+		fi
+	else
+		>&2 echo "Neither scontrol nor qrls commands found. Unable to release dependencies: $dependencies"
+		exit 1
+	fi
+}
+
+
+get_program_path() {
+    local program="${1:?}"
+	if [[ "${program_paths[$program]+exists}" ]]; then
+        echo "${program_paths[$program]}"
+    else
+        command -v "$program" || { >&2 echo "command not found: $program"; exit 1; }
+    fi
+}
+
+
+# get_max_memory is intended to set the java max heap size.
+# First it checks ulimit for limits set by an admin or job scheduler
+# Next is checks for the max physical memory
+# Finally, it defaults to 1G assuming the java heap default value
+get_max_memory() {
+    local max_memory
+    local memory_ulimit_in_kilobytes=$(ulimit -m)
+    if [[ "$memory_ulimit_in_kilobytes" = "unlimited" ]]; then
+        max_memory="$(awk '/MemTotal/{print $2}' /proc/meminfo)"
+    fi
+    if [[ "$memory_ulimit_in_kilobytes" =~ ^[0-9]+$ ]]; then
+        max_memory="${memory_ulimit_in_kilobytes}k"
+    else
+        max_memory="1G"
+    fi
+    echo $max_memory
+}
+
+
+################################################################################
+# samtools_view_sort
+#
+# Globals:
+#   None
+# Arguments:
+#   TODO
+# Returns:
+#   None
+###############################################################################
+samtools_view_sort() {
+	local ncpu="${1:?}"
+	local bam="${2:?}"
+	local tmpdir="${3:?}"
+	local stdin="${4:-"-"}"
+
+    local samtools=$(get_program_path "samtools")
+
+    if "$samtools" --version; then
+        # Post samtools v1.0 syntax
+        "$samtools" view -S -b -h $stdin \
+        | "$samtools" sort -T "$tmpdir" -@ "$ncpu" -o "$bam" -
+    else
+        # Pre samtools v1.0 syntax
+        "$samtools" view -S -b -h $stdin \
+        | "$samtools" sort -@ "$ncpu" -f - "$bam"
+    fi
+}
+
+
+################################################################################
+# error_report returns a summary identifying the current job and last recorded
+# error to assist in debugging.
+#
+# The following is an example output:
+# job_name = align.bowtie2 jobid = 12345678 task_id = 42
+# stderr = /path/to/logs/job_name/42.err
+# read1 = /path/to/read1.fastq
+# read2 = /path/to/read2.fastq
+# bam   = /path/to/bamfile.bam
+#
+# Globals:
+#   JOB_ID | PBS_JOBID | SLURM_JOB_ID
+#   JOB_NAME | PBS_JOBNAME | SLURM_JOB_NAME | BASH_SOURCE
+#   workdir
+#   index
+#   fasta
+#   bam
+#   read1
+#   read2
+# Arguments:
+#   None
+# Returns:
+#   None
+################################################################################
+error_report() {
+	local job_id="${JOB_ID:-${PBS_JOBID:-${SLURM_JOB_ID:?}}}"
+	local job_name="${JOB_NAME:-${PBS_JOBNAME:-${SLURM_JOB_NAME:-$BASH_SOURCE}}}"
+	job_name="${job_name%-$index}" # strip array index suffix appended by Torque
+	local log_dir="${workdir:?}/logs"
+	local stderr_file="${log_dir}/${job_name}/err-${index}"
+	local error_message
+	local stderr_file
+
+	#local -a error_vars=( "$job_name" "$job_id" "$index" "$stderr_file" )
+	#local error_message="job_name = %s jobid = %s task_id = %s\nstderr   = %s"
+	local error_message="job_name = $job_name jobid = $job_id task_id = $index\n\tstderr   = $stderr_file"
+
+	# Include any defined input files
+	#[[ -n "${fasta:-}" ]] && error_message="$error_message\nfasta    = %s" && error_vars+=( "$fasta" )
+	#[[ -n "${read1:-}" ]] && error_message="$error_message\nread1    = %s" && error_vars+=( "$read1" )
+	#[[ -n "${read2:-}" ]] && error_message="$error_message\nread2    = %s" && error_vars+=( "$read2" )
+	#[[ -n "${bam:-}" ]]   && error_message="$error_message\nbam      = %s" && error_vars+=( "$bam" )
+	[[ -n "${fasta:-}" ]] && error_message="$error_message\n\tfasta    = $fasta"
+	[[ -n "${read1:-}" ]] && error_message="$error_message\n\tread1    = $read1"
+	[[ -n "${read2:-}" ]] && error_message="$error_message\n\tread2    = $read2"
+	[[ -n "${bam:-}" ]]   && error_message="$error_message\n\tbam      = $bam"
+
+    printf "$error_message\n" >> "${workdir}/FAILED_JOBS"
+
+	# Fill-in error_message %s placeholders with error_vars
+	#error_message="$(printf "$error_message" ${error_vars[@]})"
+
+	#{
+	#	# wait for an exclusive write lock
+	#	flock -x 200 --timeout 60 || echo "$error_message" >> "${workdir}/FAILED_JOBS"
+    #    # The redirect resulted in a double message
+	#	#echo "$error_message" >&200
+	#	echo "$error_message"
+	#} 200>>"${workdir}/FAILED_JOBS"
+}
+
+
+# Register a trap that will trigger if any job script command returns a non-zero
+# exit status. flock acquires a file lock on the FAILED_JOBS file to avoid
+# interleaved messages should multiple jobs fail at the same time.
+trap error_report ERR

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+
+set_read1_and_read2_and_sample_name_and_bam "bwa"
+tmpdir=$(mktemp -d --tmpdir=${workdir})
+trap '{
+    rm -rf $tmpdir &
+    eval "${snpcaller_release_cmd:?}" &
+    wait
+}' EXIT
+
+samtools=$(get_program_path "samtools")
+if "$samtools" --version; then
+    # Post samtools v1.0 syntax
+    samtools_sort="$samtools sort -T $tmpdir -@ $ncpu -o $bam"
+    printf "Using samtools post v1.0 syntax: %s" $samtools_sort
+else
+    # Pre samtools v1.0 syntax
+    samtools_sort="$samtools sort -@ $ncpu - ${bam%.*}"
+    printf "Using samtools pre v1.0 syntax: %s" $samtools_sort
+fi
+
+
+$(get_program_path "novoalign") \
+	-r all \
+	-f $read1 $read2 \
+	-c $ncpu \
+	-o SAM "@RG\\tID:${sample_name}\\tSM:${sample_name}" \
+	-d ${reference}.idx \
+| "$samtools" view -S -b -h - \
+| $samtools_sort
+
+
+$(get_program_path "samtools") index "$bam"

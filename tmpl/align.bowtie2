@@ -1,0 +1,48 @@
+#!/bin/bash
+# Read files may be .gz or .bz2
+##### ERROR MESSAGE: SAM/BAM/CRAM file ${bam} is malformed: SAM file doesn't have any read groups defined in the header.
+# The GATK no longer supports SAM files without read groups
+# SOLUTION: Add --rg and --rg-id flags
+
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+
+set_read1_and_read2_and_sample_name_and_bam "bowtie2"
+mkdir -p "${workdir}/bams"
+tmpdir=$(mktemp -d --tmpdir="${workdir}/bams")
+trap "{
+    rm -rf $tmpdir &
+    eval ${snpcaller_release_cmd:?} &
+    wait
+}" EXIT
+
+
+if [ -n "$read2" ]; then
+	single_or_paired_read_arg="-1 $read1 -2 $read2"
+else
+	single_or_paired_read_arg="-U $read1"
+fi
+
+
+samtools=$(get_program_path "samtools")
+if "$samtools" --version; then
+    # Post samtools v1.0 syntax
+    samtools_sort="$samtools sort -T $tmpdir -@ $ncpu -o $bam"
+    printf "Using samtools post v1.0 syntax: %s" $samtools_sort
+else
+    # Pre samtools v1.0 syntax
+    samtools_sort="$samtools sort -@ $ncpu - ${bam%.*}"
+    printf "Using samtools pre v1.0 syntax: %s" $samtools_sort
+fi
+
+$(get_program_path "bowtie2") \
+	--rg-id "${sample_name}" \
+	--rg "SM:${sample_name}" \
+	-x "${reference%.*}" \
+	${single_or_paired_read_arg} \
+| "$samtools" view -S -b -h - \
+| $samtools_sort
+
+
+"$samtools" index "$bam"

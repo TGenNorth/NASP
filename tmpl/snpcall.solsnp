@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+bam=$(bam_path)
+
+memory_ulimit_in_kilobytes=$(ulimit -m)
+[[ "$memory_ulimit_in_kilobytes" =~ ^[0-9]+$ ]] && max_memory="${memory_ulimit_in_kilobytes}k" || max_memory="1G"
+
+$(get_program_path "java") \
+	-Xmx$(get_max_memory) \
+    -jar $(get_program_path "solsnp") \
+	INPUT=${bam} \
+	REFERENCE_SEQUENCE=${reference} \
+	OUTPUT=${workdir}/vcfs/${bam_filename}-solsnp.vcf \
+	SUMMARY=true \
+	CALCULATE_ALLELIC_BALANCE=true \
+	MINIMUM_COVERAGE=1 \
+	PLOIDY=Haploid \
+	STRAND_MODE=None \
+	OUTPUT_FORMAT=VCF \
+	OUTPUT_MODE=AllCallable

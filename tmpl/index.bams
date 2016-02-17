@@ -1,0 +1,32 @@
+#!/bin/bash
+source ${workdir}/job_scripts/common.vars
+
+trap 'eval "$snpcaller_release_cmd"' EXIT
+
+in_bam=${bams[$index]}
+bam_basename=${bam##*/}
+bam_filename=${bam_basename%.*}
+out_bam=${workdir}/bams/${bam_basename}
+
+samtools=$(get_program_path "samtools")
+
+# GATK requires the ReadGroup header. If it is not present, assign as default value.
+if $samtools view -H $bam | grep "^@RG"; then
+    ln -s $bam ${workdir}/bams
+else
+    picard=$(get_program_path "picard")
+    # Handle cases where picard is either a jar file or a wrapper script
+    [[ "$picard" = *.jar ]] && picard="java -jar $picard" 
+    # TODO: Exit if $picard is not picard.jar
+    $picard AddOrReplaceReadGroups \
+        INPUT="$in_bam" \
+        OUTPUT="$out_bam" \
+        SORT_ORDER="coordinate" \
+        ID="1" \
+        SM="$bam_filename" \
+        LB="$bam_filename" \
+        PL="illumina" \
+        PU="1"
+fi
+
+$samtools index ${out_bam}

@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+
+set_read1_and_read2_and_sample_name_and_bam "bwa"
+mkdir -p "${workdir}/bams"
+tmpdir=$(mktemp -d --tmpdir=${workdir}/bams)
+trap '{
+    rm -rf $tmpdir &
+    eval "${snpcaller_release_cmd:?}" &
+    wait
+}' EXIT
+
+samtools=$(get_program_path "samtools")
+if "$samtools" --version; then
+    # Post samtools v1.0 syntax
+    samtools_sort="$samtools sort -T $tmpdir -@ $ncpu -o $bam"
+    printf "Using samtools post v1.0 syntax: %s" $samtools_sort
+else
+    # Pre samtools v1.0 syntax
+    samtools_sort="$samtools sort -@ $ncpu - ${bam%.*}"
+    printf "Using samtools pre v1.0 syntax: %s" $samtools_sort
+fi
+
+
+bwa=$(get_program_path "bwa")
+if [ -n "$read2" ]; then
+	$bwa mem \
+		-R "@RG\\tID:${sample_name}\\tSM:${sample_name}" \
+		-t "$ncpu" \
+		"$reference" \
+		"$read1" \
+		"$read2" \
+    | "$samtools" view -S -b -h - \
+	| $samtools_sort
+else
+	$bwa samse -r "@RG\\tID:${sample_name}\\tSM:name" "$reference" \
+		<(bwa aln "$reference" "$read1" -t "$ncpu" -f "${workdir}/bams/${sample_name}.sai") \
+		"$read1" \
+    | "$samtools" view -S -b -h - \
+	| $samtools_sort
+fi
+
+$(get_program_path "samtools") index "$bam"

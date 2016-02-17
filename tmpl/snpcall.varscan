@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+bam=$(bam_path)
+bam_basename=${bam##*/} # trim path
+bam_filename=${bam_basename%.*} # trim extension
+
+$(get_program_path "java") \
+	-Xmx$(get_max_memory) \
+    -jar $(get_program_path "varscan") mpileup2cns \
+	<(samtools mpileup -B -d 10000000 -f ${reference} ${bam}) \
+	--output-vcf 1 \
+	--vcf-sample-list <(echo $bam) \
+	> ${workdir}/vcfs/${bam_filename}-varscan.vcf

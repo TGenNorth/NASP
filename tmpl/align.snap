@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+# Add -M option by default to make SNAP generate traditional CIGAR strings in the BAM output to be more compatible with SNP callers
+#
+# The two FASTQ files are not the same size! Make sure they contain
+# the same reads in the same order, without comments.
+# DEVTEAM: Allowing run, but you need to run on only one thread because the file splitter
+# Doesn't understand how to deal with files that don't match byte-for-byte.
+
+# TODO: check fastq file size and disable multithreading if they don't match
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+
+set_read1_and_read2_and_sample_name_and_bam "bwa"
+tmpdir=$(mktemp -d --tmpdir=${workdir})
+trap '{
+    rm -rf $tmpdir &
+    eval "${snpcaller_release_cmd:?}" &
+    wait
+}' EXIT INT TERM HUP
+
+
+fifo=${tmpdir}/fifo
+mkfifo $fifo
+
+read1_basename=${read1##*/}
+read2_basename=${read2##*/}
+
+# Path to the read files if they needed to be decompressed before aligning
+read1_uncompressed=${tmpdir}/${read1_basename%.*}
+read2_uncompressed=${tmpdir}/${read2_basename%.*}
+
+
+samtools=$(get_program_path "samtools")
+if "$samtools" --version; then
+    # Post samtools v1.0 syntax
+    samtools_sort="$samtools sort -T $tmpdir -@ $ncpu -o $bam"
+    printf "Using samtools post v1.0 syntax: %s" $samtools_sort
+else
+    # Pre samtools v1.0 syntax
+    samtools_sort="$samtools sort -@ $ncpu - ${bam%.*}"
+    printf "Using samtools pre v1.0 syntax: %s" $samtools_sort
+fi
+
+
+snap=$(get_program_path "snap")
+if [ -n "$read2" ]; then
+	if [[ "$read1" = *.gz ]]; then
+		gunzip -c $read1 > ${read1_uncompressed} &
+		gunzip -c $read2 > ${read2_uncompressed} &
+		read1=${read1_uncompressed}
+		read2=${read2_uncompressed}
+		wait # wait for the gunzip jobs to finish
+	elif [[ "$read1" = *.bz2 ]]; then
+		bunzip2 -c $read1 > ${read1_uncompressed} &
+		bunzip2 -c $read2 > ${read2_uncompressed} &
+		read1=${read1_uncompressed}
+		read2=${read2_uncompressed}
+		wait # wait for the bunzip2 jobs to finish
+	fi
+
+    "$samtools" view -S -b -h "$fifo" \
+    $samtools_sort &
+	$snap paired ${reference%.*} ${read1} ${read2} -o ${fifo} -M
+else
+	if [[ "$read1" = *.gz ]]; then
+		gunzip -c $read1 > ${read1_uncompressed}
+		read1=${read1_uncompressed}
+	elif [[ "$read" = *.bz2 ]]; then
+		bunzip2 -c $read1 > ${read1_uncompressed}
+		read1=${read1_uncompressed}
+	fi
+
+    "$samtools" view -S -b -h "$fifo" \
+    $samtools_sort &
+	$snap single ${reference%.*} ${read1} -o ${fifo} -M
+fi
+
+wait # wait for the samtools view/sort job to finish
+
+$(get_program_path "samtools") index ${bam}

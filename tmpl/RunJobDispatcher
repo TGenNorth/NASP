@@ -1,0 +1,610 @@
+#!/bin/bash
+#
+# RunJobDispatcher
+#
+# .fastq
+#
+#
+
+[[ -d "job_scripts" ]] || { >&2 echo "This script must be run from the same directory as the job_scripts/ directory"; exit 1; }
+
+set -euo pipefail
+[[ -n "${DEBUG:-}" ]] && set -x
+
+
+# shellcheck source=./job_scripts/common.vars
+declare -xr workdir="$PWD"
+source "${workdir}/job_scripts/common.vars"
+
+declare -r job_script_dir=${workdir}/job_scripts
+declare -i num_reads=$(( ${#single_reads[@]} + ${#paired_reads[@]}/2 ))
+declare -i num_bams=${#bams[@]}
+declare -i num_fastas=${#fastas[@]}
+declare -i num_vcfs=${#vcfs[@]}
+declare -i num_aligners=${#aligners[@]}
+declare -i num_snpcallers=${#snpcallers[@]}
+
+
+# key: program_name
+# value: job_id
+declare -A align_index_jobid
+declare -A snpcall_index_jobid
+declare -A snpcall_jobs
+
+
+main() {
+    check_directory_exists "$workdir"
+
+    check_dependencies
+    create_output_directories
+
+    [[ "$trim_reads" = "true" ]] && [[ "$num_reads" -lt 1 ]] && echo "trim reads flag set, but no fastq files found" && exit 1
+    [[ "$num_aligners" -gt 0 ]] && [[ "$num_reads" -lt 1 ]] && echo "aligner flag set, but no fastq files found" && exit 1
+    if [[ "$num_snpcallers" -gt 0 ]] && [[ $(( num_bams + num_reads )) -lt 1 ]]; then
+        printf "snpcaller flag set, but no "
+        if [[ "$num_bams" -lt 1 ]] && [[ "$num_reads" -lt 1 ]]; then
+            printf "bam/fastq" 
+        elif [[ "$num_bams" -lt 1 ]]; then
+            printf "bam" 
+        elif [[ "$num_reads" -lt 1 ]]; then
+            printf "fastq" 
+        fi
+        printf " files found"
+        exit 1
+    fi
+
+    # TODO: warn snpcaller requested, but nothing to snpcall
+    #if [[ "$num_snpcallers" -gt 0 ]] && [[ $(( num_reads + num_bams )) -lt 1 ]]
+
+    if [[ "$num_bams" -gt 0 ]] || [[ "$num_reads" -gt 0 ]]; then
+        build_snpcaller_indices
+        [[ "$num_bams" -gt 0 ]] && index_bams "$num_bams"
+        [[ "$num_reads" -gt 0 ]] && align_reads "$num_reads" "$trim_reads"
+    fi
+
+    [[ "$num_fastas" -gt 0 ]] && align_fastas "$num_fastas"
+
+    [[ "$ignore_duplicate_positions" = true ]] && scan_reference_for_duplicate_regions
+
+    [[ "$create_matrix" = true ]] && create_matrices
+}
+
+
+build_snpcaller_indices() {
+    for snpcaller in "${snpcallers[@]}"; do
+        if [ -f "${job_script_dir}/index.${snpcaller}" ]; then
+            script=index.${snpcaller}
+            echo "submitting $script"
+            index_jobid=$(submit_job "$script" "$script")
+            snpcall_index_jobid[$snpcaller]=${index_jobid}
+        fi
+    done
+}
+
+
+align_fastas() {
+    local num_fastas="${1:?}"
+    local script="frankenfasta"
+    echo "submitting $script for $num_fastas fastas"
+    frankenfasta=$(submit_job "$script" "$script" "$num_fastas")
+    snpcall_jobs[$script]="${frankenfasta}"
+}
+
+
+scan_reference_for_duplicate_regions() {
+    local script="duplicates"
+    echo "submitting $script"
+    duplicates_jobid=$(submit_job "$script" "$script")
+    duplicates_jobid=${duplicates_jobid}
+}
+
+index_bams() {
+    local -i num_bams="${1:?}"
+    local script="index.bams"
+    local aligner="precalled"
+    # side-effect: exports snpcaller_release_cmd
+    submit_and_hold_snpcallers "$aligner" "$num_bams"
+    echo "submitting $script"
+    submit_job "$script" "$script" "$num_bams" "-v snpcaller_release_cmd"
+}
+
+align_reads() {
+    local -i num_reads="${1:?}"
+    local -l is_trim_reads="${2:?}"
+
+    local trim_dependency=""
+    local script
+    local index_jobid
+    local trim_jobid
+
+    if [ "$is_trim_reads" = true ]; then
+        echo "submitting $script"
+        trim_jobid=$(submit_job "$script" "$script" "$num_reads")
+        trim_dependency="-W depend=afterokarray:${trim_jobid}"
+    fi
+
+
+    for aligner in "${aligners[@]}"; do
+        script="index.${aligner}"
+        # if statement may not be required assuming all aligners have an indexing step
+        if [[ -f "${job_script_dir}/${script}" ]]; then
+            echo "submitting $script"
+            index_jobid=$(submit_job "$script" "$script" 0 $trim_dependency)
+            align_index_jobid[$aligner]=${index_jobid}
+        fi
+    done
+
+
+    for aligner in "${aligners[@]}"; do
+        # side-effect: export snpcaller_release_cmd
+        submit_and_hold_snpcallers "$aligner" "$num_reads"
+        script=align.${aligner}
+        echo "submitting $script"
+        # if statement may not be required assuming all aligners have an indexing step
+        echo "snpcaller_release_cmd: $snpcaller_release_cmd"
+        if [[ "${align_index_jobid[$aligner]+exists}" ]]; then
+            submit_job "$script" "$script" "$num_reads" "-v snpcaller_release_cmd -W depend=afterok:${align_index_jobid[$aligner]}"
+        else
+            submit_job "$script" "$script" "$num_reads" "-v snpcaller_release_cmd"
+        fi
+    done
+}
+
+
+################################################################################
+# submit_and_hold_snpcallers dispatches an array of snpcaller jobs for a given
+# aligner.
+#
+# Globals:
+#   snpcallers
+#   snpcall_index_jobid
+# Arguments:
+#   None
+# Returns:
+#   snpcaller_release_cmd: the command for each aligner job array element to
+#   release all corresponding snpcaller job array elements.
+################################################################################
+submit_and_hold_snpcallers() {
+    local -x aligner="${1:?}"
+    local ntasks="${2:?}"
+
+    local dependency=""
+    local -a snpcall_job_ids
+    local release_jobids=""
+
+    #declare -x snpcaller_release_cmd
+
+    for snpcaller in "${snpcallers[@]}"; do
+        if [ "${snpcall_index_jobid[$snpcaller]+exists}" ]; then
+            dependency="-W depend=afterok:${snpcall_index_jobid[$snpcaller]}"
+        fi
+
+        local script="snpcall.${snpcaller}"
+        local job_name="${aligner}.${snpcaller}"
+        echo "submitting $script for $aligner alignments as $job_name"
+        local snpcall_jobid=$(submit_job "$script" "$job_name" "$ntasks" "-h $dependency")
+
+        # snpcall_jobs is a global collection of all snpcall jobs
+        snpcall_jobs[$job_name]="${snpcall_jobid}"
+        # snpcall_job_ids is the subset of snpcall jobs for the current aligner
+        # Trim Torque job array brackets. They will be replaced with: [$index]
+        snpcall_job_ids+=(${snpcall_jobid%%[*})
+    done
+
+    if [ "$num_snpcallers" -gt 0 ]; then
+        # FIXME: it is assumed the dispatcher is either SLURM or Torque
+        # Add support for the SGE syntax
+        if command_exists sbatch; then
+            release_jobids="$(printf ',%s_$index' "${snpcall_job_ids[@]}")"
+            release_jobids=${release_jobids:1} # Trim leading comma
+            snpcaller_release_cmd="scontrol release ${release_jobids[@]}"
+        else
+            release_jobids="$(printf ' %s[$index]' "${snpcall_job_ids[@]}")"
+            release_jobids=${release_jobids:1} # Trim leading space
+            snpcaller_release_cmd="qrls -h u ${release_jobids[@]}"
+        fi
+    else
+        # There are no snpcallers to release. Set the release to a no-op
+        # to satisfy guards against an undefined command
+        snpcaller_release_cmd=":"
+    fi
+
+    export snpcaller_release_cmd
+}
+
+
+################################################################################
+# create_matrices
+#
+# Globals:
+#   TODO
+# Arguments:
+#   TODO
+# Returns:
+#   None
+################################################################################
+create_matrices() {
+    local -a latch_jobids
+    local script
+    local dependencies=""
+
+    # Like SLURM, the Torque job scheduler supports job arrays, but it does not
+    # support dependencies on multiple job arrays. To get around this, a latch
+    # job is sumbitted for each job array and the NASP Matrix job can instead
+    # depend on the latch jobs.
+    #if ! command_exists sbatch && [ "${#snpcall_jobs[@]}" -gt 0 ]; then
+    if [[ "${#snpcall_jobs[@]}" -gt 0 ]]; then
+        for snpcall_job_name in "${!snpcall_jobs[@]}"; do
+            job_id="${snpcall_jobs[$snpcall_job_name]}"
+            script="latch"
+            job_name="${script}.${snpcall_job_name}"
+            echo "submitting $script for $snpcall_job_name as $job_name"
+            latch_jobid=$(submit_job "$script" "$job_name" 0 "-W depend=afteranyarray:${job_id}")
+            latch_jobids+=($latch_jobid)
+        done
+    #else
+    #    latch_jobids=${snpcall_jobs[@]}
+    fi
+
+    [[ "$ignore_duplicate_positions" = true ]] && latch_jobids+=(${duplicates_jobid})
+
+    [[ "${#latch_jobids[@]}" -gt 0 ]] && dependencies="-W depend=afterok$(printf ":%s" "${latch_jobids[@]}")"
+
+    script="nasp.matrix"
+    echo "submitting $script for $(( num_snpcallers * num_reads + num_vcfs )) vcfs and $num_fastas frankenfastas"
+
+    local matrix_jobid=$(submit_job "$script" "$script" 0 "$dependencies")
+    script="nasp.export"
+    echo "submitting $script"
+    submit_job "$script" "$script" 0 "-W depend=afterok:${matrix_jobid}"
+}
+
+
+################################################################################
+# containsElement returns true if the element exists in the array
+#
+# Globals:
+#   None
+# Arguments:
+#   1: element to find
+#   2: array to search
+# Returns:
+#   true if the element exists else false
+################################################################################
+containsElement() {
+    local element="${1:?}"
+    #local array="${@:2:?}"
+    local array="${@:2}"
+    local e
+    for e in "$array"; do [[ "$e" == "$element" ]] && return 0; done
+    return 1
+}
+
+
+################################################################################
+# submit_job submits one of the scripts in the job_scripts directory to the job
+# scheduler.
+#
+# Globals:
+#   scheduler_flags
+#   workdir
+# Arguments:
+#   1: name of script in the job_scripts directory
+#   2: job_name to appear when the job scheduler lists job status
+#   3: number of tasks. 0 will launch as a single job. 1 or more will launch a job array
+#   4: string of additional flags to pass to the job scheduler
+# Returns:
+#   None
+################################################################################
+submit_job() {
+    local script="${1:?}"
+    local job_name="${2:?}"
+    local -i ntasks="${3:-0}"
+    #local job_flags_from_runme="${4:-}"
+    local job_flags_from_runme="${@:4}"
+
+    local stderr="${workdir}/logs/${script}/err"
+    local stdout="${workdir}/logs/${script}/out"
+    local tasks=""
+
+    if [[ "$ntasks" -gt 0 ]]; then
+        if command_exists sbatch; then
+            # Torque implicity appends a '-$PBS_ARRAYID' for job array stderr/stdout
+            # SLURM has %A for the job_id and %a for the task_id
+            # The error_report function checks whether these files exist
+            stderr="${workdir}/logs/${script}/err-%a"
+            stdout="${workdir}/logs/${script}/out-%a"
+        fi
+        tasks="-t 0-$(( ntasks - 1 ))"
+    fi
+
+	local job_flags_from_config
+	if [[ "${scheduler_flags[$script]+exists}" ]]; then
+	    job_flags_from_config="${scheduler_flags[$script]}"
+	elif [[ "${scheduler_flags[default]+exists}" ]]; then
+	    job_flags_from_config="${scheduler_flags[default]}"
+	else
+	    job_flags_from_config="-V \
+        -N \"$job_name\" \
+        -e \"$stderr\" \
+        -o \"$stdout\""
+	fi
+
+    job_flags_from_config=$(eval "echo $job_flags_from_config")
+
+    [[ $job_flags_from_config =~ -[eo][[:space:]\'\"]*([^\'\"[:space:]]*) ]] && mkdir -p $(dirname ${BASH_REMATCH[1]})
+
+    # NOTE: $tasks and $extra_arguments must not be quoted so the flags may expand
+    local job_id=$(qsub \
+		$job_flags_from_config \
+		${job_flags_from_runme[@]} \
+		$tasks \
+		"${job_script_dir}/${script}"
+    )
+
+    # Trim SLURM sbatch message prefix
+    job_id="${job_id#Submitted batch job }"
+    # Trim Torque hostname suffix
+    #job_id="${job_id%%.*}"
+    # Trim Torque job array brackets
+    #job_id="${job_id%[*}"
+
+    # Validation invalid because Torque afterokarray dependency requires square brackets
+    # This could be conditionally added when the dependency is specified or the regex could
+    # optional square brackets and maybe hostname. Hostname is not required when
+    # specifying dependencies
+    #if ! [[ "$job_id" =~ ^[0-9]+$ ]] ; then
+    #    # TODO: job scheduler did not return a valid job id
+    #    echo "error: Not a number" >&2
+    #    exit 1
+    #fi
+
+    echo "$job_id"
+}
+
+
+
+check_directory_exists() {
+    local directory="${1:?}"
+    if ! [ -d "$directory" ]; then
+        >&2 echo "Directory not found: $directory"
+        exit 1
+    fi
+    # FIXME: not working as intended, script crashed saying writeable directory was not writeable
+    #if ! [[ -w "directory" ]]; then
+    #    >&2 echo "Directory is not writeable: directory"
+    #    exit 1
+    #fi
+}
+
+################################################################################
+# check_jar will exit if the jar file does not exist or throws an Exception
+# when run with java
+#
+# Globals:
+#   None
+# Arguments:
+#   1: name for command/jar. FIXME: this was added because of picar, but is it necessary? Perhaps we could get the filename instead
+#   2: path to jar file
+#   3: jar arguments to check java compatibility
+# Returns:
+#   None
+################################################################################
+check_jar() {
+    # Name is required in case jar is invalid/undefined
+    local name=${1-}
+    local jar=${2-}
+    local args=${3-}
+    local cmd="java -jar $jar $args"
+
+    printf "checking %s..." "$name"
+    check_file_exists "$jar"
+    echo "$jar"
+    printf "checking %s java compatibility..." "$name"
+    # FIXME: This is a brittle check which can have false positives such as when
+    # the program emits usage documentation which contains the key words.
+    # It was added primarily for GATK which is java version dependent.
+    # GATK ~< v3.4 raised an exception with and user error. Later versions
+    # Catch the exception, but still emit the error.
+    #if ! $cmd 2>&1 | grep --ignore-case "Exception\|ERROR" > /dev/null; then
+    $cmd 2>&1 | grep  "Exception\|ERROR" > /dev/null && { 2>&1 echo "$cmd raised an exception"; exit 1; }
+    echo "pass"
+}
+
+
+################################################################################
+# check_matrix_dependencies will exit  TODO
+#
+# Globals:
+#   num_reads
+#   num_bams
+#   num_vcfs
+#   num_fastas
+#   num_aligners
+#   num_snpcallers
+# Arguments:
+#   None
+# Returns:
+#   None
+################################################################################
+check_matrix_dependencies() {
+    printf "checking matrix dependencies..."
+    if [ "$num_reads" -gt 0 ]; then
+        if [ "$num_aligners" -lt 1 ]; then
+            2>&1 echo "reads found but no aligner specified"
+            exit 1
+        fi
+        if [ "$num_snpcallers" -lt 1 ]; then
+            2>&1 echo "reads found but no snpcaller specified"
+            exit 1
+        fi
+    fi
+
+    if [ "$num_bams" -gt 0 ] && [ "$num_snpcallers" -lt 1 ]; then
+        2>&1 echo "bams found but no snpcaller specified"
+        exit 1
+    fi
+
+    if [ $(( num_reads + num_bams + num_vcfs + num_fastas )) -lt 1 ]; then
+        2>&1 echo "no reads/bams/vcfs/fastas found"
+        exit 1
+    fi
+    echo "pass"
+}
+
+
+################################################################################
+# check_dependencies will exit if it cannot find a required program or file
+#
+# Globals:
+#   aligners
+#   picard
+#   GenomeAnalysisTK
+#   VarScan
+#   paired_reads
+#   single_reads
+#   bams
+#   vcfs
+#   fastas
+# Arguments:
+#   None
+# Returns:
+#   None
+################################################################################
+check_dependencies() {
+    declare -a commands=('samtools')
+    #commands+=('nasp')
+
+    echo ""
+	echo "Supported aligners: bowtie2 bwa novoalign snap"
+	echo "Requested aligners: $(IFS=$'\n' sort<<<"${aligners[*]-}")"
+	echo "Supported snpcallers: gatk samtools solsnp varscan"
+	echo "Requested snpcallers: $(IFS=$'\n' sort<<<"${snpcallers[*]-}")"
+	echo "trim_reads: $trim_reads"
+	echo "ignore_duplicate_positions: $ignore_duplicate_positions"
+	echo "create_matrix: $create_matrix"
+	echo ""
+
+    # TODO: Warn if snpcallers requested and nothing to snpcall?
+    [ "$create_matrix" = true ] && check_matrix_dependencies
+
+	#  required with checkdup/frankenfasta
+	if [ "$num_fastas" -gt 0 ] || [ "$ignore_duplicate_positions" = true ]; then
+		commands+=('nucmer')
+		commands+=('delta-filter')
+	fi
+
+	# Append aligners array to commands array
+    if [ "$num_aligners" -gt 0 ]; then
+        commands+=("${aligners[@]}")
+    fi  
+
+	for command in "${commands[@]}"; do
+		printf "checking %s..." "$command"
+		command -v "$(get_program_path "$command")" || { echo "command not found"; exit 1; }
+	done
+
+	if containsElement "gatk" "${snpcallers[@]}" \
+        || containsElement "varscan" "${snpcallers[@]}" \
+        || [[ $trim_reads = "true" ]]; then
+		printf "checking java..."
+		command -v java || { echo "command not found"; exit 1; }
+
+		if [[ "$trim_reads" = true ]]; then
+            check_jar "trimmomatic" "$trimmomatic"
+
+            if [ "${#single_reads[@]}" -gt 0 ]; then
+				printf "checking %s SE adapter fasta exists..." "$trimmomatic_se_adapter_fasta"
+				check_file_exists "$trimmomatic_se_adapter_fasta"
+				echo "pass"
+			fi
+
+			if [ "${#paired_reads[@]}" -gt 0 ]; then
+				printf "checking %s PE adapter fasta exists..." "$trimmomatic_pe_adapter_fasta"
+				check_file_exists $trimmomatic_pe_adapter_fasta
+				echo "pass"
+			fi
+		fi
+
+		if containsElement "gatk" "${snpcallers[@]}"; then
+            check_jar "picard" "${picard% *}" ""
+            check_jar "GenomeAnalysisTK" "$GenomeAnalysisTK" "--version"
+        fi
+
+		if containsElement "varscan" "${snpcallers[@]}"; then
+            check_jar "VarScan" "$VarScan"
+		fi
+	fi
+
+	printf "checking reference fasta exists..."
+	check_file_exists "$reference"
+	echo "pass"
+
+	printf "checking %d paired read files exist..." $((${#paired_reads[@]}/2))
+	if [ -n "${paired_reads-}" ]; then
+		for file in "${paired_reads[@]}"; do
+			check_file_exists "$file"
+		done
+	fi
+	echo "pass"
+
+	printf "checking %d single read files exist..." ${#single_reads[@]}
+	if [ -n "${single_reads-}" ]; then
+		for file in "${single_reads[@]}"; do
+			check_file_exists "$file"
+		done
+	fi
+	echo "pass"
+
+	printf "checking %d bam files exist..." "$num_bams"
+	if [ -n "${bams-}" ]; then
+		for file in "${bams[@]}"; do
+			check_file_exists "$file"
+		done
+	fi
+	echo "pass"
+
+	printf "checking %d vcf files exist..." "$num_vcfs"
+	if [ -n "${vcfs-}" ]; then
+		for file in "${vcfs[@]}"; do
+			check_file_exists "$file"
+		done
+	fi
+	echo "pass"
+
+	printf "checking %d fasta files exist..." "$num_fastas"
+	if [ -n "${fastas-}" ]; then
+		for file in "${fastas[@]}"; do
+			check_file_exists "$file"
+		done
+	fi
+	echo "pass"
+}
+
+
+################################################################################
+# create_output_directories
+#
+# Globals:
+#   workdir
+#   num_reads
+#   num_fastas
+#   num_bams
+#   trim_reads
+# Arguments:
+#   None
+# Returns:
+#   None
+################################################################################
+create_output_directories() {
+    mkdir -p "${workdir}"/{reference,logs}
+    [ "$num_fastas" -gt 0 ] && mkdir "${workdir}/frankenfastas"
+    [ "$num_reads" -gt 0 ] && mkdir "${workdir}/bams"
+    if [ "$num_reads" -gt 0 ] || [ "$num_bams" -gt 0 ]; then
+        mkdir "${workdir}/vcfs"
+    fi
+    [ "$num_reads" -gt 0 ] && [ "$trim_reads" = true ] && mkdir "${workdir}/trimmed"
+    ln -sf "$reference" "${workdir}/reference/reference.fasta"
+}
+
+main

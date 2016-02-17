@@ -1,0 +1,12 @@
+#!/bin/bash
+
+source ${workdir}/job_scripts/common.vars
+
+nasp=$(get_program_path "nasp")
+
+# TODO: check matrices exist
+$nasp export --type fasta ${workdir}/matrices/bestsnp.tsv > ${workdir}/matrices/bestsnp.fasta
+$nasp export --type vcf ${workdir}/matrices/bestsnp.tsv > ${workdir}/matrices/bestsnp.vcf
+$nasp export --type fasta ${workdir}/matrices/missingdata.tsv > ${workdir}/matrices/missingdata.fasta
+$nasp export --type vcf ${workdir}/matrices/missingdata.tsv > ${workdir}/matrices/missingdata.vcf
+

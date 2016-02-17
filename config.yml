@@ -1,0 +1,44 @@
+config_version: "0.0.1"
+
+
+# The following are key:value pairs where the keys are programs names
+# and the path is an absolute path to the program
+#
+# samtools: "/path/to/samtools"
+# gatk: "$GATK"
+# picard: "/path/to/picard.jar"
+program_paths:
+    #"GenomeAnalysisTK": "/scratch/jtravis/packages/GenomeAnalysisTK/3.4-46/GenomeAnalysisTK.jar"
+    "GenomeAnalysisTK": "/scratch/bin/GenomeAnalysisTK.jar"
+    "VarScan": "/scratch/bin/VarScan.jar"
+    "gatk": "/scratch/jtravis/packages/GenomeAnalysisTK/3.4-46/GenomeAnalysisTK.jar"
+    "nasp": "/scratch/jtravis/qapla/dev/qapla"
+    "picard": "/scratch/jtravis/packages/picard-tools/1.140/picard.jar"
+    "trimmomatic": "/scratch/bin/trimmomatic-0.32.jar"
+    "varscan": "/scratch/bin/VarScan.jar"
+
+
+
+# The following are key:value pairs where the keys are job script filenames
+# and the values are commandline flags that will be passed to the job scheduler.
+# FIXME: The dispatcher script assumes the -V, -N, -e, -o flags are set
+#
+# snpcall.gatk: >
+#     -V
+#     -N "${job_name}"
+#     -e "${workdir}/logs/${script}/err"
+#     -o "${workdir}/logs/${script}/out"
+#     -A "MyLab"
+#     -l walltime=10:30,mem=320kb
+#
+# qsub -V -N ${job_name} -e ${workdir}/logs/${script}/err -o ${workdir}/logs/${script}/out -A "MyLab" -l walltime=10:30,mem320kb ${job_script_dir}/script_name
+scheduler_flags:
+    default: >
+        -V
+        -N "${job_name}"
+        -e "${workdir}/logs/${job_name}/err"
+        -o "${workdir}/logs/${job_name}/out"
+    latch: >
+        -N "${job_name}"
+        -e "/dev/null"
+        -o "/dev/null"

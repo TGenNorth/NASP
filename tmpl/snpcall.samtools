@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# shellcheck source=./common.vars
+source ${workdir}/job_scripts/common.vars
+
+bam=$(bam_path)
+bam_basename=${bam##*/}
+bam_filename=${bam_basename%.*}
+
+# http://samtools.sourceforge.net/mpileup.shtml
+#samtools mpileup -uf ref.fa aln1.bam aln2.bam | bcftools view -bvcg - > var.raw.bcf  
+#bcftools view var.raw.bcf | vcfutils.pl varFilter -D100 > var.flt.vcf
+#samtools mpileup -uf $reference $bam | bcftools view -bvcg - |
+#bcftools view - | vcfutils.pl varFilter -D100 > ${workdir}/vcfs/${bam_filename}-samtools.vcf
+
+#samtools mpileup -uD -d 10000000 -f ${reference} ${bam} |
+#samtools view -ceg - > ${workdir}/vcfs/${bam_filename}-samtools.vcf
+
+samtools=$(get_program_path "samtools")
+$samtools mpileup -uD -d 10000000 -f ${reference} ${bam} \
+| $samtools view -g - > ${workdir}/vcfs/${bam_filename}-samtools.vcf

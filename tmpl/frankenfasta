@@ -1,0 +1,12 @@
+#!/bin/bash
+
+source ${workdir}/job_scripts/common.vars
+
+fasta=${fastas[$index]}
+basename=${fasta##*/} # trim path
+prefix=${workdir}/frankenfastas/${basename%%.*} # trim extension
+
+nucmer --prefix=${prefix} ${reference} ${fasta}
+$(get_program_path "nasp") frankenfasta \
+	<($(get_program_path "delta-filter") -q -r -o 100 ${prefix}.delta) \
+	> ${prefix}.frankenfasta

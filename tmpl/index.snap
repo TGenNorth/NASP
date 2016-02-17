@@ -1,0 +1,4 @@
+#!/bin/bash
+source ${workdir}/job_scripts/common.vars
+
+$(get_program_path "snap") index ${reference} ${reference%.*}

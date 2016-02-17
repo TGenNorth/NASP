@@ -1,0 +1,5 @@
+#!/bin/bash
+source ${workdir}/job_scripts/common.vars
+
+# bowtie2-build will create ${reference%.*}.{1.bt2,2.bt2,3.bt2,4.bt2,rev.1.bt2,rev.2.bt2} in the ${reference} directory
+$(get_program_path "bowtie2-build") ${reference} ${reference%.*}

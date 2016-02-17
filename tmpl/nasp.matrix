@@ -1,0 +1,54 @@
+#!/bin/bash
+
+source ${workdir}/job_scripts/common.vars
+
+# TODO: finish checking
+check_matrix_input_files_exist() {
+    local basename
+    for vcf in "${vcfs[@]}"; do
+        check_file_exists "$vcf"
+        basename="${vcf##*/}"
+        ln -s "$vcf" "${workdir}/vcfs/${basename%.*}-prealigned-precalled.vcf"
+    done
+
+    for fasta in "${fastas[@]}"; do
+        basename="${fasta##*/}"
+        check_file_exists "${workdir}/frankenfastas/${basename%.*}.frankenfasta"
+    done
+
+    # FIXME: does not account for aligner
+    for snpcaller in "${snpcallers[@]}"; do
+        for bam in "${bams[@]}"; do
+            check_file_exists "${bam%.*}-prealigned-${snpcaller}.vcf"
+        done
+    done
+
+    for aligner in "${aligners[@]}"; do
+        for snpcaller in "${snpcallers[@]}"; do
+            for fastq in "${single_reads[@]}"; do
+                local sample_name=$(illumina_sample_name "$fastq")
+                check_file_exists "${sample_name}-${aligner}-${snpcaller}.vcf"
+            done
+        done
+    done
+
+    for aligner in "${aligners[@]}"; do
+        for snpcaller in "${snpcallers[@]}"; do
+            for fastq in "${paired_reads[@]}"; do
+                local sample_name=$(illumina_sample_name "$fastq")
+                check_file_exists "${sample_name}-${aligner}-${snpcaller}.vcf"
+            done
+        done
+    done
+}
+
+if [[ -d "${workdir}/frankenfastas" ]] && [[ -d "${workdir}/vcfs" ]]; then
+    $(get_program_path "nasp") matrix --reference-fasta ${workdir}/reference/reference.fasta ${workdir}/vcfs/ ${workdir}/frankenfastas/
+elif [[ -d "${workdir}/vcfs" ]]; then
+    $(get_program_path "nasp") matrix --reference-fasta ${workdir}/reference/reference.fasta ${workdir}/vcfs/
+elif [[ -d "${workdir}/frankenfastas" ]]; then
+    $(get_program_path "nasp") matrix --reference-fasta ${workdir}/reference/reference.fasta ${workdir}/frankenfastas/
+else
+    >&2 echo "error: expected to find either frankenfastas/ or vcfs/ in output directory: '${workdir}'"
+    exit 1
+fi
