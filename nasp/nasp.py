@@ -374,7 +374,7 @@ def _get_trimming_parameters(queue, args):
     response = input("  What is the minimum length read to keep after trimming [%s]? " % min_length)
     if response:
         min_length = response
-    arg_string = "ILLUMINACLIP:%s:2:30:10 %s MINLEN:%s" % (adapter_file, quality_string, min_length)
+    arg_string = "ILLUMINACLIP:%s:4:30:10:1:true %s MINLEN:%s" % (adapter_file, quality_string, min_length)
     return _get_advanced_settings("ReadTrimmer", trim_path, arg_string,
                                   {'num_cpus': '4', 'mem_requested': '6', 'walltime': '24', 'queue': queue, 'args': args})
 
