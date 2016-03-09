@@ -599,7 +599,6 @@ def _index_bams(configuration, index_job_id):
     command_parts = []
     for (name, bam) in alignments:
         new_file = os.path.join(bam_folder, "%s.bam" % name)
-        bam_files.append((name, new_file))
         # GATK requires bams have a ReadGroup header. If one if not present,
         # assign a default value.
         command_parts.append((
@@ -618,10 +617,11 @@ def _index_bams(configuration, index_job_id):
             "fi"
         ).format(samtools=sampath, picard=picard_path, out_bam=new_file, in_bam=bam, sample_name=os.path.splitext(bam)[0]))
         command_parts.append("%s index %s" % (sampath, new_file))
-    command = "\n".join(command_parts)
-    job_parms['work_dir'] = bam_folder
-    job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
-    return bam_files, job_id
+        command = "\n".join(command_parts)
+        job_parms['work_dir'] = bam_folder
+        job_id = _submit_job(configuration["job_submitter"], command, job_parms, (index_job_id,))
+        bam_files.append((name, new_file, job_id))
+    return bam_files
 
 
 def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids):
@@ -698,8 +698,8 @@ def begin(configuration):
             franken_fastas.append((assembly[0], "nucmer", final_file))
     if configuration["alignments"]:
         pre_aligned = []
-        (bam_files, bamindex_job_id) = _index_bams(configuration, index_job_id)
-        for (name, bam) in bam_files:
+        (bam_files) = _index_bams(configuration, index_job_id)
+        for (name, bam, bamindex_job_id) in bam_files:
             pre_aligned.append((name, bamindex_job_id, bam, "pre-aligned"))
         snpcaller_output = _call_snps(pre_aligned, configuration, reference)
         for (vcf_nickname, job_id, final_file, aligner, snpcaller) in snpcaller_output:
