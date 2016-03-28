@@ -116,7 +116,10 @@ def make_map_file(ref_id, snp_eff, vcf):
         if line.startswith("#"):
             pass
         else:
-            chromosomes.append(fields[0].split("::"))
+            if fields[0].split("::") in chromosomes:
+                pass
+            else:
+                chromosomes.append(fields[0].split("::"))
     nr=[x for i, x in enumerate(chromosomes) if x not in chromosomes[i+1:]]
     print("")
     print("Your chromosome names are:")

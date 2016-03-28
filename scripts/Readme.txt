@@ -78,14 +78,14 @@ number of parsimony-informative SNPs: 1488
 
 -What does it do?
 
-Given a NASP SNP matrix, corresponding reference fasta, and a minimum distance, this script will produce 
+Given a NASP SNP matrix, corresponding reference fasta, and a minimum distance, this script will produce
 a new matrix with only SNPs that are guaranteed to be at least that distance apart from each other.
 This can be used to create a random sampling of SNPs that are spread throughout the genome.
 
 Example:
 
 python ../scripts/filter_matrix_by_distance.py -m bestsnp.tsv -r reference.fasta -p prefix -d 5000
-bestsnp.tsv has been filtered for SNPs that are at least 5000 bases apart. Output is in 
+bestsnp.tsv has been filtered for SNPs that are at least 5000 bases apart. Output is in
 prefix_distance_filtered.matrix and prefix_distance_filtered.fasta
 
 6. annotate_NASP.py
@@ -98,26 +98,23 @@ FASTA with the names in the snpEff database
 
 Example
 
--First, I need to find the corresponding snpEff database for Y. pestis CO92:
+-First, I run the script without a mapping file, using Y. pestis CO92 as the reference:
 
-java -jar ~/tools/snpEff/snpEff.jar databases | grep "CO92"
-Yersinia_pestis_CO92_uid57621                               	Yersinia_pestis_CO92_uid57621
+[js2829@wind /scratch/js2829/nasp_bowtie/snpeff_test ]$ python annotate_NASP.py -i bestsnp.tsv -v bestsnp.vcf -s /common/contrib/tools/snpEff/snpEff.jar -r CO92
 
--Then we will need to identify how snpEff identifies their chromosomes:
-
-java -jar ~/tools/snpEff/snpEff.jar eff -v Yersinia_pestis_CO92_uid57621 bestsnp.vcf
-
--This information is printed to the top of the output:
-
-# Number of chromosomes      : 4
+create mapping file with the following information:
 # Chromosomes                : Format 'chromo_name size codon_table'
-#               'NC_003143'     4653728 Standard
-#               'NC_003134'     96210   Standard
-#               'NC_003131'     70305   Standard
-#               'NC_003132'     9612    Standard
-#-----------------------------------------------
 
--Now you must create a mapping file that contains your names and snpEff's names, if they differ:
+#		'NC_003143'	4653728	Standard
+#		'NC_003134'	96210	Standard
+#		'NC_003131'	70305	Standard
+#		'NC_003132'	9612	Standard
+
+Your chromosome names are:
+gi|16120353|ref|NC_003143.1|
+gi|5763810|emb|AL109969.1|
+
+-Now you must create a mapping file that contains your names and snpEff's names:
 
 gi|16120353|ref|NC_003143.1|	NC_003143
 gi|5834685|emb|AL117211.1|	NC_003134
@@ -126,7 +123,7 @@ gi|5763810|emb|AL109969.1|	NC_003132
 
 -Now you can annotate your matrix:
 
-python ../scripts/annotate_NASP.py -i bestsnp.tsv -v bestsnp.vcf -s ~/tools/snpEff/snpEff.jar -r Yersinia_pestis_CO92_uid57621 -m map.txt
+python annotate_NASP.py -i bestsnp.tsv -v bestsnp.vcf -s /common/contrib/tools/snpEff/snpEff.jar -r CO92 -m map.txt
 
 -The output is a new NASP matrix ("annotated_bestsnp.tsv") with three extra columns: type    locus   ncbi_id
 
