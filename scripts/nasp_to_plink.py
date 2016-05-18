@@ -181,7 +181,11 @@ def main(nasp_matrix, groups_file, prefix, alpha):
         subprocess.check_call("plink --noweb --adjust --file %s --assoc --out out > /dev/null 2>&1" % prefix, shell=True)
         print("Finished")
         print("")
-        os.system("mv out.assoc.adjusted reference.assoc")
+        try:
+            os.system("mv out.assoc.adjusted reference.assoc")
+        except:
+            print("no significant SNPs found, exiting...")
+            sys.exit()
     else:
         print("plink isn't in your PATH and won't be run")
         sys.exit()
