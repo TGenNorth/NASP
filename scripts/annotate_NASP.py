@@ -80,7 +80,11 @@ def parse_output_file():
     outfile.close()
 
 def find_reference_genome(reference, snp_eff):
-    os.system("java -jar %s databases | grep %s > tmp.snpeff.out" % (snp_eff,reference))
+    try:
+        os.system("java -jar %s databases | grep %s > tmp.snpeff.out" % (snp_eff,reference))
+    except:
+        print("problem finding your genome, refine search string")
+        sys.exit()
     num_lines = sum(1 for line in open('tmp.snpeff.out'))
     if num_lines == 0:
         print("no hits found for your search criteria, try again with the strain name")
