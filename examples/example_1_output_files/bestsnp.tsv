@@ -1,0 +1,6 @@
+LocusID	Reference	example_1	example_1_L001::BWA-mem,GATK	#SNPcall	#Indelcall	#Refcall	#CallWasMade	#PassedDepthFilter	#PassedProportionFilter	#A	#C	#G	#T	#Indel	#NXdegen	Contig	Position	InDupRegion	SampleConsensus	CallWasMade	PassedDepthFilter	PassedProportionFilter	Pattern
+500WT1_test::1373	C	G	G	2	0	0	2/2	2/2	2/2	0	0	2	0	0	0	500WT1_test	1373	False	True	YY	-Y	-Y	122
+500WT1_test::1374	C	T	T	2	0	0	2/2	2/2	2/2	0	0	0	2	0	0	500WT1_test	1374	False	True	YY	-Y	-Y	122
+500WT1_test::2270	T	A	A	2	0	0	2/2	2/2	2/2	2	0	0	0	0	0	500WT1_test	2270	False	True	YY	-Y	-Y	122
+500WT1_test::3480	A	T	T	2	0	0	2/2	2/2	2/2	0	0	0	2	0	0	500WT1_test	3480	False	True	YY	-Y	-Y	122
+500WT1_test::3820	G	A	A	2	0	0	2/2	2/2	2/2	2	0	0	0	0	0	500WT1_test	3820	False	True	YY	-Y	-Y	122

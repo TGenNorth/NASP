@@ -1,0 +1,17 @@
+##fileFormat=VCFv4.2
+##source=NASP
+##contig=<ID="",length=0>
+##contig=<ID="500WT1_test",length=5>
+##SAMPLE=<ID="example_1",Genomes="example_1",Mixture=1.0>
+##SAMPLE=<ID="example_1_L001::BWA-mem,GATK",Genomes="example_1_L001::BWA-mem,GATK",Mixture=1.0>
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
+##FILTER=<ID=NoCall,Description="No call for this sample at this position">
+##FILTER=<ID=CovFail,Description="Insufficient depth of coverage for this sample at this position">
+##FILTER=<ID=PropFail,Description="Insufficient proportion of reads were variant for this sample at this position">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	example_1	example_1_L001::BWA-mem,GATK
+500WT1_test	1373	.	C	G	.	PASS	GT:FT	AN=2;NS=1	0:PASS	1:PASS
+500WT1_test	1374	.	C	T	.	PASS	GT:FT	AN=2;NS=1	0:PASS	1:PASS
+500WT1_test	2270	.	T	A	.	PASS	GT:FT	AN=2;NS=1	0:PASS	1:PASS
+500WT1_test	3480	.	A	T	.	PASS	GT:FT	AN=2;NS=1	0:PASS	1:PASS
+500WT1_test	3820	.	G	A	.	PASS	GT:FT	AN=2;NS=1	0:PASS	1:PASS
