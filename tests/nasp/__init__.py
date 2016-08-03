@@ -1,3 +1,2 @@
-# coding: utf-8
-
-__author__ = 'jtravis'
+__author__ = "Jason Travis"
+__email__  = "jtravis@tgen.org"
