@@ -261,7 +261,7 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
     return bam_nickname, job_id, final_file
 
 
-def _samtools_view_sort_index_command(samtools_path, bam_prefix):
+def _samtools_view_sort_index_pipe_command(samtools_path, bam_prefix):
     return '{samtools} view -S -b -h - | {samtools} sort - {bam_prefix}; {samtools} index {bam_filename}'.format(**{
         'samtools': samtools_path,
         'bam_prefix': shlex.quote(bam_prefix),
@@ -431,6 +431,36 @@ def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, refere
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
     return bam_nickname, job_id, final_file
+
+
+def _snap_command(path, args, ncpu, reference, output_folder, sample_name, read1, read2=None):
+    """
+    Args:
+        path (str): path to aligner executable
+        args (str): raw arguments to be passed to the aligner
+        ncpu: number of alignment threads to launch
+        reference: (str): reference filename
+        output_folder (str): directory for aligner output
+        sample_name (str): 
+        read1 (str): absolute path to read1 fastq[.gz|.bz2]
+        read2 (str): absolute path to read2 fastq[.gz|.bz2]
+
+    Returns:
+        string: command to execute bowtie2 aligner
+    """
+    import os
+
+    aligner_command = '{snap} {single_or_paired} {ref_dir} {read1} {read2} -t {ncpu} -b {snap_args} -o sam -'.format(**{
+        'snap': path,
+        'single_or_paired': 'paired' if read2 else 'single',
+        'ref_dir': shlex.quote(os.path.join(output_folder, 'reference', 'snap')),
+        'read1': shlex.quote(read1),
+        'read2': shlex.quote(read2) if read2 else '',
+        'ncpu': shlex.quote(str(ncpu)),
+        'snap_args': ' '.join(map(shlex.quote, shlex.split(args)))
+    })
+    return aligner_command
+
 
 
 def _run_gatk(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, reference, output_folder):
