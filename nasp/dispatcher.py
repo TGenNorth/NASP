@@ -269,11 +269,11 @@ def _samtools_view_sort_index_command(samtools_path, bam_prefix):
     })
     return ''
 
-def _bowtie2_command(bowtie2_path, bowtie2_args, ncpu, reference, sample_name, read1, read2=None):
+def _bowtie2_command(path, args, ncpu, reference, sample_name, read1, read2=None):
     """
     Args:
-        bowtie2_path (str): path to bowtie2 executable
-        bowtie2_args (str): raw arguments to be passed to the aligner
+        path (str): path to aligner executable
+        args (str): raw arguments to be passed to the aligner
         ncpu: number of alignment threads to launch
         reference: (str): reference filename
         sample_name (str): 
@@ -281,18 +281,18 @@ def _bowtie2_command(bowtie2_path, bowtie2_args, ncpu, reference, sample_name, r
         read2 (str): absolute path to read2 fastq[.gz|.bz2]
 
     Returns:
-        tuple: bam nickname, job id, path to bam file
+        string: command to execute bowtie2 aligner
     """
     import os
 
     reference_basename = os.path.splitext(reference)[0]
 
-    quoted_bowtie2_args = ' '.join(map(shlex.quote, shlex.split(bowtie2_args)))
+    quoted_args = ' '.join(map(shlex.quote, shlex.split(args)))
     quoted_read_args = "-1 {read1} -2 {read2}".format(read1=shlex.quote(read1), read2=shlex.quote(read2)) if read2 else "-U {read1}".format(read1=shlex.quote(read1))
 
     aligner_command = '{bowtie2} {bowtie2_args} --threads {ncpu} --rg {read_group} --rg-id {read_group_id} -x {bt2_index_prefix} {read_args}'.format(**{
-        'bowtie2': bowtie2_path,
-        'bowtie2_args': quoted_bowtie2_args,
+        'bowtie2': path,
+        'bowtie2_args': quoted_args,
         'ncpu': shlex.quote(str(ncpu)),
         'read_group': shlex.quote('SM:' + sample_name),
         'read_group_id': shlex.quote(sample_name),
@@ -342,6 +342,37 @@ def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, ref
     job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
     return bam_nickname, job_id, final_file
 
+
+def _novoalign_command(path, args, ncpu, reference, sample_name, read1, read2=None):
+    """
+    Args:
+        path (str): path to aligner executable
+        args (str): raw arguments to be passed to the aligner
+        ncpu: number of alignment threads to launch
+        reference: (str): reference filename
+        sample_name (str): 
+        read1 (str): absolute path to read1 fastq[.gz|.bz2]
+        read2 (str): absolute path to read2 fastq[.gz|.bz2]
+
+    Returns:
+        string: command to execute bowtie2 aligner
+    """
+
+    import os
+
+    aligner_command = '{novoalign} -d {dbname} -f {read1} {read2} {paired_string} -c {ncpu} -o SAM {bam_string} {novoalign_args}'.format(**{
+        'novoalign': path,
+        'dbname': shlex.quote(reference + '.idx'),
+        'read1': shlex.quote(read1),
+        'read2': shlex.quote(read2) if read2 else '',
+        'paired_string': '-i PE 500,100' if read2 else '',
+        'ncpu': shlex.quote(str(ncpu)),
+        'bam_string': shlex.quote('@RG\tID:{sample_name}\tSM:{sample_name}'.format(sample_name=sample_name)),
+        'novoalign_args': ' '.join(map(shlex.quote, shlex.split(args)))
+    })
+    return aligner_command
+
+    
 
 def _run_novoalign(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import os

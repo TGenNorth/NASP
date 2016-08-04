@@ -42,6 +42,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             'single_pipe': Sample('NA|10831_ATCACG_L002', 'NA|10831_ATCACG_L002.fastq.gz', ''),
         }
         self.bowtie2 = App('bowtie2', '/path/to/bowtie2', '--very-sensitive-local --un pipe|in|name.fastq.gz --al "space in name.fastq.gz"', {'num_cpus': 2})
+        self.novoalign = App('novoalign', '/path/to/novoalign', '-K mismatch:stats.txt -i MP 99-99 99,99', {'num_cpus': 2})
         self.samtools = App('samtools', '/path/to/samtools', '', {})
         self.job_submitter = 'pbs'
         self.reference = 'reference.fasta'
@@ -84,6 +85,24 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         expect = "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg 'SM:NA|10831_ATCACG_L002' --rg-id 'NA|10831_ATCACG_L002' -x reference -U 'NA|10831_ATCACG_L002.fastq.gz'"
         result = dispatcher._bowtie2_command(self.bowtie2.path, self.bowtie2.args, 2, self.reference, *self.samples['single_pipe'])
         self.assertEqual(expect, result)
+
+    def test_novoalign_command(self):
+        expect = "/path/to/novoalign -d reference.fasta.idx -f NA10831_ATCACG_L002_R1_001.fastq.gz NA10831_ATCACG_L002_R2_001.fastq.gz -i PE 500,100 -c 2 -o SAM '@RG\tID:NA10831_ATCACG_L002\tSM:NA10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99"
+        result = dispatcher._novoalign_command(self.novoalign.path, self.novoalign.args, 2, self.reference, *self.samples['paired_basic'])
+        self.assertEqual(expect, result)
+
+        expect = "/path/to/novoalign -d reference.fasta.idx -f 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -i PE 500,100 -c 2 -o SAM '@RG\tID:NA|10831_ATCACG_L002\tSM:NA|10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99"
+        result = dispatcher._novoalign_command(self.novoalign.path, self.novoalign.args, 2, self.reference, *self.samples['paired_pipe'])
+        self.assertEqual(expect, result)
+
+        expect = "/path/to/novoalign -d reference.fasta.idx -f NA10831_ATCACG_L002.fastq.gz   -c 2 -o SAM '@RG\tID:NA10831_ATCACG_L002\tSM:NA10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99"
+        result = dispatcher._novoalign_command(self.novoalign.path, self.novoalign.args, 2, self.reference, *self.samples['single_basic'])
+        self.assertEqual(expect, result)
+
+        expect = "/path/to/novoalign -d reference.fasta.idx -f 'NA|10831_ATCACG_L002.fastq.gz'   -c 2 -o SAM '@RG\tID:NA|10831_ATCACG_L002\tSM:NA|10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99"
+        result = dispatcher._novoalign_command(self.novoalign.path, self.novoalign.args, 2, self.reference, *self.samples['single_pipe'])
+        self.assertEqual(expect, result)
+
 
     def test_run_bowtie2(self):
         expected_submit_job_calls = [
