@@ -85,17 +85,17 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
     def test_bwa_command(self):
         tests = {
-            'paired_basic': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg SM:NA10831_ATCACG_L002 --rg-id NA10831_ATCACG_L002 -x reference -1 NA10831_ATCACG_L002_R1_001.fastq.gz -2 NA10831_ATCACG_L002_R2_001.fastq.gz",
+            'paired_basic': "/path/to/bwa aln  reference.fasta NA10831_ATCACG_L002_R1_001.fastq.gz -t 2 -f output_folder/bwa/NA10831_ATCACG_L002-R1.sai -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa aln  reference.fasta NA10831_ATCACG_L002_R2_001.fastq.gz -t 2 -f output_folder/bwa/NA10831_ATCACG_L002-R1.sai -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa sampe -r '@RG\\tID:NA10831_ATCACG_L002\\tSM:NA10831_ATCACG_L002' reference.fasta output_folder/bwa/NA10831_ATCACG_L002-R1.sai output_folder/bwa/NA10831_ATCACG_L002-R2.sai NA10831_ATCACG_L002_R1_001.fastq.gz NA10831_ATCACG_L002_R2_001.fastq.gz -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'",
 
-            'paired_pipe': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg 'SM:NA|10831_ATCACG_L002' --rg-id 'NA|10831_ATCACG_L002' -x reference -1 'NA|10831_ATCACG_L002_R1_001.fastq.gz' -2 'NA|10831_ATCACG_L002_R2_001.fastq.gz'",
+            'paired_pipe': "/path/to/bwa aln  reference.fasta 'NA|10831_ATCACG_L002_R1_001.fastq.gz' -t 2 -f 'output_folder/bwa/NA|10831_ATCACG_L002-R1.sai' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa aln  reference.fasta 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -t 2 -f 'output_folder/bwa/NA|10831_ATCACG_L002-R1.sai' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa sampe -r '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' reference.fasta 'output_folder/bwa/NA|10831_ATCACG_L002-R1.sai' 'output_folder/bwa/NA|10831_ATCACG_L002-R2.sai' 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'",
 
-            'single_basic': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg SM:NA10831_ATCACG_L002 --rg-id NA10831_ATCACG_L002 -x reference -U NA10831_ATCACG_L002.fastq.gz",
+            'single_basic': "/path/to/bwa aln  reference.fasta NA10831_ATCACG_L002.fastq.gz -t 2 -f output_folder/bwa/NA10831_ATCACG_L002.sai -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa samse -r '@RG\\tID:NA10831_ATCACG_L002\\tSM:NA10831_ATCACG_L002' reference.fasta output_folder/bwa/NA10831_ATCACG_L002.sai NA10831_ATCACG_L002.fastq.gz -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'",
 
-            'single_pipe': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg 'SM:NA|10831_ATCACG_L002' --rg-id 'NA|10831_ATCACG_L002' -x reference -U 'NA|10831_ATCACG_L002.fastq.gz'"
+            'single_pipe': "/path/to/bwa aln  reference.fasta 'NA|10831_ATCACG_L002.fastq.gz' -t 2 -f 'output_folder/bwa/NA|10831_ATCACG_L002.sai' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa samse -r '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' reference.fasta 'output_folder/bwa/NA|10831_ATCACG_L002.sai' 'NA|10831_ATCACG_L002.fastq.gz' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'"
         }
 
         for sample_type, expect in tests.items():
-            result = dispatcher._bwa_command(self.bwa.path, self.bwa.args, 2, self.reference, *self.samples[sample_type])
+            result = dispatcher._bwa_command(self.bwa.path, self.bwa.args, 2, self.reference, self.output_folder, *self.samples[sample_type])
             self.assertEqual(expect, result)
 
 
@@ -141,10 +141,6 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             ]
         }
 
-        dispatcher._align_reads(self.samples['paired_pipe'], configuration, self.index_job_id, self.reference)
-        pass
-
-    def test_run_bowtie2(self):
         expected_submit_job_calls = [
             call(
                 'pbs',
@@ -160,10 +156,6 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             ),
         ]
 
-        bam_nickname, job_id, final_file = dispatcher._run_bowtie2(self.reads['paired_basic'], self.bowtie2, self.samtools, self.job_submitter, self.index_job_id, self.reference, self.output_folder)
-        #bam_nickname, job_id, final_file = dispatcher._run_bowtie2(("foo|bar",""), ["", "bowtie2", "", {'num_cpus': 42}], ["", "samtools"], "pbs", ("jobid", "action"), "reference", "output_folder")
-        print("FOOBAR", bam_nickname, job_id, final_file)
-        print(dispatcher)
-
+        dispatcher._align_reads(self.samples['paired_pipe'], configuration, self.index_job_id, self.reference)
         dispatcher._submit_job.assert_has_calls(expected_submit_job_calls)
 

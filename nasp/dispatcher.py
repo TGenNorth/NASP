@@ -295,13 +295,14 @@ def _bwamem_command(path, args, ncpu, reference, sample_name, read1, read2=None)
     })
 
 
-def _bwa_command(path, args, ncpu, reference, sample_name, read1, read2=None):
+def _bwa_command(path, args, ncpu, reference, output_folder, sample_name, read1, read2=None):
     """
     Args:
         path (str): path to aligner executable
         args (str): raw arguments to be passed to the aligner
         ncpu: number of alignment threads to launch
         reference: (str): reference filename
+        output_folder (str): directory for aligner to write output
         sample_name (str): 
         read1 (str): absolute path to read1 fastq[.gz|.bz2]
         read2 (str): absolute path to read2 fastq[.gz|.bz2]
@@ -312,34 +313,67 @@ def _bwa_command(path, args, ncpu, reference, sample_name, read1, read2=None):
     import re
     import os
 
-    bam_string = "\'@RG\\tID:%s\\tSM:%s\'" % (name, name)
-    aligner_command = ""
-    if re.search('mem', aligner_name, re.IGNORECASE):
-        aligner_name = "bwamem"
-        aligner_command = "%s mem -R %s %s -t %s %s %s %s" % (path, bam_string, args, ncpus, reference, read1, read2)
+    bam_string = '@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)
+    quoted_bwa_args = ' '.join(map(shlex.quote, shlex.split(args)))
+    # Parse read file basename
+    is_illumina_fastq = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
+                                          re.IGNORECASE) else ""
+    work_dir = os.path.join(output_folder, 'bwa')
+    command_parts = []
+    if read2:
+        outfile1 = os.path.join(work_dir, "%s-R1.sai" % sample_name)
+        outfile2 = os.path.join(work_dir, "%s-R2.sai" % sample_name)
+        align_read1 = '{bwa} aln {is_illumina_fastq} {reference} {read1} -t {ncpu} -f {outfile1} {bwa_args}'.format(**{
+            'bwa': path,
+            'is_illumina_fastq': is_illumina_fastq,
+            'reference': shlex.quote(reference),
+            'read1': shlex.quote(read1),
+            'ncpu': shlex.quote(str(ncpu)),
+            'outfile1': shlex.quote(outfile1),
+            'bwa_args': quoted_bwa_args
+        })
+        align_read2 = '{bwa} aln {is_illumina_fastq} {reference} {read2} -t {ncpu} -f {outfile1} {bwa_args}'.format(**{
+            'bwa': path,
+            'is_illumina_fastq': is_illumina_fastq,
+            'reference': shlex.quote(reference),
+            'read2': shlex.quote(read2),
+            'ncpu': shlex.quote(str(ncpu)),
+            'outfile1': shlex.quote(outfile1),
+            'bwa_args': quoted_bwa_args
+        })
+        sampe_command = '{bwa} sampe -r {bam_string} {reference} {outfile1} {outfile2} {read1} {read2} {bwa_args}'.format(**{
+            'bwa': path,
+            'bam_string': shlex.quote(bam_string),
+            'reference': shlex.quote(reference),
+            'outfile1': shlex.quote(outfile1),
+            'outfile2': shlex.quote(outfile2),
+            'read1': shlex.quote(read1),
+            'read2': shlex.quote(read2),
+            'bwa_args': quoted_bwa_args
+        })
+        aligner_command = '; '.join([align_read1, align_read2, sampe_command])
     else:
-        aligner_name = "bwa"
-        # Parse read file basename
-        old_format_string = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
-                                              re.IGNORECASE) else ""
-        work_dir = os.path.join(output_folder, aligner_name)
-        command_parts = []
-        if read2:
-            output_file_1 = os.path.join(work_dir, "%s-R1.sai" % name)
-            output_file_2 = os.path.join(work_dir, "%s-R2.sai" % name)
-            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
-                path, old_format_string, reference, read1, ncpus, output_file_1, args))
-            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
-                path, old_format_string, reference, read2, ncpus, output_file_2, args))
-            command_parts.append("%s sampe -r %s %s %s %s %s %s %s" % (
-                path, bam_string, reference, output_file_1, output_file_2, read1, read2, args))
-        else:
-            output_file = os.path.join(work_dir, "%s.sai" % name)
-            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
-                path, old_format_string, reference, read1, ncpus, output_file, args))
-            command_parts.append(
-                "%s samse -r %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
-        aligner_command = "\n".join(command_parts)
+        outfile = os.path.join(work_dir, "%s.sai" % sample_name)
+        align_read = '{bwa} aln {is_illumina_fastq} {reference} {read1} -t {ncpu} -f {outfile} {bwa_args}'.format(**{
+            'bwa': path,
+            'is_illumina_fastq': is_illumina_fastq,
+            'reference': shlex.quote(reference),
+            'read1': shlex.quote(read1),
+            'ncpu': shlex.quote(str(ncpu)),
+            'outfile': shlex.quote(outfile),
+            'bwa_args': quoted_bwa_args
+        })
+        samse_command = '{bwa} samse -r {bam_string} {reference} {outfile} {read1} {bwa_args}'.format(**{
+            'bwa': path,
+            'bam_string': shlex.quote(bam_string),
+            'reference': shlex.quote(reference),
+            'outfile': shlex.quote(outfile),
+            'read1': shlex.quote(read1),
+            'bwa_args': quoted_bwa_args
+        })
+        aligner_command = '; '.join([align_read, samse_command])
+
+    return aligner_command
 
 
 def _bowtie2_command(path, args, ncpu, reference, sample_name, read1, read2=None):
