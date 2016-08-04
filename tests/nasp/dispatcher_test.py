@@ -41,22 +41,19 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             'single_basic': Sample('NA10831_ATCACG_L002', 'NA10831_ATCACG_L002.fastq.gz', ''),
             'single_pipe': Sample('NA|10831_ATCACG_L002', 'NA|10831_ATCACG_L002.fastq.gz', ''),
         }
+        self.bwa = App('bwa', '/path/to/bwa', '-x "-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0"', {'num_cpus': 2})
         self.bowtie2 = App('bowtie2', '/path/to/bowtie2', '--very-sensitive-local --un pipe|in|name.fastq.gz --al "space in name.fastq.gz"', {'num_cpus': 2})
         self.novoalign = App('novoalign', '/path/to/novoalign', '-K mismatch:stats.txt -i MP 99-99 99,99', {'num_cpus': 2})
+        self.snap = App('snap', '/path/to/snap', '--TODO', {'num_cpus': 2})
         self.samtools = App('samtools', '/path/to/samtools', '', {})
         self.job_submitter = 'pbs'
         self.reference = 'reference.fasta'
         self.output_folder = 'output_folder'
         self.index_job_id = ('jobid', 'action')
 
+
     def tearDown(self):
         pass
-
-    def test_index_reference(self):
-        pass
-
-    def test_run_bwa(self):
-        pass	
 
     def test_samtools_view_sort_index_pipe_command(self):
         tests = {
@@ -68,6 +65,39 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         for sample_type, expect in tests.items():
             result = dispatcher._samtools_view_sort_index_pipe_command(self.samtools.path, self.samples[sample_type].name)
             self.assertEqual(expect, result)
+
+
+    def test_bwamem_command(self):
+        tests = {
+            'paired_basic': "/path/to/bwa mem -R '@RG\\tID:NA10831_ATCACG_L002\\tSM:NA10831_ATCACG_L002' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0' -t 2 reference.fasta NA10831_ATCACG_L002_R1_001.fastq.gz NA10831_ATCACG_L002_R2_001.fastq.gz",
+
+            'paired_pipe': "/path/to/bwa mem -R '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0' -t 2 reference.fasta 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz'",
+
+            'single_basic': "/path/to/bwa mem -R '@RG\\tID:NA10831_ATCACG_L002\\tSM:NA10831_ATCACG_L002' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0' -t 2 reference.fasta NA10831_ATCACG_L002.fastq.gz ",
+
+            'single_pipe': "/path/to/bwa mem -R '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0' -t 2 reference.fasta 'NA|10831_ATCACG_L002.fastq.gz' "
+        }
+
+        for sample_type, expect in tests.items():
+            result = dispatcher._bwamem_command(self.bwa.path, self.bwa.args, 2, self.reference, *self.samples[sample_type])
+            self.assertEqual(expect, result)
+
+
+    def test_bwa_command(self):
+        tests = {
+            'paired_basic': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg SM:NA10831_ATCACG_L002 --rg-id NA10831_ATCACG_L002 -x reference -1 NA10831_ATCACG_L002_R1_001.fastq.gz -2 NA10831_ATCACG_L002_R2_001.fastq.gz",
+
+            'paired_pipe': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg 'SM:NA|10831_ATCACG_L002' --rg-id 'NA|10831_ATCACG_L002' -x reference -1 'NA|10831_ATCACG_L002_R1_001.fastq.gz' -2 'NA|10831_ATCACG_L002_R2_001.fastq.gz'",
+
+            'single_basic': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg SM:NA10831_ATCACG_L002 --rg-id NA10831_ATCACG_L002 -x reference -U NA10831_ATCACG_L002.fastq.gz",
+
+            'single_pipe': "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg 'SM:NA|10831_ATCACG_L002' --rg-id 'NA|10831_ATCACG_L002' -x reference -U 'NA|10831_ATCACG_L002.fastq.gz'"
+        }
+
+        for sample_type, expect in tests.items():
+            result = dispatcher._bwa_command(self.bwa.path, self.bwa.args, 2, self.reference, *self.samples[sample_type])
+            self.assertEqual(expect, result)
+
 
     def test_bowtie2_command(self):
         tests = {
@@ -99,6 +129,20 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         for sample_type, expect in tests.items():
             result = dispatcher._novoalign_command(self.novoalign.path, self.novoalign.args, 2, self.reference, *self.samples[sample_type])
             self.assertEqual(expect, result)
+
+
+    def test_align_reads(self):
+        configuration = {
+            'aligners': [
+                self.bowtie2,
+                self.bwa,
+                self.novoalign,
+                self.snap
+            ]
+        }
+
+        dispatcher._align_reads(self.samples['paired_pipe'], configuration, self.index_job_id, self.reference)
+        pass
 
     def test_run_bowtie2(self):
         expected_submit_job_calls = [

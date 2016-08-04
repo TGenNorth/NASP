@@ -269,6 +269,79 @@ def _samtools_view_sort_index_pipe_command(samtools_path, bam_prefix):
     })
     return ''
 
+
+def _bwamem_command(path, args, ncpu, reference, sample_name, read1, read2=None):
+    """
+    Args:
+        path (str): path to aligner executable
+        args (str): raw arguments to be passed to the aligner
+        ncpu: number of alignment threads to launch
+        reference: (str): reference filename
+        sample_name (str): 
+        read1 (str): absolute path to read1 fastq[.gz|.bz2]
+        read2 (str): absolute path to read2 fastq[.gz|.bz2]
+
+    Returns:
+        string: command to execute bowtie2 aligner
+    """
+    return '{bwa} mem -R {bam_string} {bam_args} -t {ncpu} {reference} {read1} {read2}'.format(**{
+        'bwa': path,
+        'bam_string': shlex.quote('@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)),
+        'bam_args': ' '.join(map(shlex.quote, shlex.split(args))),
+        'ncpu': shlex.quote(str(ncpu)),
+        'reference': shlex.quote(reference),
+        'read1': shlex.quote(read1),
+        'read2': shlex.quote(read2) if read2 else ''
+    })
+
+
+def _bwa_command(path, args, ncpu, reference, sample_name, read1, read2=None):
+    """
+    Args:
+        path (str): path to aligner executable
+        args (str): raw arguments to be passed to the aligner
+        ncpu: number of alignment threads to launch
+        reference: (str): reference filename
+        sample_name (str): 
+        read1 (str): absolute path to read1 fastq[.gz|.bz2]
+        read2 (str): absolute path to read2 fastq[.gz|.bz2]
+
+    Returns:
+        string: command to execute bowtie2 aligner
+    """
+    import re
+    import os
+
+    bam_string = "\'@RG\\tID:%s\\tSM:%s\'" % (name, name)
+    aligner_command = ""
+    if re.search('mem', aligner_name, re.IGNORECASE):
+        aligner_name = "bwamem"
+        aligner_command = "%s mem -R %s %s -t %s %s %s %s" % (path, bam_string, args, ncpus, reference, read1, read2)
+    else:
+        aligner_name = "bwa"
+        # Parse read file basename
+        old_format_string = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
+                                              re.IGNORECASE) else ""
+        work_dir = os.path.join(output_folder, aligner_name)
+        command_parts = []
+        if read2:
+            output_file_1 = os.path.join(work_dir, "%s-R1.sai" % name)
+            output_file_2 = os.path.join(work_dir, "%s-R2.sai" % name)
+            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
+                path, old_format_string, reference, read1, ncpus, output_file_1, args))
+            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
+                path, old_format_string, reference, read2, ncpus, output_file_2, args))
+            command_parts.append("%s sampe -r %s %s %s %s %s %s %s" % (
+                path, bam_string, reference, output_file_1, output_file_2, read1, read2, args))
+        else:
+            output_file = os.path.join(work_dir, "%s.sai" % name)
+            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
+                path, old_format_string, reference, read1, ncpus, output_file, args))
+            command_parts.append(
+                "%s samse -r %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
+        aligner_command = "\n".join(command_parts)
+
+
 def _bowtie2_command(path, args, ncpu, reference, sample_name, read1, read2=None):
     """
     Args:
@@ -618,33 +691,42 @@ def _align_reads(read_tuple, configuration, index_job_id, reference):
 
     aligner_output = []
     for aligner in configuration["aligners"]:
-        name = aligner[0]
+        (aligner_name, aligner_path, aligner_args, aligner_job_params) = aligner
+        align_command = ''
+
         if re.search('bwa', name, re.IGNORECASE):
-            (bam_nickname, job_id, final_file) = _run_bwa(read_tuple, aligner, configuration["samtools"],
-                                                          configuration["job_submitter"], index_job_id, reference,
-                                                          configuration["output_folder"])
-            if job_id:
-                aligner_output.append((bam_nickname, job_id, final_file, name))
+            if re.search('mem', name, re.IGNORECASE):
+                aligner_name = 'bwamem'
+                align_command = _bwamem_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
+            else:
+                aligner_name = 'bwa'
+                align_command = _bwa_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
         elif re.search('b(ow)?t(ie)?2', name, re.IGNORECASE):
-            (bam_nickname, job_id, final_file) = _run_bowtie2(read_tuple, aligner, configuration["samtools"],
-                                                              configuration["job_submitter"], index_job_id, reference,
-                                                              configuration["output_folder"])
-            if job_id:
-                aligner_output.append((bam_nickname, job_id, final_file, name))
+            aligner_name = 'bowtie2'
+            align_command = _bowtie2_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
         elif re.search('novo', name, re.IGNORECASE):
-            (bam_nickname, job_id, final_file) = _run_novoalign(read_tuple, aligner, configuration["samtools"],
-                                                                configuration["job_submitter"], index_job_id, reference,
-                                                                configuration["output_folder"])
-            if job_id:
-                aligner_output.append((bam_nickname, job_id, final_file, name))
+            align_command = _novoalign_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
         elif re.search('snap', name, re.IGNORECASE):
-            (bam_nickname, job_id, final_file) = _run_snap(read_tuple, aligner, configuration["samtools"],
-                                                           configuration["job_submitter"], index_job_id, reference,
-                                                           configuration["output_folder"])
-            if job_id:
-                aligner_output.append((bam_nickname, job_id, final_file, name))
+            align_command = _snap_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
         else:
             print("Unknown aligner \'%s\' found, don't know what to do. Skipping..." % name)
+            continue
+
+        bam_basename = '{sample_name}-{aligner_name}'.format(sample_name=name, aligner_name=aligner_name)
+        command = align_command + ' | ' + _samtools_view_sort_index_pipe_command(sampath, bam_basename)
+
+        work_dir = os.path.join(output_folder, aligner_name)
+        if not os.path.exists(work_dir):
+            os.makedirs(work_dir)
+
+        final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
+        job_parms['name'] = "nasp_%s_%s" % (aligner_name, sample_name)
+        job_parms['work_dir'] = work_dir
+
+        job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+        if job_id:
+            aligner_output.append((bam_prefix, job_id, final_file, name))
+
     return aligner_output
 
 
