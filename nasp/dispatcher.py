@@ -11,6 +11,7 @@ Created on Mar 4, 2014
 '''
 
 import logging
+import shlex
 
 def _parse_args():
     import argparse
@@ -258,6 +259,47 @@ def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, referen
     job_parms['work_dir'] = work_dir
     job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
     return bam_nickname, job_id, final_file
+
+
+def _samtools_view_sort_index_command(samtools_path, bam_prefix):
+    return '{samtools} view -S -b -h - | {samtools} sort - {bam_prefix}; {samtools} index {bam_filename}'.format(**{
+        'samtools': samtools_path,
+        'bam_prefix': shlex.quote(bam_prefix),
+        'bam_filename': shlex.quote(bam_prefix + '.bam')
+    })
+    return ''
+
+def _bowtie2_command(bowtie2_path, bowtie2_args, ncpu, reference, sample_name, read1, read2=None):
+    """
+    Args:
+        bowtie2_path (str): path to bowtie2 executable
+        bowtie2_args (str): raw arguments to be passed to the aligner
+        ncpu: number of alignment threads to launch
+        reference: (str): reference filename
+        sample_name (str): 
+        read1 (str): absolute path to read1 fastq[.gz|.bz2]
+        read2 (str): absolute path to read2 fastq[.gz|.bz2]
+
+    Returns:
+        tuple: bam nickname, job id, path to bam file
+    """
+    import os
+
+    reference_basename = os.path.splitext(reference)[0]
+
+    quoted_bowtie2_args = ' '.join(map(shlex.quote, shlex.split(bowtie2_args)))
+    quoted_read_args = "-1 {read1} -2 {read2}".format(read1=shlex.quote(read1), read2=shlex.quote(read2)) if read2 else "-U {read1}".format(read1=shlex.quote(read1))
+
+    aligner_command = '{bowtie2} {bowtie2_args} --threads {ncpu} --rg {read_group} --rg-id {read_group_id} -x {bt2_index_prefix} {read_args}'.format(**{
+        'bowtie2': bowtie2_path,
+        'bowtie2_args': quoted_bowtie2_args,
+        'ncpu': shlex.quote(str(ncpu)),
+        'read_group': shlex.quote('SM:' + sample_name),
+        'read_group_id': shlex.quote(sample_name),
+        'bt2_index_prefix': shlex.quote(reference_basename),
+        'read_args': quoted_read_args
+    })
+    return aligner_command
 
 
 def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
