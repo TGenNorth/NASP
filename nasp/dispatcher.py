@@ -12,6 +12,10 @@ Created on Mar 4, 2014
 
 import logging
 import shlex
+from collections import namedtuple
+
+App = namedtuple('App', ['name', 'path', 'args', 'job_params'])
+Assembly = namedtuple('Assembly', ['name', 'read1', 'read2'])
 
 def _parse_args():
     import argparse
@@ -380,7 +384,7 @@ def _novoalign_command(path, args, ncpu, reference, sample_name, read1, read2=No
         'read2': shlex.quote(read2) if read2 else '',
         'paired_string': '-i PE 500,100' if read2 else '',
         'ncpu': shlex.quote(str(ncpu)),
-        'bam_string': shlex.quote('@RG\tID:{sample_name}\tSM:{sample_name}'.format(sample_name=sample_name)),
+        'bam_string': shlex.quote('@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)),
         'novoalign_args': ' '.join(map(shlex.quote, shlex.split(args)))
     })
     return aligner_command
@@ -568,44 +572,51 @@ def _trim_adapters(read_tuple, configuration):
 
 def _align_reads(read_tuple, configuration, index_job_id, reference):
     import re
+    import os
 
+    output_folder = configuration['output_folder']
+    samtools_path = configuration['samtools'][1]
+    job_submitter = configuration['job_submitter']
     aligner_output = []
-    for aligner in configuration["aligners"]:
-        (aligner_name, aligner_path, aligner_args, aligner_job_params) = aligner
+
+    for aligner in map(App._make, configuration['aligners']):
+        aligner_name = ''
         align_command = ''
 
-        if re.search('bwa', name, re.IGNORECASE):
-            if re.search('mem', name, re.IGNORECASE):
+        if re.search('bwa', aligner.name, re.IGNORECASE):
+            if re.search('mem', aligner.name, re.IGNORECASE):
                 aligner_name = 'bwamem'
-                align_command = _bwamem_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
+                align_command = _bwamem_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
             else:
                 aligner_name = 'bwa'
-                align_command = _bwa_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
-        elif re.search('b(ow)?t(ie)?2', name, re.IGNORECASE):
+                align_command = _bwa_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, output_folder, *read_tuple)
+        elif re.search('b(ow)?t(ie)?2', aligner.name, re.IGNORECASE):
             aligner_name = 'bowtie2'
-            align_command = _bowtie2_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
-        elif re.search('novo', name, re.IGNORECASE):
-            align_command = _novoalign_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
-        elif re.search('snap', name, re.IGNORECASE):
-            align_command = _snap_command(aligner_path, aligner_args, aligner_job_params.num_cpus, reference, *read_tuple)
+            align_command = _bowtie2_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
+        elif re.search('novo', aligner.name, re.IGNORECASE):
+            aligner_name = 'novo'
+            align_command = _novoalign_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
+        elif re.search('snap', aligner.name, re.IGNORECASE):
+            aligner_name = 'snap'
+            align_command = _snap_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, output_folder, *read_tuple)
         else:
-            print("Unknown aligner \'%s\' found, don't know what to do. Skipping..." % name)
+            print("Unknown aligner \'{0}\' found, don't know what to do. Skipping...".format(aligner.name))
             continue
 
-        bam_basename = '{sample_name}-{aligner_name}'.format(sample_name=name, aligner_name=aligner_name)
-        command = align_command + ' | ' + _samtools_view_sort_index_pipe_command(sampath, bam_basename)
+        bam_prefix = '{sample}-{aligner}'.format(sample=read_tuple[0], aligner=aligner_name)
+        command = align_command + ' | ' + _samtools_view_sort_index_pipe_command(samtools_path, bam_prefix)
 
         work_dir = os.path.join(output_folder, aligner_name)
         if not os.path.exists(work_dir):
             os.makedirs(work_dir)
 
-        final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
-        job_parms['name'] = "nasp_%s_%s" % (aligner_name, sample_name)
-        job_parms['work_dir'] = work_dir
+        outfile = os.path.join(work_dir, "{bam_prefix}.bam".format(bam_prefix=bam_prefix))
+        aligner.job_params['name'] = "nasp_{aligner}_{sample}".format(aligner=aligner_name, sample=read_tuple[0])
+        aligner.job_params['work_dir'] = work_dir
 
-        job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+        job_id = _submit_job(job_submitter, align_command, aligner.job_params, (index_job_id,))
         if job_id:
-            aligner_output.append((bam_prefix, job_id, final_file, name))
+            aligner_output.append((bam_prefix, job_id, outfile, aligner_name))
 
     return aligner_output
 
@@ -737,8 +748,7 @@ def _export_matrices(configuration, matrix_job_id):
         for exported_matrix in ['bestsnp', 'missingdata']:
             commands.append("{0} export --type {1} {2}.tsv > {2}.{1}".format(gonasp_path, file_type, exported_matrix))
 
-    commands.append('wait')
-    command = ' & '.join(commands)
+    command = '; '.join(commands)
 
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (matrix_job_id,), notify=False)
 
