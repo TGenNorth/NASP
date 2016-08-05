@@ -41,6 +41,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             'single_basic': Sample('NA10831_ATCACG_L002', 'NA10831_ATCACG_L002.fastq.gz', ''),
             'single_pipe': Sample('NA|10831_ATCACG_L002', 'NA|10831_ATCACG_L002.fastq.gz', ''),
         }
+        self.bwamem = App('bwamem', '/path/to/bwa', '-x "-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0"', {'num_cpus': 2})
         self.bwa = App('bwa', '/path/to/bwa', '-x "-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0"', {'num_cpus': 2})
         self.bowtie2 = App('bowtie2', '/path/to/bowtie2', '--very-sensitive-local --un pipe|in|name.fastq.gz --al "space in name.fastq.gz"', {'num_cpus': 2})
         self.novoalign = App('novoalign', '/path/to/novoalign', '-K mismatch:stats.txt -i MP 99-99 99,99', {'num_cpus': 2})
@@ -117,13 +118,13 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
     def test_novoalign_command(self):
         tests = {
-            'paired_basic': "/path/to/novoalign -d reference.fasta.idx -f NA10831_ATCACG_L002_R1_001.fastq.gz NA10831_ATCACG_L002_R2_001.fastq.gz -i PE 500,100 -c 2 -o SAM '@RG\tID:NA10831_ATCACG_L002\tSM:NA10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
+            'paired_basic': "/path/to/novoalign -d reference.fasta.idx -f NA10831_ATCACG_L002_R1_001.fastq.gz NA10831_ATCACG_L002_R2_001.fastq.gz -i PE 500,100 -c 2 -o SAM '@RG\\tID:NA10831_ATCACG_L002\\tSM:NA10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
 
-            'paired_pipe': "/path/to/novoalign -d reference.fasta.idx -f 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -i PE 500,100 -c 2 -o SAM '@RG\tID:NA|10831_ATCACG_L002\tSM:NA|10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
+            'paired_pipe': "/path/to/novoalign -d reference.fasta.idx -f 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -i PE 500,100 -c 2 -o SAM '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
 
-            'single_basic': "/path/to/novoalign -d reference.fasta.idx -f NA10831_ATCACG_L002.fastq.gz   -c 2 -o SAM '@RG\tID:NA10831_ATCACG_L002\tSM:NA10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
+            'single_basic': "/path/to/novoalign -d reference.fasta.idx -f NA10831_ATCACG_L002.fastq.gz   -c 2 -o SAM '@RG\\tID:NA10831_ATCACG_L002\\tSM:NA10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
 
-            'single_pipe': "/path/to/novoalign -d reference.fasta.idx -f 'NA|10831_ATCACG_L002.fastq.gz'   -c 2 -o SAM '@RG\tID:NA|10831_ATCACG_L002\tSM:NA|10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
+            'single_pipe': "/path/to/novoalign -d reference.fasta.idx -f 'NA|10831_ATCACG_L002.fastq.gz'   -c 2 -o SAM '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
         }
 
         for sample_type, expect in tests.items():
@@ -131,29 +132,67 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             self.assertEqual(expect, result)
 
 
+    def test_snap_command(self):
+        tests = {
+            'paired_basic': "/path/to/snap paired output_folder/reference/snap NA10831_ATCACG_L002_R1_001.fastq.gz NA10831_ATCACG_L002_R2_001.fastq.gz -t 2 -b --TODO -o sam -",
+
+            'paired_pipe': "/path/to/snap paired output_folder/reference/snap 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -t 2 -b --TODO -o sam -",
+
+            'single_basic': "/path/to/snap single output_folder/reference/snap NA10831_ATCACG_L002.fastq.gz  -t 2 -b --TODO -o sam -",
+
+            'single_pipe': "/path/to/snap single output_folder/reference/snap 'NA|10831_ATCACG_L002.fastq.gz'  -t 2 -b --TODO -o sam -",
+        }
+
+        for sample_type, expect in tests.items():
+            result = dispatcher._snap_command(self.snap.path, self.snap.args, 2, self.reference, self.output_folder, *self.samples[sample_type])
+            self.assertEqual(expect, result)
+
+
     def test_align_reads(self):
         configuration = {
+            'job_submitter': self.job_submitter,
             'aligners': [
                 self.bowtie2,
+                self.bwamem,
                 self.bwa,
                 self.novoalign,
                 self.snap
-            ]
+            ],
+            'samtools': ['samtools', '/path/to/samtools'],
+            'output_folder': self.output_folder
         }
 
         expected_submit_job_calls = [
             call(
                 'pbs',
-                "bowtie2  -p 42 --rg-id 'read1' --rg 'SM:read1' -x reference -U read2 | samtools view -S -b -h - | samtools sort - read1-bowtie2 \n a index read1-bowtie2.bam",
-                {
-                    'num_cpus': 42,
-                    'name': 'nasp_bowtie2_read1',
-                    'work_dir': 'output_folder/bowtie2'
-                },
-                (
-                    ('jobid', 'action'),
-                )
+                "/path/to/bowtie2 --very-sensitive-local --un 'pipe|in|name.fastq.gz' --al 'space in name.fastq.gz' --threads 2 --rg 'SM:NA|10831_ATCACG_L002' --rg-id 'NA|10831_ATCACG_L002' -x reference -1 'NA|10831_ATCACG_L002_R1_001.fastq.gz' -2 'NA|10831_ATCACG_L002_R2_001.fastq.gz'",
+                {'work_dir': 'output_folder/bowtie2', 'num_cpus': 2, 'name': 'nasp_bowtie2_NA|10831_ATCACG_L002'},
+                (('jobid', 'action'),)
             ),
+            call(
+                'pbs',
+                "/path/to/bwa mem -R '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0' -t 2 reference.fasta 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz'",
+                {'name': 'nasp_bwamem_NA|10831_ATCACG_L002', 'num_cpus': 2, 'work_dir': 'output_folder/bwamem'},
+                (('jobid', 'action'),)
+            ),
+            call(
+                'pbs',
+                "/path/to/bwa aln  reference.fasta 'NA|10831_ATCACG_L002_R1_001.fastq.gz' -t 2 -f 'output_folder/bwa/NA|10831_ATCACG_L002-R1.sai' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa aln  reference.fasta 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -t 2 -f 'output_folder/bwa/NA|10831_ATCACG_L002-R1.sai' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'; /path/to/bwa sampe -r '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' reference.fasta 'output_folder/bwa/NA|10831_ATCACG_L002-R1.sai' 'output_folder/bwa/NA|10831_ATCACG_L002-R2.sai' 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -x '-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0'",
+                {'num_cpus': 2, 'work_dir': 'output_folder/bwa', 'name': 'nasp_bwa_NA|10831_ATCACG_L002'},
+                (('jobid', 'action'),)
+            ),
+            call(
+                'pbs',
+                "/path/to/novoalign -d reference.fasta.idx -f 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -i PE 500,100 -c 2 -o SAM '@RG\\tID:NA|10831_ATCACG_L002\\tSM:NA|10831_ATCACG_L002' -K mismatch:stats.txt -i MP 99-99 99,99",
+                {'num_cpus': 2, 'work_dir': 'output_folder/novo', 'name': 'nasp_novo_NA|10831_ATCACG_L002'},
+                (('jobid', 'action'),)
+            ),
+            call(
+                'pbs',
+                "/path/to/snap paired output_folder/reference/snap 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' -t 2 -b --TODO -o sam -",
+                {'work_dir': 'output_folder/snap', 'num_cpus': 2, 'name': 'nasp_snap_NA|10831_ATCACG_L002'},
+                (('jobid', 'action'),)
+            )
         ]
 
         dispatcher._align_reads(self.samples['paired_pipe'], configuration, self.index_job_id, self.reference)
