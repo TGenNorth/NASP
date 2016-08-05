@@ -13,9 +13,10 @@ Created on Mar 4, 2014
 import logging
 import shlex
 from collections import namedtuple
+import os
 
 App = namedtuple('App', ['name', 'path', 'args', 'job_params'])
-Assembly = namedtuple('Assembly', ['name', 'read1', 'read2'])
+#Assembly = namedtuple('Assembly', ['name', 'read1', 'read2'])
 
 def _parse_args():
     import argparse
@@ -23,6 +24,85 @@ def _parse_args():
     parser = argparse.ArgumentParser(description="Meant to be called from the pipeline automatically.")
     parser.add_argument("--config", required=True, help="Path to the configuration xml file.")
     return parser.parse_args()
+
+
+def _pbs_command(name, work_dir, mem_requested=1, num_cpus=1, walltime=1, queue='', args='', hold=False, notify=False, waitfor_id=None):
+    job_resources = 'ncpus={ncpu},mem={mem}gb,walltime={hours}:00:00'.format(**{
+        'ncpu': num_cpus,
+        'mem': mem_requested,
+        'hours': walltime
+    })
+
+    pbs_cmd = shlex.split("qsub -V -d {work_dir} -w {work_dir} -l {job_resources} -m a -N {job_name}".format(**{
+        'work_dir': shlex.quote(work_dir),
+        'job_resources': shlex.quote(job_resources),
+        'job_name': shlex.quote(name),
+    }))
+
+    if waitfor_id:
+        pbs_cmd.extend(['-W', 'depend={directive}:{job_ids}'.format(**{
+            'directive': waitfor_id[1] if len(waitfor_id) > 1 else 'afterok',
+            'job_ids': waitfor_id[0],
+        })])
+    if queue:
+        pbs_cmd.extend(['-q', queue])
+    if hold:
+        pbs_cmd.append('-h')
+    if notify:
+        pbs_cmd.extend(['-m', 'e'])
+
+    pbs_cmd.extend(shlex.split(args))
+
+    return ' '.join(map(shlex.quote, pbs_cmd))
+
+    logging.debug("submit_command = %s", submit_command)
+    output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
+    logging.debug("output = %s" % output)
+    job_match = re.search('^(\d+)\..*$', output)
+    if job_match:
+        jobid = job_match.group(1)
+    else:
+        logging.warning("Job not submitted!!")
+        print("WARNING: Job not submitted: %s" % output)
+
+
+def _slurm_command(name, work_dir, mem_requested=1, num_cpus=1, walltime=1, queue='', args='', hold=False, notify=False, waitfor_id=None):
+    slurm_cmd = shlex.split('sbatch -D {work_dir} -c {ncpu} --mem={mem_gb} --time={hours} --mail-type=FAIL -J {job_name}'.format(**{
+        'work_dir': shlex.quote(work_dir),
+        'ncpu': shlex.quote(str(num_cpus)),
+        'mem_gb': shlex.quote(str(mem_requested) + '000'),
+        'hours': shlex.quote(str(walltime) + ':00:00'),
+        'job_name': shlex.quote(name),
+    }))
+
+    if waitfor_id:
+        slurm_cmd.extend([
+            '-d', '{directive}:{job_ids}'.format(**{
+                'directive': waitfor_id[1] if len(waitfor_id) > 1 else 'afterok',
+                'job_ids': waitfor_id[0],
+            })
+        ])
+
+    if queue:
+        slurm_cmd.extend(['-p', queue])
+    if hold:
+        slurm_cmd.append('-H') 
+    if notify:
+        slurm_cmd.append('--mail-type=END')
+
+    slurm_cmd.extend(shlex.split(args))
+
+    return ' '.join(map(shlex.quote, slurm_cmd))
+
+    logging.debug("submit_command = %s" % submit_command)
+    output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
+    logging.debug("output = %s" % output)
+    job_match = re.search('^Submitted batch job (\d+)$', output)
+    if job_match:
+        jobid = job_match.group(1)
+    else:
+        logging.warning("Job not submitted!!")
+        print("WARNING: Job not submitted: %s" % output)
 
 
 def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, notify=False):
@@ -219,7 +299,6 @@ def _samtools_view_sort_index_pipe_command(samtools_path, bam_prefix):
         'bam_prefix': shlex.quote(bam_prefix),
         'bam_filename': shlex.quote(bam_prefix + '.bam')
     })
-    return ''
 
 
 def _bwamem_command(path, args, ncpu, reference, sample_name, read1, read2=None):

@@ -198,3 +198,35 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         dispatcher._align_reads(self.samples['paired_pipe'], configuration, self.index_job_id, self.reference)
         dispatcher._submit_job.assert_has_calls(expected_submit_job_calls)
 
+
+    def test_pbs_command(self):
+        job_params = {
+            'name': 'test_job_name',
+            'num_cpus': 2,
+            'mem_requested': 4,
+            'walltime': 6,
+            'queue': 'test_queue',
+            'args': '--TODO',
+            'work_dir': 'test_work_dir',
+        }
+
+        expect = 'qsub -V -d test_work_dir -w test_work_dir -l ncpus=2,mem=4gb,walltime=6:00:00 -m a -N test_job_name -q test_queue --TODO'
+        result = dispatcher._pbs_command(**job_params)
+        self.assertEqual(expect, result)
+
+
+    def test_slurm_command(self):
+        job_params = {
+            'name': 'test',
+            'num_cpus': 2,
+            'mem_requested': 4,
+            'walltime': 6,
+            'queue': 'test_queue',
+            'args': '--TODO',
+            'work_dir': 'test_work_dir',
+        }
+
+        expect = 'sbatch -D test_work_dir -c 2 --mem=4000 --time=6:00:00 --mail-type=FAIL -J test -p test_queue --TODO'
+        result = dispatcher._slurm_command(**job_params)
+        self.assertEqual(expect, result)
+
