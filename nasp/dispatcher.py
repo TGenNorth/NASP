@@ -209,58 +209,6 @@ def _index_reference(configuration):
     return job_id, reference
 
 
-def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
-    import re
-    import os
-
-    (name, read1) = read_tuple[0:2]
-    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
-    bam_string = "\'@RG\\tID:%s\\tSM:%s\'" % (name, name)
-    sampath = samtools[1]
-    (aligner_name, path, args, job_parms) = aligner
-    ncpus = job_parms['num_cpus']
-    aligner_command = ""
-    if re.search('mem', aligner_name, re.IGNORECASE):
-        aligner_name = "bwamem"
-        aligner_command = "%s mem -R %s %s -t %s %s %s %s" % (path, bam_string, args, ncpus, reference, read1, read2)
-    else:
-        aligner_name = "bwa"
-        # Parse read file basename
-        old_format_string = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
-                                              re.IGNORECASE) else ""
-        work_dir = os.path.join(output_folder, aligner_name)
-        command_parts = []
-        if read2:
-            output_file_1 = os.path.join(work_dir, "%s-R1.sai" % name)
-            output_file_2 = os.path.join(work_dir, "%s-R2.sai" % name)
-            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
-                path, old_format_string, reference, read1, ncpus, output_file_1, args))
-            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
-                path, old_format_string, reference, read2, ncpus, output_file_2, args))
-            command_parts.append("%s sampe -r %s %s %s %s %s %s %s" % (
-                path, bam_string, reference, output_file_1, output_file_2, read1, read2, args))
-        else:
-            output_file = os.path.join(work_dir, "%s.sai" % name)
-            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
-                path, old_format_string, reference, read1, ncpus, output_file, args))
-            command_parts.append(
-                "%s samse -r %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
-        aligner_command = "\n".join(command_parts)
-    bam_nickname = "%s-%s" % (name, aligner_name)
-    samview_command = "%s view -S -b -h -" % sampath
-    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
-    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
-    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
-    work_dir = os.path.join(output_folder, aligner_name)
-    if not os.path.exists(work_dir):
-        os.makedirs(work_dir)
-    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
-    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
-    job_parms['work_dir'] = work_dir
-    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
-    return bam_nickname, job_id, final_file
-
-
 def _samtools_view_sort_index_pipe_command(samtools_path, bam_prefix):
     return '{samtools} view -S -b -h - | {samtools} sort - {bam_prefix}; {samtools} index {bam_filename}'.format(**{
         'samtools': samtools_path,
@@ -319,7 +267,6 @@ def _bwa_command(path, args, ncpu, reference, output_folder, sample_name, read1,
     is_illumina_fastq = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
                                           re.IGNORECASE) else ""
     work_dir = os.path.join(output_folder, 'bwa')
-    command_parts = []
     if read2:
         outfile1 = os.path.join(work_dir, "%s-R1.sai" % sample_name)
         outfile2 = os.path.join(work_dir, "%s-R2.sai" % sample_name)
@@ -409,47 +356,6 @@ def _bowtie2_command(path, args, ncpu, reference, sample_name, read1, read2=None
     return aligner_command
 
 
-def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
-    """
-    Args:
-        read_tuple:
-        aligner (list): name, path, args, job parameters
-        samtools:
-        job_submitter (str):
-        index_job_id (tuple): (jobid, action)
-        reference:
-        output_folder:
-
-    Returns:
-        tuple: bam nickname, job id, path to bam file
-    """
-    import os
-
-    (name, read1) = read_tuple[0:2]
-    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
-    read_string = "-1 %s -2 %s" % (read1, read2) if read2 else "-U %s" % read1
-    ref_string = os.path.splitext(reference)[0]
-    bam_string = "--rg-id \'%s\' --rg \'SM:%s\'" % (name, name)
-    sampath = samtools[1]
-    (path, args, job_parms) = aligner[1:4]
-    aligner_name = "bowtie2"
-    ncpus = job_parms['num_cpus']
-    aligner_command = "%s %s -p %s %s -x %s %s" % (path, args, ncpus, bam_string, ref_string, read_string)
-    bam_nickname = "%s-%s" % (name, aligner_name)
-    samview_command = "%s view -S -b -h -" % sampath
-    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
-    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
-    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
-    work_dir = os.path.join(output_folder, aligner_name)
-    if not os.path.exists(work_dir):
-        os.makedirs(work_dir)
-    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
-    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
-    job_parms['work_dir'] = work_dir
-    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
-    return bam_nickname, job_id, final_file
-
-
 def _novoalign_command(path, args, ncpu, reference, sample_name, read1, read2=None):
     """
     Args:
@@ -478,67 +384,7 @@ def _novoalign_command(path, args, ncpu, reference, sample_name, read1, read2=No
         'novoalign_args': ' '.join(map(shlex.quote, shlex.split(args)))
     })
     return aligner_command
-
     
-
-def _run_novoalign(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
-    import os
-
-    (name, read1) = read_tuple[0:2]
-    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
-    paired_string = "-i PE 500,100" if read2 else ""
-    bam_string = "\'@RG\\tID:%s\\tSM:%s\'" % (name, name)
-    sampath = samtools[1]
-    (path, args, job_parms) = aligner[1:4]
-    aligner_name = "novo"
-    ncpus = job_parms['num_cpus']
-    aligner_command = "%s -f %s %s %s -c %s -o SAM %s -d %s.idx %s" % (
-        path, read1, read2, paired_string, ncpus, bam_string, reference, args)
-    bam_nickname = "%s-%s" % (name, aligner_name)
-    samview_command = "%s view -S -b -h -" % sampath
-    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
-    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
-    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
-    work_dir = os.path.join(output_folder, aligner_name)
-    if not os.path.exists(work_dir):
-        os.makedirs(work_dir)
-    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
-    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
-    job_parms['work_dir'] = work_dir
-    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
-    return bam_nickname, job_id, final_file
-
-
-def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
-    import os
-    (name, read1) = read_tuple[0:2]
-    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
-    paired_string = "paired" if read2 else "single"
-    sampath = samtools[1]
-    (path, args, job_parms) = aligner[1:4]
-    aligner_name = "snap"
-    reads = []
-    for read in (read1, read2):
-        reads.append(read)
-    read_string = " ".join(reads)
-    ref_dir = os.path.join(os.path.join(output_folder, "reference"), aligner_name)
-    ncpus = job_parms['num_cpus']
-    bam_nickname = "%s-%s" % (name, aligner_name)
-    aligner_command = "%s %s %s %s -t %s -b %s -o -sam -" % (
-        path, paired_string, ref_dir, read_string, ncpus, args)
-    samview_command = "%s view -S -b -h -" % (sampath)
-    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
-    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
-    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
-    work_dir = os.path.join(output_folder, aligner_name)
-    if not os.path.exists(work_dir):
-        os.makedirs(work_dir)
-    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
-    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
-    job_parms['work_dir'] = work_dir
-    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
-    return bam_nickname, job_id, final_file
-
 
 def _snap_command(path, args, ncpu, reference, output_folder, sample_name, read1, read2=None):
     """
