@@ -59,6 +59,16 @@ LICENSE:
 Copyright |copy| The Translational Genomics Research Institute See the
 included "LICENSE" document.
 
+PUBLICATION:
+--------
+
+Please read our paper for more information:
+
+[Jason W. Sahl,  Darrin Lemmer,  Jason Travis,  James M. Schupp,  John D. Gillece,  Maliha Aziz,  Elizabeth M. Driebe,  Kevin P. Drees,  Nathan D. Hicks,  Charles Hall Davis Williamson,  Crystal M. Hepp,  David Earl Smith,  Chandler Roe,  David M. Engelthaler,  David M. Wagner, Paul Keim
+"NASP: an accurate, rapid method for the identification of SNPs in WGS datasets that supports flexible input and output formats". Published Ahead of Print: 21 June, 2016 Microbial Genomics doi: 10.1099/mgen.0.000074 ]
+(http://mgen.microbiologyresearch.org/content/journal/mgen/10.1099/mgen.0.000074)
+
+
 CONTACT:
 --------
 
