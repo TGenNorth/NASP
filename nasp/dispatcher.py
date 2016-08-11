@@ -498,7 +498,102 @@ def _snap_command(path, args, ncpu, reference, output_folder, sample_name, read1
     return aligner_command
 
 
+def _gatk_command(path, args, ncpu, mem, reference, bam):
+    (bam_root, _)= os.path.splitext(bam)
+    vcf = '{0}-gatk.vcf'.format(bam_root)
 
+    return 'java -Xmx{mem}G -jar {gatk} -T UnifiedGenotyper -dt NONE -glm BOTH -I {bam} -R {reference} -nt {ncpu} -o {vcf} -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE {gatk_args}'.format(**{
+        'mem': shlex.quote(str(mem)),
+        'gatk': shlex.quote(path),
+        'bam': shlex.quote(bam),
+        'reference': shlex.quote(reference),
+        'ncpu': shlex.quote(str(ncpu)),
+        'vcf': shlex.quote(vcf),
+        'gatk_args': ' '.join(map(shlex.quote, shlex.split(args)))
+    })
+
+
+def _solsnp_command(path, args, ncpu, mem, reference, bam):
+    (bam_root, _)= os.path.splitext(bam)
+    vcf = '{0}-solsnp.vcf'.format(bam_root)
+
+    return 'java -Xmx{mem}G -jar {solsnp} INPUT={bam} REFERENCE_SEQUENCE={reference} OUTPUT={vcf} SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable {solsnp_args}'.format(**{
+        'mem': shlex.quote(str(mem)),
+        'solsnp': path,
+        'bam': shlex.quote(bam),
+        'reference': shlex.quote(reference),
+        'vcf': shlex.quote(vcf),
+        'solsnp_args': ' '.join(map(shlex.quote, shlex.split(args)))
+    })
+    
+
+def _varscan_command(path, args, ncpu, mem, reference, bam):
+    import os
+    import re
+
+    cmd = '; '.join([
+        "echo {sample_name} > {sample_list}".format(**{
+            'sample_name': '',
+            'sample_list': '',
+        }),
+         "{samtools} mpileup -B -d 10000000 -f {reference} {bam} > {pileup_file}".format(**{
+             'samtools': '',
+             'reference': '',
+             'bam': '',
+             'pileup_file': '',
+        }),
+       "java -Xmx{mem}G -jar {var} mpileup2cns {pileup_file} --output-vcf 1 --vcf-sample-list {sample_list} {varscan_args} > {outfile}".format(**{
+            'mem': '',
+            'var': '',
+            'pileup_file': '',
+            'sample_list': '',
+            'varscan_args': '',
+            'outfile': '',
+        })
+    ])
+
+    (bam_root, _) = os.path.splitext(bam)
+
+    vcf_prefix = "{0}-varscan".format(bam_root)
+    test = re.match('^(.*)-[a-z]*$', nickname, re.IGNORECASE)
+    read_nickname = test.group(1) if test else nickname
+    work_dir = os.path.join(output_folder, snpcaller_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    sample_list = os.path.join(work_dir, "%s.txt" % nickname)
+    pileup_file = os.path.join(os.path.dirname(bam_file), "%s.mpileup" % nickname)
+    final_file = os.path.join(work_dir, "%s.vcf" % vcf_nickname)
+    command_parts = ["echo %s > %s" % (read_nickname, sample_list),
+                     "%s mpileup -B -d 10000000 -f %s %s > %s" % (sampath, reference, bam_file, pileup_file),
+                     "java -Xmx%sG -jar %s mpileup2cns %s --output-vcf 1 --vcf-sample-list %s > %s %s" % (
+                         memory, path, pileup_file, sample_list, final_file, args)]
+    command = "\n".join(command_parts)
+    job_parms['name'] = "nasp_%s_%s" % (snpcaller_name, nickname)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
+    return vcf_nickname, job_id, final_file
+
+
+def _samtools_command(nickname, bam_file, snpcaller, samtools, job_submitter, aligner_job_id, reference, output_folder):
+    import os
+
+    (path, args, job_parms) = snpcaller[1:4]
+    sampath = samtools[1]
+    snpcaller_name = "samtools"
+    vcf_nickname = "%s-%s" % (nickname, snpcaller_name)
+    work_dir = os.path.join(output_folder, snpcaller_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    final_file = os.path.join(work_dir, "%s.vcf" % vcf_nickname)
+    command_parts = ["%s mpileup -uD -d 10000000 -f %s %s" % (sampath, reference, bam_file),
+                     "%s view -ceg %s - > %s" % (path, args, final_file)]
+    command = " | ".join(command_parts)
+    job_parms['name'] = "nasp_%s_%s" % (snpcaller_name, nickname)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
+    return vcf_nickname, job_id, final_file
+
+    
 def _run_gatk(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, reference, output_folder):
     import os
 
