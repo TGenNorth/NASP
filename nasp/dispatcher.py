@@ -720,6 +720,30 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     return job_id, final_file
 
 
+# http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
+def _trimmomatic_command(path, args, ncpu, sample_name, read1, read2=None):
+
+    parameters = {
+        'trimmomatic': path,
+        'ncpu': shlex.quote(str(ncpu)),
+        'input_read1': shlex.quote(read1),
+        'input_read2': shlex.quote(read2),
+        'output_pe_read1_paired': shlex.quote(sample_name + '_R1_paired.fastq.gz'),
+        'output_pe_read1_unpaired': shlex.quote(sample_name + '_R1_unpaired.fastq.gz'),
+        'output_pe_read2_paired': shlex.quote(sample_name + '_R2_paired.fastq.gz'),
+        'output_pe_read2_unpaired': shlex.quote(sample_name + '_R2_unpaired.fastq.gz'),
+        'output_se_trimmed': shlex.quote(sample_name + '_trimmed.fastq.gz'),
+        'trimmomatic_args': ' '.join(map(shlex.quote, shlex.split(args)))
+    }
+
+    if read2:
+        # Paired End
+        return 'java -jar {trimmomatic} PE -threads {ncpu} {input_read1} {input_read2} {output_pe_read1_paired} {output_pe_read2_unpaired} {output_pe_read2_paired} {output_pe_read2_unpaired} {trimmomatic_args}'.format(**parameters)
+
+    # Single End
+    return 'java -jar {trimmomatic} SE -threads {ncpu} {input_read1} {output_se_trimmed} {trimmomatic_args}'.format(**parameters)
+
+
 def _trim_adapters(read_tuple, configuration):
     import os
 

@@ -42,6 +42,11 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             'single_pipe': Assembly('NA|10831_ATCACG_L002', 'NA|10831_ATCACG_L002.fastq.gz', ''),
         }
 
+        self.bams = {
+            'basic': 'NA10831_ATCACG_L002.bam',
+            'pipe': 'NA|10831_ATCACG_L002.bam',
+        }
+
         self.job_params = {
             'name': 'test|job|name',
             'num_cpus': 2,
@@ -60,6 +65,8 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         self.bam = '/path/to/test-fake-aligner.bam'
 
+        self.trimmomatic = App('trimmomatic', '/path/to/trimmomatic', '--TODO', self.job_params)
+
         self.aligners = {
             'bwamem': App('bwamem', '/path/to/bwa', '-x "-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0"', self.job_params),
             'bwa': App('bwa', '/path/to/bwa', '-x "-k17 -W40 -r10 -A1 -B1 -O1 -E1 -L0"', self.job_params),
@@ -77,6 +84,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
+
     def test_samtools_view_sort_index_pipe_command(self):
         tests = {
             'paired_basic': "/path/to/samtools view -S -b -h - | /path/to/samtools sort - NA10831_ATCACG_L002; /path/to/samtools index NA10831_ATCACG_L002.bam",
@@ -86,7 +94,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         for sample_type, expect in tests.items():
             result = dispatcher._samtools_view_sort_index_pipe_command(self.samtools.path, self.assemblies[sample_type].name)
-            self.assertEqual(expect, result)
+            self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_bwamem_command(self):
@@ -105,7 +113,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         for sample_type, expect in tests.items():
             result = dispatcher._bwamem_command(bwamem.path, bwamem.args, ncpu, self.reference, *self.assemblies[sample_type])
-            self.assertEqual(expect, result)
+            self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_bwa_command(self):
@@ -124,7 +132,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         for sample_type, expect in tests.items():
             result = dispatcher._bwa_command(bwa.path, bwa.args, ncpu, self.reference, self.output_folder, *self.assemblies[sample_type])
-            self.assertEqual(expect, result)
+            self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_bowtie2_command(self):
@@ -143,7 +151,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         for sample_type, expect in tests.items():
             result = dispatcher._bowtie2_command(bowtie2.path, bowtie2.args, ncpu, self.reference, *self.assemblies[sample_type])
-            self.assertEqual(expect, result)
+            self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_novoalign_command(self):
@@ -162,7 +170,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         for sample_type, expect in tests.items():
             result = dispatcher._novoalign_command(novoalign.path, novoalign.args, ncpu, self.reference, *self.assemblies[sample_type])
-            self.assertEqual(expect, result)
+            self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_snap_command(self):
@@ -181,7 +189,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         for sample_type, expect in tests.items():
             result = dispatcher._snap_command(snap.path, snap.args, ncpu, self.reference, self.output_folder, *self.assemblies[sample_type])
-            self.assertEqual(expect, result)
+            self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_align_reads_bowtie2(self):
@@ -313,10 +321,27 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         self.assertEqual(expect, result)
 
 
+    def test_trimmomatic_command(self):
+        tests = {
+            'paired_basic': "java -jar /path/to/trimmomatic PE -threads 2 NA10831_ATCACG_L002_R1_001.fastq.gz NA10831_ATCACG_L002_R2_001.fastq.gz NA10831_ATCACG_L002_R1_paired.fastq.gz NA10831_ATCACG_L002_R2_unpaired.fastq.gz NA10831_ATCACG_L002_R2_paired.fastq.gz NA10831_ATCACG_L002_R2_unpaired.fastq.gz --TODO",
+
+            'paired_pipe': "java -jar /path/to/trimmomatic PE -threads 2 'NA|10831_ATCACG_L002_R1_001.fastq.gz' 'NA|10831_ATCACG_L002_R2_001.fastq.gz' 'NA|10831_ATCACG_L002_R1_paired.fastq.gz' 'NA|10831_ATCACG_L002_R2_unpaired.fastq.gz' 'NA|10831_ATCACG_L002_R2_paired.fastq.gz' 'NA|10831_ATCACG_L002_R2_unpaired.fastq.gz' --TODO",
+
+            'single_basic': "java -jar /path/to/trimmomatic SE -threads 2 NA10831_ATCACG_L002.fastq.gz NA10831_ATCACG_L002_trimmed.fastq.gz --TODO",
+
+            'single_pipe': "java -jar /path/to/trimmomatic SE -threads 2 'NA|10831_ATCACG_L002.fastq.gz' 'NA|10831_ATCACG_L002_trimmed.fastq.gz' --TODO",
+        }
+
+        ncpu = self.trimmomatic.job_params['num_cpus']
+        for sample_type, expect in tests.items():
+            result = dispatcher._trimmomatic_command(self.trimmomatic.path, self.trimmomatic.args, ncpu, *self.assemblies[sample_type])
+            self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
+
+
     def test_pbs_command(self):
         expect = "qsub -V -d 'test|work|dir' -w 'test|work|dir' -l ncpus=2,mem=4gb,walltime=6:00:00 -m a -N 'test|job|name' -q 'test|queue' --fake-job-parameter -f '|ake' -j 'o|b' -p 'arameter|'"
         result = dispatcher._pbs_command(**self.job_params)
-        self.assertEqual(expect, result)
+        self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_slurm_command(self):
