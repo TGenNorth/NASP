@@ -57,7 +57,7 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             'work_dir': 'test|work|dir',
         }
 
-        self.samtools = App('samtools', '/path/to/samtools', '', {})
+        self.samtools = App('samtools', '/path/to/samtools', '--TODO', self.job_params)
         self.job_submitter = 'pbs'
         self.reference = 'reference.fasta'
         self.output_folder = 'output_folder'
@@ -77,7 +77,9 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
         self.snpcallers = {
             'gatk': App('gatk', '/path/to/gatk', '--TODO', self.job_params) ,
-            'solsnp': App('solsnp', '/path/to/solsnp', '--TODO', self.job_params) 
+            'solsnp': App('solsnp', '/path/to/solsnp', '--TODO', self.job_params),
+            'varscan': App('varscan', '/path/to/varscan', '--TODO', self.job_params),
+            'samtools': self.samtools
         }
 
 
@@ -109,10 +111,9 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         }
 
         bwamem = self.aligners['bwamem']
-        ncpu = bwamem.job_params['num_cpus']
 
         for sample_type, expect in tests.items():
-            result = dispatcher._bwamem_command(bwamem.path, bwamem.args, ncpu, self.reference, *self.assemblies[sample_type])
+            result = dispatcher._bwamem_command(bwamem.path, bwamem.args, self.job_params['num_cpus'], self.reference, *self.assemblies[sample_type])
             self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
@@ -128,10 +129,9 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         }
 
         bwa = self.aligners['bwa']
-        ncpu = bwa.job_params['num_cpus']
 
         for sample_type, expect in tests.items():
-            result = dispatcher._bwa_command(bwa.path, bwa.args, ncpu, self.reference, self.output_folder, *self.assemblies[sample_type])
+            result = dispatcher._bwa_command(bwa.path, bwa.args, self.job_params['num_cpus'], self.reference, self.output_folder, *self.assemblies[sample_type])
             self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
@@ -147,10 +147,9 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         }
 
         bowtie2 = self.aligners['bowtie2']
-        ncpu = bowtie2.job_params['num_cpus']
 
         for sample_type, expect in tests.items():
-            result = dispatcher._bowtie2_command(bowtie2.path, bowtie2.args, ncpu, self.reference, *self.assemblies[sample_type])
+            result = dispatcher._bowtie2_command(bowtie2.path, bowtie2.args, self.job_params['num_cpus'], self.reference, *self.assemblies[sample_type])
             self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
@@ -166,10 +165,9 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         }
 
         novoalign = self.aligners['novoalign']
-        ncpu = novoalign.job_params['num_cpus']
 
         for sample_type, expect in tests.items():
-            result = dispatcher._novoalign_command(novoalign.path, novoalign.args, ncpu, self.reference, *self.assemblies[sample_type])
+            result = dispatcher._novoalign_command(novoalign.path, novoalign.args, self.job_params['num_cpus'], self.reference, *self.assemblies[sample_type])
             self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
@@ -185,10 +183,9 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
         }
 
         snap = self.aligners['snap']
-        ncpu = snap.job_params['num_cpus']
 
         for sample_type, expect in tests.items():
-            result = dispatcher._snap_command(snap.path, snap.args, ncpu, self.reference, self.output_folder, *self.assemblies[sample_type])
+            result = dispatcher._snap_command(snap.path, snap.args, self.job_params['num_cpus'], self.reference, self.output_folder, *self.assemblies[sample_type])
             self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
@@ -299,25 +296,25 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
 
     def test_gatk_command(self):
         gatk = self.snpcallers['gatk']
-        ncpu = gatk.job_params['num_cpus']
         mem = gatk.job_params['mem_requested']
         expect = 'java -Xmx4G -jar /path/to/gatk -T UnifiedGenotyper -dt NONE -glm BOTH -I /path/to/test-fake-aligner.bam -R reference.fasta -nt 2 -o /path/to/test-fake-aligner-gatk.vcf -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE --TODO'
-        result = dispatcher._gatk_command(gatk.path, gatk.args, ncpu, mem, self.reference, self.bam)
+        result = dispatcher._gatk_command(gatk.path, gatk.args, self.job_params['num_cpus'], mem, self.reference, self.bam)
         self.assertEqual(expect, result)
 
 
     def test_solsnp_command(self):
         solsnp = self.snpcallers['solsnp']
-        ncpu = solsnp.job_params['num_cpus']
         mem = solsnp.job_params['mem_requested']
         expect = 'java -Xmx4G -jar /path/to/solsnp INPUT=/path/to/test-fake-aligner.bam REFERENCE_SEQUENCE=reference.fasta OUTPUT=/path/to/test-fake-aligner-solsnp.vcf SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable --TODO'
-        result = dispatcher._solsnp_command(solsnp.path, solsnp.args, ncpu, mem, self.reference, self.bam)
+        result = dispatcher._solsnp_command(solsnp.path, solsnp.args, self.job_params['num_cpus'], mem, self.reference, self.bam)
         self.assertEqual(expect, result)
 
 
     def test_varscan_command(self):
         expect = ''
-        result = dispatcher._varscan_command()
+        varscan = self.snpcallers['varscan']
+        mem = varscan.job_params['mem_requested']
+        result = dispatcher._varscan_command(varscan.path, varscan.args, self.job_params['num_cpus'], mem, self.reference, self.bam)
         self.assertEqual(expect, result)
 
 
@@ -332,16 +329,15 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
             'single_pipe': "java -jar /path/to/trimmomatic SE -threads 2 'NA|10831_ATCACG_L002.fastq.gz' 'NA|10831_ATCACG_L002_trimmed.fastq.gz' --TODO",
         }
 
-        ncpu = self.trimmomatic.job_params['num_cpus']
         for sample_type, expect in tests.items():
-            result = dispatcher._trimmomatic_command(self.trimmomatic.path, self.trimmomatic.args, ncpu, *self.assemblies[sample_type])
+            result = dispatcher._trimmomatic_command(self.trimmomatic.path, self.trimmomatic.args, self.job_params['num_cpus'], *self.assemblies[sample_type])
             self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
 
 
     def test_pbs_command(self):
         expect = "qsub -V -d 'test|work|dir' -w 'test|work|dir' -l ncpus=2,mem=4gb,walltime=6:00:00 -m a -N 'test|job|name' -q 'test|queue' --fake-job-parameter -f '|ake' -j 'o|b' -p 'arameter|'"
         result = dispatcher._pbs_command(**self.job_params)
-        self.assertEqual(expect, result, 'Failed {0} test data set'.format(sample_type))
+        self.assertEqual(expect, result)
 
 
     def test_slurm_command(self):
