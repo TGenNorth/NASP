@@ -27,6 +27,7 @@ def _parse_args():
 
 
 def _pbs_command(name, work_dir, mem_requested=1, num_cpus=1, walltime=1, queue='', args='', hold=False, notify=False, waitfor_id=None):
+
     job_resources = 'ncpus={ncpu},mem={mem}gb,walltime={hours}:00:00'.format(**{
         'ncpu': num_cpus,
         'mem': mem_requested,
@@ -95,8 +96,8 @@ def _slurm_command(name, work_dir, mem_requested=1, num_cpus=1, walltime=1, queu
     return ' '.join(map(shlex.quote, slurm_cmd))
 
     logging.debug("submit_command = %s" % submit_command)
-    output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
-    logging.debug("output = %s" % output)
+    output = subprocess.getoutput("{0} --wrap={1}".format(submit_command, shlex.quote(command)))
+    logging.debug("output = {0}".format(output))
     job_match = re.search('^Submitted batch job (\d+)$', output)
     if job_match:
         jobid = job_match.group(1)
@@ -110,28 +111,13 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
     import re
     import os
 
-    # TODO(jtravis): remove unused output variable
-    output = jobid = None
+    jobid = None
     logging.info("command = %s" % command)
     if job_submitter == "PBS":
-        waitfor = ""
-        if waitfor_id:
-            dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
-            waitfor = "-W depend=%s:%s" % (dependency_string, waitfor_id[0])
-        queue = ""
-        if job_parms["queue"]:
-            queue = "-q %s" % job_parms["queue"]
-        args = job_parms["args"]
-        if hold:
-            args += " -h"
-        if notify:
-            args += " -m e"
-        submit_command = "qsub -V -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s %s %s" % (
-            job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'],
-            job_parms['walltime'], job_parms['name'], waitfor, queue, args)
-        logging.debug("submit_command = %s", submit_command)
-        output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
-        logging.debug("output = %s" % output)
+        submit_command = _pbs_command(**job_params, hold=hold, notify=notify, waitfor_id=waitfor_id)
+        logging.debug("submit_command = {0}".format(submit_command))
+        output = subprocess.getoutput("echo {0} | {1} - ".format(shlex.quote(command), submit_command))
+        logging.debug("output = {0}".format(output))
         job_match = re.search('^(\d+)\..*$', output)
         if job_match:
             jobid = job_match.group(1)
@@ -139,21 +125,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
     elif job_submitter == "SLURM":
-        waitfor = ""
-        if waitfor_id:
-            dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
-            waitfor = "-d %s:%s" % (dependency_string, waitfor_id[0])
-        queue = ""
-        if job_parms["queue"]:
-            queue = "-p %s" % job_parms["queue"]
-        args = job_parms["args"]
-        if hold:
-            args += " -H"
-        if notify:
-            args += " --mail-type=END"
-        submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --time=%s:00:00 --mail-type=FAIL -J \'%s\' %s %s %s" % (
-            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'],
-            job_parms['name'], waitfor, queue, args)
+        submit_command = _slurm_command(**job_params, hold=hold, notify=notify, waitfor_id=waitfor_id)
         logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
         logging.debug("output = %s" % output)
