@@ -265,11 +265,12 @@ def _index_reference(configuration):
     return job_id, reference
 
 
-def _samtools_view_sort_index_pipe_command(samtools_path, bam_prefix):
+def _samtools_view_sort_index_pipe_command(samtools_path, output_bam):
+    (bam_prefix, _) = os.path.splitext(output_bam)
     return '{samtools} view -S -b -h - | {samtools} sort - {bam_prefix}; {samtools} index {bam_filename}'.format(**{
         'samtools': samtools_path,
         'bam_prefix': shlex.quote(bam_prefix),
-        'bam_filename': shlex.quote(bam_prefix + '.bam')
+        'bam_filename': shlex.quote(output_bam)
     })
 
 
@@ -317,14 +318,13 @@ def _bwa_command(path, args, ncpu, reference, output_folder, sample_name, read1,
     import os
 
     bam_string = '@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)
-    quoted_bwa_args = ' '.join(map(shlex.quote, shlex.split(args)))
     # Parse read file basename
-    is_illumina_fastq = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
-                                          re.IGNORECASE) else ""
+    is_illumina_fastq = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1, re.IGNORECASE) else ""
+    quoted_bwa_args = ' '.join(map(shlex.quote, shlex.split(args)))
     work_dir = os.path.join(output_folder, 'bwa')
     if read2:
-        outfile1 = os.path.join(work_dir, "%s-R1.sai" % sample_name)
-        outfile2 = os.path.join(work_dir, "%s-R2.sai" % sample_name)
+        outfile1 = os.path.join(work_dir, "{0}-R1.sai".format(sample_name))
+        outfile2 = os.path.join(work_dir, "{0}-R2.sai".format(sample_name))
         align_read1 = '{bwa} aln {is_illumina_fastq} {reference} {read1} -t {ncpu} -f {outfile1} {bwa_args}'.format(**{
             'bwa': path,
             'is_illumina_fastq': is_illumina_fastq,
@@ -470,9 +470,9 @@ def _snap_command(path, args, ncpu, reference, output_folder, sample_name, read1
     return aligner_command
 
 
-def _gatk_command(path, args, ncpu, mem, reference, bam):
+def _gatk_command(path, args, ncpu, mem, output_folder, reference, bam):
     (bam_root, _)= os.path.splitext(bam)
-    vcf = '{0}-gatk.vcf'.format(bam_root)
+    vcf = os.path.join(output_folder, 'gatk', '{0}-gatk.vcf'.format(bam_root))
 
     return 'java -Xmx{mem}G -jar {gatk} -T UnifiedGenotyper -dt NONE -glm BOTH -I {bam} -R {reference} -nt {ncpu} -o {vcf} -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE {gatk_args}'.format(**{
         'mem': shlex.quote(str(mem)),
@@ -485,9 +485,9 @@ def _gatk_command(path, args, ncpu, mem, reference, bam):
     })
 
 
-def _solsnp_command(path, args, ncpu, mem, reference, bam):
+def _solsnp_command(path, args, ncpu, mem, output_folder, reference, bam):
     (bam_root, _)= os.path.splitext(bam)
-    vcf = '{0}-solsnp.vcf'.format(bam_root)
+    vcf = os.path.join(output_folder, 'solsnp', '{0}-solsnp.vcf'.format(bam_root))
 
     return 'java -Xmx{mem}G -jar {solsnp} INPUT={bam} REFERENCE_SEQUENCE={reference} OUTPUT={vcf} SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable {solsnp_args}'.format(**{
         'mem': shlex.quote(str(mem)),
@@ -499,9 +499,11 @@ def _solsnp_command(path, args, ncpu, mem, reference, bam):
     })
     
 
-def _varscan_command(path, args, ncpu, mem, reference, bam):
+def _varscan_command(path, args, ncpu, mem, output_folder, reference, bam):
     import os
     import re
+    (bam_root, _)= os.path.splitext(bam)
+    vcf = os.path.join(output_folder, 'varscan', '{0}-varscan.vcf'.format(bam_root))
 
     cmd = '; '.join([
         "echo {sample_name} > {sample_list}".format(**{
@@ -524,9 +526,6 @@ def _varscan_command(path, args, ncpu, mem, reference, bam):
         })
     ])
 
-    (bam_root, _) = os.path.splitext(bam)
-
-    vcf_prefix = "{0}-varscan".format(bam_root)
     test = re.match('^(.*)-[a-z]*$', nickname, re.IGNORECASE)
     read_nickname = test.group(1) if test else nickname
     work_dir = os.path.join(output_folder, snpcaller_name)
@@ -540,30 +539,22 @@ def _varscan_command(path, args, ncpu, mem, reference, bam):
                      "java -Xmx%sG -jar %s mpileup2cns %s --output-vcf 1 --vcf-sample-list %s > %s %s" % (
                          memory, path, pileup_file, sample_list, final_file, args)]
     command = "\n".join(command_parts)
-    job_parms['name'] = "nasp_%s_%s" % (snpcaller_name, nickname)
-    job_parms['work_dir'] = work_dir
-    job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
-    return vcf_nickname, job_id, final_file
+    return command
 
 
-def _samtools_command(nickname, bam_file, snpcaller, samtools, job_submitter, aligner_job_id, reference, output_folder):
+#def _samtools_command(nickname, bam_file, snpcaller, samtools, job_submitter, aligner_job_id, reference, output_folder):
+def _samtools_command(path, args, ncpu, mem, output_folder, reference, bam):
     import os
+    (bam_root, _)= os.path.splitext(bam)
+    vcf = os.path.join(output_folder, 'samtools', '{0}-samtools.vcf'.format(bam_root))
 
-    (path, args, job_parms) = snpcaller[1:4]
-    sampath = samtools[1]
-    snpcaller_name = "samtools"
-    vcf_nickname = "%s-%s" % (nickname, snpcaller_name)
-    work_dir = os.path.join(output_folder, snpcaller_name)
-    if not os.path.exists(work_dir):
-        os.makedirs(work_dir)
-    final_file = os.path.join(work_dir, "%s.vcf" % vcf_nickname)
-    command_parts = ["%s mpileup -uD -d 10000000 -f %s %s" % (sampath, reference, bam_file),
-                     "%s view -ceg %s - > %s" % (path, args, final_file)]
-    command = " | ".join(command_parts)
-    job_parms['name'] = "nasp_%s_%s" % (snpcaller_name, nickname)
-    job_parms['work_dir'] = work_dir
-    job_id = _submit_job(job_submitter, command, job_parms, (aligner_job_id,))
-    return vcf_nickname, job_id, final_file
+    return '{samtools} mpileup -uD -d 10000000 -f {reference} {bam} | {samtools} view -ceg {samtools_args} - > {vcf}'.format(**{
+        'samtools': path,
+        'reference': shlex.quote(reference),
+        'bam': shlex.quote(bam),
+        'samtools_args': ' '.join(map(shlex.quote, shlex.split(args))),
+        'vcf': shlex.quote(vcf)
+    })
 
     
 def _run_gatk(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, reference, output_folder):
@@ -693,18 +684,18 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
 
 
 # http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
-def _trimmomatic_command(path, args, ncpu, sample_name, read1, read2=None):
+def _trimmomatic_command(path, args, ncpu, output_folder, sample_name, read1, read2=None):
 
     parameters = {
         'trimmomatic': path,
         'ncpu': shlex.quote(str(ncpu)),
         'input_read1': shlex.quote(read1),
         'input_read2': shlex.quote(read2),
-        'output_pe_read1_paired': shlex.quote(sample_name + '_R1_paired.fastq.gz'),
-        'output_pe_read1_unpaired': shlex.quote(sample_name + '_R1_unpaired.fastq.gz'),
-        'output_pe_read2_paired': shlex.quote(sample_name + '_R2_paired.fastq.gz'),
-        'output_pe_read2_unpaired': shlex.quote(sample_name + '_R2_unpaired.fastq.gz'),
-        'output_se_trimmed': shlex.quote(sample_name + '_trimmed.fastq.gz'),
+        'output_pe_read1_paired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name + '_R1_paired.fastq.gz')),
+        'output_pe_read1_unpaired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_R1_unpaired.fastq.gz')),
+        'output_pe_read2_paired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_R2_paired.fastq.gz')),
+        'output_pe_read2_unpaired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_R2_unpaired.fastq.gz')),
+        'output_se_trimmed': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_trimmed.fastq.gz')),
         'trimmomatic_args': ' '.join(map(shlex.quote, shlex.split(args)))
     }
 
@@ -773,8 +764,9 @@ def _align_reads(read_tuple, configuration, index_job_id, reference):
             print("Unknown aligner \'{0}\' found, don't know what to do. Skipping...".format(aligner.name))
             continue
 
-        bam_prefix = '{sample}-{aligner}'.format(sample=read_tuple[0], aligner=aligner_name)
-        command = align_command + ' | ' + _samtools_view_sort_index_pipe_command(samtools_path, bam_prefix)
+        output_bam = os.path.join(output_folder, aligner_name, '{sample}-{aligner}.bam'.format(sample=read_tuple[0], aligner=aligner_name))
+        
+        command = align_command + ' | ' + _samtools_view_sort_index_pipe_command(samtools_path, output_bam)
 
         work_dir = os.path.join(output_folder, aligner_name)
         if not os.path.exists(work_dir):
