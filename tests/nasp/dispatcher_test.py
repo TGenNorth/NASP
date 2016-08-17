@@ -318,8 +318,10 @@ class DispatcherShellEscapeCommandsTestCase(unittest.TestCase):
     def test_varscan_command(self):
         expect = ''
         varscan = self.snpcallers['varscan']
+        ncpu = varscan.job_params['num_cpus']
         mem = varscan.job_params['mem_requested']
-        result = dispatcher._varscan_command(varscan.path, varscan.args, self.job_params['num_cpus'], mem, self.output_folder, self.reference, self.bam)
+        sample_name = self.assemblies['paired_pipe'].name
+        result = dispatcher._varscan_command(varscan.path, varscan.args, ncpu, mem, self.output_folder, self.reference, self.bam, sample_name, self.samtools.path)
         self.assertEqual(expect, result)
 
 

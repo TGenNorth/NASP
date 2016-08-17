@@ -499,47 +499,37 @@ def _solsnp_command(path, args, ncpu, mem, output_folder, reference, bam):
     })
     
 
-def _varscan_command(path, args, ncpu, mem, output_folder, reference, bam):
+def _varscan_command(varscan_path, varscan_args, ncpu, mem, output_folder, reference, bam, sample_name, samtools_path='samtools'):
     import os
     import re
     (bam_root, _)= os.path.splitext(bam)
-    vcf = os.path.join(output_folder, 'varscan', '{0}-varscan.vcf'.format(bam_root))
 
-    cmd = '; '.join([
+    vcf = os.path.join(output_folder, 'varscan', '{0}-varscan.vcf'.format(bam_root))
+    pileup_file = os.path.join(os.path.dirname(bam), "{0}.mpileup".format(sample_name))
+    sample_list = os.path.join(output_folder, 'varscan', "{0}.txt".format(sample_name))
+
+    snpcall_command = '; '.join([
         "echo {sample_name} > {sample_list}".format(**{
-            'sample_name': '',
-            'sample_list': '',
+            'sample_name': shlex.quote(sample_name),
+            'sample_list': shlex.quote(sample_list),
         }),
          "{samtools} mpileup -B -d 10000000 -f {reference} {bam} > {pileup_file}".format(**{
-             'samtools': '',
-             'reference': '',
-             'bam': '',
-             'pileup_file': '',
+             'samtools': samtools_path,
+             'reference': shlex.quote(reference),
+             'bam': shlex.quote(bam),
+             'pileup_file': shlex.quote(pileup_file),
         }),
-       "java -Xmx{mem}G -jar {var} mpileup2cns {pileup_file} --output-vcf 1 --vcf-sample-list {sample_list} {varscan_args} > {outfile}".format(**{
-            'mem': '',
-            'var': '',
-            'pileup_file': '',
-            'sample_list': '',
-            'varscan_args': '',
-            'outfile': '',
+       "java -Xmx{mem_gb} -jar {varscan} mpileup2cns {pileup_file} --output-vcf 1 --vcf-sample-list {sample_list} {varscan_args} > {vcf}".format(**{
+            'mem_gb': shlex.quote(str(mem) + 'G'),
+            'varscan': varscan_path,
+            'pileup_file': shlex.quote(pileup_file),
+            'sample_list': shlex.quote(sample_list),
+            'varscan_args': ' '.join(map(shlex.quote, shlex.split(varscan_args))),
+            'vcf': shlex.quote(vcf),
         })
     ])
 
-    test = re.match('^(.*)-[a-z]*$', nickname, re.IGNORECASE)
-    read_nickname = test.group(1) if test else nickname
-    work_dir = os.path.join(output_folder, snpcaller_name)
-    if not os.path.exists(work_dir):
-        os.makedirs(work_dir)
-    sample_list = os.path.join(work_dir, "%s.txt" % nickname)
-    pileup_file = os.path.join(os.path.dirname(bam_file), "%s.mpileup" % nickname)
-    final_file = os.path.join(work_dir, "%s.vcf" % vcf_nickname)
-    command_parts = ["echo %s > %s" % (read_nickname, sample_list),
-                     "%s mpileup -B -d 10000000 -f %s %s > %s" % (sampath, reference, bam_file, pileup_file),
-                     "java -Xmx%sG -jar %s mpileup2cns %s --output-vcf 1 --vcf-sample-list %s > %s %s" % (
-                         memory, path, pileup_file, sample_list, final_file, args)]
-    command = "\n".join(command_parts)
-    return command
+    return snpcall_command
 
 
 #def _samtools_command(nickname, bam_file, snpcaller, samtools, job_submitter, aligner_job_id, reference, output_folder):
