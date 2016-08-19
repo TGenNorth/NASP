@@ -274,7 +274,7 @@ def _samtools_view_sort_index_pipe_command(samtools_path, output_bam):
     })
 
 
-def _bwamem_command(path, args, ncpu, reference, sample_name, read1, read2=None):
+def _bwamem_command(path, args, ncpu, reference, output_folder, sample_name, read1, read2=None):
     """
     Args:
         path (str): path to aligner executable
@@ -502,11 +502,14 @@ def _solsnp_command(path, args, ncpu, mem, output_folder, reference, bam):
 def _varscan_command(varscan_path, varscan_args, ncpu, mem, output_folder, reference, bam, sample_name, samtools_path='samtools'):
     import os
     import re
-    (bam_root, _)= os.path.splitext(bam)
 
-    vcf = os.path.join(output_folder, 'varscan', '{0}-varscan.vcf'.format(bam_root))
+    # TODO: assert bam_filename is not empty
+    bam_filename = os.path.basename(bam)
+    (bam_root, _)= os.path.splitext(bam_filename)
+
+    vcf = os.path.join(output_folder, '{0}-varscan.vcf'.format(bam_root))
     pileup_file = os.path.join(os.path.dirname(bam), "{0}.mpileup".format(sample_name))
-    sample_list = os.path.join(output_folder, 'varscan', "{0}.txt".format(sample_name))
+    sample_list = os.path.join(output_folder, "{0}.txt".format(sample_name))
 
     snpcall_command = '; '.join([
         "echo {sample_name} > {sample_list}".format(**{
@@ -776,6 +779,8 @@ def _align_reads(read_tuple, configuration, index_job_id, reference):
 def _call_snps(aligner_output, configuration, reference):
     import re
 
+    # TODO: skip task if the file exists and a --force flag was not used
+    # TODO: implement a GNU make style --force flag
     snpcaller_output = []
     for (nickname, aligner_job_id, bam_file, aligner_name) in aligner_output:
         if aligner_job_id:
