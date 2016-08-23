@@ -266,16 +266,47 @@ def _index_reference(configuration):
     return job_id, reference
 
 
+def _gatk_index_command(picard_path, reference):
+    return 'java -Xmx{mem_gb} -jar {picard} CreateSequenceDictionary R={reference} O={dict}; {samtools} faidx {reference}'.format(**{
+        'picard': shlex.quote(picard_path),
+        'reference': shlex.quote(reference),
+        'dict': shlex.quote('reference.dict'),
+        'samtools': shlex.quote(samtools_path),
+    })
+
+def _bwa_index_command(bwa_path, reference):
+    return '{bwa} index {reference}'.format(**{
+        'bwa': shlex.quote(bwa_path),
+        'reference': shlex.quote(reference)
+    })
+
+def _bowtie2_index_command(bowtie2_path, reference):
+    (reference_root, _) = os.path.splitext(reference)
+    return '{bowtie2}-build {reference_in} {bt2_index_base}'.format(**{
+        'bowtie2': shlex.quote(bowtie2_path),
+        'reference_in': shlex.quote(reference),
+        'bt2_index_base': shlex.quote(reference_root)
+    })
+
+
+def _novo_index_command(path, reference):
+    return '{novoindex} {indexfile} {reference}'.format(**{
+        'novoindex': shlex.quote(path),
+        'reference': shlex.quote(reference)
+    })
+
+
 def _samtools_view_sort_index_pipe_command(samtools_path, output_bam):
     (bam_prefix, _) = os.path.splitext(output_bam)
-    return '{samtools} view -S -b -h - | {samtools} sort - {bam_prefix}; {samtools} index {bam_filename}'.format(**{
-        'samtools': samtools_path,
+    # The semicolon has a space on each side so the shlex parser will treat it as a separate token.
+    return '{samtools} view -S -u -h - | {samtools} sort - {bam_prefix} ; {samtools} index {bam_filename}'.format(**{
+        'samtools': shlex.quote(samtools_path),
         'bam_prefix': shlex.quote(bam_prefix),
         'bam_filename': shlex.quote(output_bam)
     })
 
 
-def _bwamem_command(path, args, ncpu, reference, output_folder, sample_name, read1, read2=None):
+def _bwamem_command(path, args, ncpu, reference, sample_name, read1, read2=None):
     """
     Args:
         path (str): path to aligner executable
@@ -287,10 +318,10 @@ def _bwamem_command(path, args, ncpu, reference, output_folder, sample_name, rea
         read2 (str): absolute path to read2 fastq[.gz|.bz2]
 
     Returns:
-        string: command to execute bowtie2 aligner
+        string: command to execute aligner
     """
     return '{bwa} mem -R {bam_string} {bam_args} -t {ncpu} {reference} {read1} {read2}'.format(**{
-        'bwa': path,
+        'bwa': shlex.quote(path),
         'bam_string': shlex.quote('@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)),
         'bam_args': ' '.join(map(shlex.quote, shlex.split(args))),
         'ncpu': shlex.quote(str(ncpu)),
@@ -313,7 +344,7 @@ def _bwa_command(path, args, ncpu, reference, output_folder, sample_name, read1,
         read2 (str): absolute path to read2 fastq[.gz|.bz2]
 
     Returns:
-        string: command to execute bowtie2 aligner
+        string: command to execute aligner
     """
     import re
     import os
@@ -322,12 +353,12 @@ def _bwa_command(path, args, ncpu, reference, output_folder, sample_name, read1,
     # Parse read file basename
     is_illumina_fastq = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1, re.IGNORECASE) else ""
     quoted_bwa_args = ' '.join(map(shlex.quote, shlex.split(args)))
-    work_dir = os.path.join(output_folder, 'bwa')
+
     if read2:
-        outfile1 = os.path.join(work_dir, "{0}-R1.sai".format(sample_name))
-        outfile2 = os.path.join(work_dir, "{0}-R2.sai".format(sample_name))
+        outfile1 = os.path.join(output_folder, "{0}-R1.sai".format(sample_name))
+        outfile2 = os.path.join(output_folder, "{0}-R2.sai".format(sample_name))
         align_read1 = '{bwa} aln {is_illumina_fastq} {reference} {read1} -t {ncpu} -f {outfile1} {bwa_args}'.format(**{
-            'bwa': path,
+            'bwa': shlex.quote(path),
             'is_illumina_fastq': is_illumina_fastq,
             'reference': shlex.quote(reference),
             'read1': shlex.quote(read1),
@@ -356,7 +387,7 @@ def _bwa_command(path, args, ncpu, reference, output_folder, sample_name, read1,
         })
         aligner_command = '; '.join([align_read1, align_read2, sampe_command])
     else:
-        outfile = os.path.join(work_dir, "%s.sai" % sample_name)
+        outfile = os.path.join(output_folder, "%s.sai" % sample_name)
         align_read = '{bwa} aln {is_illumina_fastq} {reference} {read1} -t {ncpu} -f {outfile} {bwa_args}'.format(**{
             'bwa': path,
             'is_illumina_fastq': is_illumina_fastq,
@@ -395,20 +426,20 @@ def _bowtie2_command(path, args, ncpu, reference, sample_name, read1, read2=None
     """
     import os
 
-    reference_basename = os.path.splitext(reference)[0]
+    # TODO: if possible, validate arguments (not empty/exist)
 
-    quoted_args = ' '.join(map(shlex.quote, shlex.split(args)))
-    quoted_read_args = "-1 {read1} -2 {read2}".format(read1=shlex.quote(read1), read2=shlex.quote(read2)) if read2 else "-U {read1}".format(read1=shlex.quote(read1))
+    reference_basename = os.path.splitext(reference)[0]
 
     aligner_command = '{bowtie2} {bowtie2_args} --threads {ncpu} --rg {read_group} --rg-id {read_group_id} -x {bt2_index_prefix} {read_args}'.format(**{
         'bowtie2': path,
-        'bowtie2_args': quoted_args,
+        'bowtie2_args': ' '.join(map(shlex.quote, shlex.split(args))),
         'ncpu': shlex.quote(str(ncpu)),
         'read_group': shlex.quote('SM:' + sample_name),
         'read_group_id': shlex.quote(sample_name),
         'bt2_index_prefix': shlex.quote(reference_basename),
-        'read_args': quoted_read_args
+        'read_args': "-1 {read1} -2 {read2}".format(read1=shlex.quote(read1), read2=shlex.quote(read2)) if read2 else "-U {read1}".format(read1=shlex.quote(read1))
     })
+
     return aligner_command
 
 
@@ -504,15 +535,18 @@ def _varscan_command(varscan_path, varscan_args, ncpu, mem, output_folder, refer
     import os
     import re
 
-    # TODO: assert bam_filename is not empty
-    bam_filename = os.path.basename(bam)
-    (bam_root, _)= os.path.splitext(bam_filename)
+    # sample_name could be derived from the bam file based on the following assumption:
+    # the sample_name is the bam filename excluding an optional '-<ALIGNER_NAME>' suffix.
 
-    vcf = os.path.join(output_folder, '{0}-varscan.vcf'.format(bam_root))
+    # TODO: assert bam_filename is not empty
+    #bam_filename = os.path.basename(bam)
+    #(bam_root, _)= os.path.splitext(bam_filename)
+
+    vcf = os.path.join(output_folder, '{0}-varscan.vcf'.format(sample_name))
     pileup_file = os.path.join(os.path.dirname(bam), "{0}.mpileup".format(sample_name))
     sample_list = os.path.join(output_folder, "{0}.txt".format(sample_name))
 
-    snpcall_command = '; '.join([
+    snpcall_command = ' ; '.join([
         "echo {sample_name} > {sample_list}".format(**{
             'sample_name': shlex.quote(sample_name),
             'sample_list': shlex.quote(sample_list),
