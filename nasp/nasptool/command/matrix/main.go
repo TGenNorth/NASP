@@ -3,7 +3,10 @@ package matrix
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
@@ -20,6 +23,35 @@ const (
 
 var NUM_SAMPLES int
 var t0 = time.Now()
+
+/**
+ * FIXME: findFiles() was copied from the qapla prototype. We do not need two copies
+ * of the same function. Extract this function to a package.
+ * findFiles returns all regular files within 1 level of the given file object paths.
+ */
+func findFiles(args []string) (filepaths []string, err error) {
+	for _, arg := range args {
+		fi, err := os.Stat(arg)
+		switch {
+		case err != nil:
+			return nil, err
+		case fi.IsDir():
+			files, err := ioutil.ReadDir(arg)
+			if err != nil {
+				return nil, err
+			}
+			for _, fi := range files {
+				filepaths = append(filepaths, filepath.Clean(filepath.Join(arg, fi.Name())))
+			}
+		case fi.Mode().IsRegular():
+			filepaths = append(filepaths, filepath.Clean(arg))
+		default:
+			log.Fatalf("TODO: Unable to identify file '%s'\n", fi.Name())
+		}
+	}
+
+	return filepaths, nil
+}
 
 func Run(numThreads int, dtoFile, refPath, dupPath, statsPath, matrixPath string, minCoverage int, minProportion float64, files ...string) error {
 	var wg sync.WaitGroup
@@ -41,6 +73,27 @@ func Run(numThreads int, dtoFile, refPath, dupPath, statsPath, matrixPath string
 		log.Println(time.Now().Sub(t0))
 	}()
 	// End Development Profiling
+	//
+
+	// Expand directories (non-recursive) to absolute filepaths matching frankenfasta|vcf.
+	// This allows the user to specify directories of files without glob expansion will
+	// hit terminal character limits.
+	// See 'getconf ARG_MAX' on *nix operating systems.
+	files = func(unexpandedPaths []string) []string {
+		unfilteredFiles, err := findFiles(unexpandedPaths)
+		if err != nil {
+			log.Fatal("nasp matrix: " + err.Error())
+		}
+		filteredFiles := make([]string, 0, len(unfilteredFiles))
+		for _, f := range unfilteredFiles {
+			switch filepath.Ext(f) {
+			case ".frankenfasta", ".vcf":
+				filteredFiles = append(filteredFiles, f)
+				//default: discard non-matching files
+			}
+		}
+		return filteredFiles
+	}(files)
 
 	dto, err := NewDto(dtoFile, refPath, dupPath, matrixPath, statsPath, minCoverage, minProportion, files)
 	if err != nil {

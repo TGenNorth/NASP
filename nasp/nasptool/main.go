@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime/debug"
 	"strings"
 	"text/template"
 
@@ -24,6 +25,7 @@ var commands = command.Commands
 
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "")
+	debug.SetMaxThreads(50000)
 }
 
 func main() {
