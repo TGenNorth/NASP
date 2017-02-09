@@ -1,26 +1,199 @@
-# Config file for automatic testing at travis-ci.org
+#
+# https://docs.travis-ci.com/user/customizing-the-build#The-Build-Lifecycle
+#
+---
+sudo: required
 
-language: python 
+services:
+  - docker
 
-cache: pip
+# https://docs.travis-ci.com/user/notifications#Configuring-email-notifications
+# Turn off email notifications entirely
+notifications:
+  email: false
 
-python:
-  - "3.4"
-    #  - "3.3"
-    #- "2.7"
-    #- "2.6"
-    #- "pypy"
+language: go
+go:
+#- '1.0'
+#- '1.3'
+#- '1.7.x'
+- tip
+#- master
+#language: generic
 
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install:
-    - pip install -r requirements.txt
-    - pip install coveralls
+# TODO: reduce default clone depth?
+#
+# https://docs.travis-ci.com/user/customizing-the-build#Git-Clone-Depth
+# Travis CI clones repositories to a depth of 50 commits, which is only really
+# useful if you are performing git operations.
+# Please note that if you use a depth of 1 and have a queue of jobs, Travis CI
+# won’t build commits that are in the queue when you push a new commit.
+#git:
+#  depth: 3
 
-# command to run tests, e.g. python setup.py test
+# travis-ci encrypted values
+# -------------------------
+# https://docs.travis-ci.com/user/encryption-keys/#Fetching-the-public-key-for-your-repository
+# Note, travis uses travis.slug in your project to determine the endpoints
+# if it exists (check by using git config --local travis.slug), if you rename
+# your repo or move your repo to another user/organization, you might need to change it.
+#
+# Refer to the following documentation for more about travis-ci encrypted values:
+# https://docs.travis-ci.com/user/environment-variables/#Defining-encrypted-variables-in-.travis.yml
+# https://docs.travis-ci.com/user/encryption-keys
+# https://docs.travis-ci.com/user/encrypting-files/
+# `travis encrypt MY_SECRET_ENV=super_secret --add env.matrix`
+env:
+  # global
+  # ======
+  #
+  # https://docs.travis-ci.com/user/environment-variables/#Global-Variables
+  #
+  # VERSION
+  # -------
+  # VERSION is either the commit tag or first 8 characters of the commit hash
+  #
+  # DOCKER_REPOSITORY
+  # -----------------
+  # Docker image repository. It is expected this will match the Github repository,
+  # but it could differ. This primarily servers to document the repositories as
+  # separate entities.
+  #
+  # GO_BUILD_ARGS
+  # -------------
+  # -x -ldflags "-X main.version=$VERSION"
+  # Set the version at compile time to matche the git tag/commit.
+  # An alterative:
+  #   go build -i -v -ldflags="-X main.version=$(git describe --always --long --dirty)"
+  #
+  # -ldflags="-s -w"
+  # Remove debugging symbols to reduce the binary size.
+  #
+  # -gcflags=-trimpath=$GOPATH -asmflags=-trimpath=$GOPATH
+  # Remove GOPATH prefix from the stacktrace.
+  # https://github.com/golang/go/issues/13809#issuecomment-168874760
+  global:
+    - VERSION="${TRAVIS_TAG:-${TRAVIS_COMMIT:0:8}}"
+    - DOCKER_REPOSITORY="$TRAVIS_REPO_SLUG"
+      # The build flags are passed directly because I could not get this to work.
+      # Originally the environment variable was a simple string, but I struggled with escaping the inner quotes.
+      # Next I tried creating a shell array and passing it as `go build "${GO_BUILD_FLAGS}".
+      # While this worked locally, travis-ci parsed it as a series of environment variables
+      # i.e. GO_BUILD_ARGS, gcflags, asmflags
+      # I also tried removing the '=' and declaring the variable in the script block.
+      #- GO_BUILD_ARGS=(-x -ldflags "-X main.version=$VERSION -s -w" -gcflags "-trimpath=$GOPATH" -asmflags "-trimpath=$GOPATH")
+
+
+# https://docs.travis-ci.com/user/customizing-the-build#The-Build-Lifecycle
+# OPTIONAL Install apt addons
+# OPTIONAL Install cache components
+# before_install
+# install
+# before_script
+# script
+# OPTIONAL before_cache (for cleaning up cache)
+# after_success or after_failure
+# OPTIONAL before_deploy
+# OPTIONAL deploy
+# OPTIONAL after_deploy
+# after_script
+
+# install
+# -------
+# https://docs.travis-ci.com/user/languages/go#Dependency-Management
+# install:
+#   - go get -t -v ./...
+
 script:
-    coverage run --source nasp setup.py test
+  - go build -x -ldflags="-X main.version=$VERSION -s -w" -gcflags="-trimpath=$GOPATH" -asmflags="-trimpath=$GOPATH"
+  - ./NASP
 
-#after_success:
-#    coveralls
+# after_success update the Docker latest image.
+# If this is tagged commit, create a named image as well
+after_success:
+  #- docker build -t ${DOCKER_REPOSITORY}:latest -t ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} --pull=true .
+  - "[ -n \"$TRAVIS_TAG\" ] && DOCKER_TAG=\"-t $DOCKER_REPOSITORY:$TRAVIS_TAG\""
+  - docker build -t ${DOCKER_REPOSITORY}:latest $DOCKER_TAG .
+  # TODO: docker login and push
 
-after_script: coveralls
+  # https://docs.travis-ci.com/user/customizing-the-build#Deploying-your-Code
+  #deploy:
+  #  skip_cleanup: true
+
+
+  # TODO: remove env output
+  # The following was the output of the env command:
+  # MANPATH=/home/travis/.nvm/v0.10.36/share/man:/usr/local/clang-3.4/share/man:/usr/local/man:/usr/local/share/man:/usr/share/man
+  # NVM_IOJS_ORG_VERSION_LISTING=https://iojs.org/dist/index.tab
+  # rvm_bin_path=/home/travis/.rvm/bin
+  # HOSTNAME=testing-docker-529dc211-5fed-4586-9e66-0a562c42dca6
+  # HAS_JOSH_K_SEAL_OF_APPROVAL=true
+  # GEM_HOME=/home/travis/.rvm/gems/ruby-1.9.3-p551
+  # TERM=xterm
+  # SHELL=/bin/bash
+  # IRBRC=/home/travis/.rvm/rubies/ruby-1.9.3-p551/.irbrc
+  # TRAVIS_COMMIT=7ed7a67bf62076bddcb91bd060bc8614a01e007f
+  # NVM_PATH=/home/travis/.nvm/v0.10.36/lib/node
+  # TRAVIS_OS_NAME=linux
+  # OLDPWD=/home/travis/build/corburn/test
+  # MY_RUBY_HOME=/home/travis/.rvm/rubies/ruby-1.9.3-p551
+  # rvm_autoupdate_flag=0
+  # TRAVIS_GO_VERSION=1.0.3
+  # USER=travis
+  # NVM_DIR=/home/travis/.nvm
+  # _system_type=Linux
+  # TRAVIS_LANGUAGE=go
+  # rvm_path=/home/travis/.rvm
+  # TRAVIS=true
+  # TRAVIS_REPO_SLUG=corburn/test
+  # HAS_ANTARES_THREE_LITTLE_FRONZIES_BADGE=true
+  # TRAVIS_COMMIT_MESSAGE=disable install step
+  # TRAVIS_PULL_REQUEST=false
+  # PAGER=cat
+  # RACK_ENV=test
+  # rvm_prefix=/home/travis
+  # PATH=/home/travis/gopath/bin:/home/travis/.gimme/versions/go1.0.3.linux.amd64/bin:/home/travis/bin:/home/travis/.local/bin:/home/travis/.rvm/gems/ruby-1.9.3-p551/bin:/home/travis/.rvm/gems/ruby-1.9.3-p551@global/bin:/home/travis/.rvm/rubies/ruby-1.9.3-p551/bin:/usr/local/phantomjs/bin:/home/travis/.nvm/v0.10.36/bin:./node_modules/.bin:/usr/local/maven-3.2.5/bin:/usr/local/clang-3.4/bin:/home/travis/.gimme/versions/go1.4.1.linux.amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/travis/.rvm/bin
+  # TRAVIS_PULL_REQUEST_SHA=
+  # NVM_NODEJS_ORG_MIRROR=https://nodejs.org/dist
+  # PWD=/home/travis/gopath/src/github.com/corburn/test
+  # CONTINUOUS_INTEGRATION=true
+  # JAVA_HOME=/usr/lib/jvm/java-7-oracle
+  # LANG=en_US.UTF-8
+  # MERB_ENV=test
+  # _system_arch=x86_64
+  # TRAVIS_SUDO=false
+  # _system_version=12.04
+  # TRAVIS_TAG=
+  # TRAVIS_ALLOW_FAILURE=false
+  # GOMAXPROCS=2
+  # rvm_version=1.26.8 (1.26.8)
+  # TRAVIS_JOB_NUMBER=3.1
+  # TRAVIS_EVENT_TYPE=push
+  # SHLVL=1
+  # PS4=+
+  # HOME=/home/travis
+  # GOROOT=/home/travis/.gimme/versions/go1.0.3.linux.amd64
+  # RAILS_ENV=test
+  # CI=true
+  # TRAVIS_BUILD_ID=199668278
+  # TRAVIS_PULL_REQUEST_SLUG=
+  # COMPOSER_NO_INTERACTION=1
+  # GEM_PATH=/home/travis/.rvm/gems/ruby-1.9.3-p551:/home/travis/.rvm/gems/ruby-1.9.3-p551@global
+  # TRAVIS_SECURE_ENV_VARS=false
+  # DEBIAN_FRONTEND=noninteractive
+  # GOPATH=/home/travis/gopath
+  # NVM_BIN=/home/travis/.nvm/v0.10.36/bin
+  # NVM_IOJS_ORG_MIRROR=https://iojs.org/dist
+  # GIT_ASKPASS=echo
+  # TRAVIS_BRANCH=master
+  # TRAVIS_COMMIT_RANGE=3f553b88e967...7ed7a67bf620
+  # JRUBY_OPTS=--client -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -Xcext.enabled=false -J-Xss2m -Xcompile.invokedynamic=false
+  # TRAVIS_PULL_REQUEST_BRANCH=
+  # TRAVIS_JOB_ID=199668279
+  # RUBY_VERSION=ruby-1.9.3-p551
+  # container=docker
+  # TRAVIS_BUILD_DIR=/home/travis/gopath/src/github.com/corburn/test
+  # TRAVIS_BUILD_NUMBER=3
+  # _system_name=Ubuntu
+  # rvm_silence_path_mismatch_check_flag=1
+  # _=/usr/bin/env
