@@ -98,6 +98,13 @@ env:
 # OPTIONAL after_deploy
 # after_script
 
+before_install:
+  # package github.com/TGenNorth/nasp/command: cannot find package "github.com/TGenNorth/nasp/command" in any of:
+  #  /home/travis/.gimme/versions/go/src/github.com/TGenNorth/nasp/command (from $GOROOT)
+  #  /home/travis/gopath/src/github.com/TGenNorth/nasp/command (from $GOPATH)
+  # http://stackoverflow.com/a/22563974
+  - ln -s $GOPATH/src/github.com/$TRAVIS_REPO_SLUG $TRAVIS_BUILD_DIR
+
 # install
 # -------
 # https://docs.travis-ci.com/user/languages/go#Dependency-Management
