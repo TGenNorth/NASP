@@ -1,13 +1,13 @@
 package align
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"text/template"
 
-	"github.com/TGenNorth/nasp/command"
+	"github.com/TGenNorth/NASP/command"
 )
 
 var cmd = &command.Command{
@@ -137,7 +137,7 @@ type Job struct {
 
 var tmpl = template.Must(template.New("align").Parse(alignTemplate))
 
-func runAlign(cmd *command.Command, args []string) {
+func runAlign(cmd *command.Command, args []string) error {
 	/*
 		path, err := exec.LookPath("sbatch")
 		if err != nil {
@@ -146,11 +146,11 @@ func runAlign(cmd *command.Command, args []string) {
 	*/
 
 	if referenceFlag == "" {
-		log.Fatal("nasp.align: no reference fasta specified")
+		return errors.New("nasp.align: no reference fasta specified")
 	}
 
 	if len(alignersFlag) < 1 {
-		log.Fatal("nasp.align: no aligners specified")
+		return errors.New("nasp.align: no aligners specified")
 	}
 
 	job := Job{
@@ -161,12 +161,14 @@ func runAlign(cmd *command.Command, args []string) {
 	}
 
 	if err := tmpl.Execute(os.Stdout, job); err != nil {
-		log.Fatalf("execution failed: %s", err)
+		return fmt.Errorf("execution failed: %s", err)
 	}
 
 	for _, aligner := range alignersFlag {
 		if err := tmpl.ExecuteTemplate(os.Stdout, aligner, job); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
 }

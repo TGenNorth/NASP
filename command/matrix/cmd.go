@@ -5,7 +5,7 @@ package matrix
 import (
 	"runtime"
 
-	"github.com/TGenNorth/nasp/command"
+	"github.com/TGenNorth/NASP/command"
 )
 
 var cmd = &command.Command{

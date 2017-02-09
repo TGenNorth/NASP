@@ -9,9 +9,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/TGenNorth/nasp/command"
-	_ "github.com/TGenNorth/nasp/command/export"
-	_ "github.com/TGenNorth/nasp/command/matrix"
+	"github.com/TGenNorth/NASP/command"
+	_ "github.com/TGenNorth/NASP/command/export"
+	_ "github.com/TGenNorth/NASP/command/matrix"
 )
 
 // TODO: document --version flag is usage template

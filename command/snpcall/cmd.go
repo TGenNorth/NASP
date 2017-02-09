@@ -1,6 +1,7 @@
 package snpcall
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -130,7 +131,7 @@ type Job struct {
 
 var tmpl = template.Must(template.New("root").Parse(snpcallTemplate))
 
-func runSnpcall(cmd *command.Command, args []string) {
+func runSnpcall(cmd *command.Command, args []string) error {
 	/*
 		path, err := exec.LookPath("sbatch")
 		if err != nil {
@@ -143,7 +144,7 @@ func runSnpcall(cmd *command.Command, args []string) {
 	}
 
 	if len(args) < 1 {
-		log.Fatal("nasp.snpcall: expected a list or glob pattern of read files")
+		return errors.New("nasp.snpcall: expected a list or glob pattern of read files")
 	}
 
 	if err := tmpl.Execute(os.Stdout, Job{
@@ -152,12 +153,14 @@ func runSnpcall(cmd *command.Command, args []string) {
 		Tasks:     len(args) - 1,
 		Files:     args,
 	}); err != nil {
-		log.Fatalf("execution failed: %s", err)
+		return fmt.Errorf("execution failed: %s", err)
 	}
 
 	for _, snpcaller := range snpcallersFlag {
 		if err := tmpl.ExecuteTemplate(os.Stdout, snpcaller, ""); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
 }

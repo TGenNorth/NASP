@@ -2,12 +2,11 @@ package index
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"text/template"
 
-	"github.com/TGenNorth/nasp/command"
+	"github.com/TGenNorth/NASP/command"
 )
 
 var cmd = &command.Command{
@@ -172,7 +171,7 @@ type Job struct {
 
 var tmpl = template.Must(template.New("root").Parse(alignTemplate))
 
-func runIndexReference(cmd *command.Command, args []string) {
+func runIndexReference(cmd *command.Command, args []string) error {
 	/*
 		path, err := exec.LookPath("sbatch")
 		if err != nil {
@@ -186,18 +185,20 @@ func runIndexReference(cmd *command.Command, args []string) {
 		Tasks:     len(args) / 2,
 		Files:     args,
 	}); err != nil {
-		log.Fatalf("execution failed: %s", err)
+		return fmt.Errorf("execution failed: %s", err)
 	}
 
 	for _, aligner := range alignersFlag {
 		if err := tmpl.ExecuteTemplate(os.Stdout, aligner, ""); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	for _, snpcaller := range snpcallerFlag {
 		if err := tmpl.ExecuteTemplate(os.Stdout, snpcaller, ""); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
+
+	return nil
 
 }
