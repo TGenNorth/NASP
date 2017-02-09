@@ -74,7 +74,7 @@ env:
   # https://github.com/golang/go/issues/13809#issuecomment-168874760
   global:
     - VERSION="${TRAVIS_TAG:-${TRAVIS_COMMIT:0:8}}"
-    - DOCKER_REPOSITORY="$TRAVIS_REPO_SLUG"
+      #- DOCKER_REPOSITORY="$TRAVIS_REPO_SLUG"
       # The build flags are passed directly because I could not get this to work.
       # Originally the environment variable was a simple string, but I struggled with escaping the inner quotes.
       # Next I tried creating a shell array and passing it as `go build "${GO_BUILD_FLAGS}".
@@ -114,7 +114,8 @@ after_success:
   #- docker build -t ${DOCKER_REPOSITORY}:latest -t ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} --pull=true .
   - "[ -n \"$TRAVIS_TAG\" ] && DOCKER_TAG=\"-t $DOCKER_REPOSITORY:$TRAVIS_TAG\""
   - docker build -t ${DOCKER_REPOSITORY}:latest $DOCKER_TAG .
-  # TODO: docker login and push
+  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+  - docker push $DOCKER_REPOSITORY
 
   # https://docs.travis-ci.com/user/customizing-the-build#Deploying-your-Code
   #deploy:
