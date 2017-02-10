@@ -129,7 +129,7 @@ after_success:
       -H "Accept: application/json" \
       -H "Travis-API-Version: 3" \
       -H "Authorization: token $TRAVIS_API_TOKEN" \
-      -d '{ "request":{ "branch":"docker", "config": { "env": { "global": [ "TRAVIS_TAG=overrideTravisTag" ] } }' \
+      -d '{ "request":{ "branch":"docker", "config": { "env": { "global": [ "TRAVIS_TAG=overrideTravisTag" ] } } } }' \
       https://api.travis-ci.org/repo/${TRAVIS_REPO_SLUG/\//%2F}/requests
 
 before_deploy:
