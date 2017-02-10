@@ -2,11 +2,6 @@
 # https://docs.travis-ci.com/user/customizing-the-build#The-Build-Lifecycle
 #
 ---
-sudo: required
-
-services:
-  - docker
-
 # https://docs.travis-ci.com/user/notifications#Configuring-email-notifications
 # Turn off email notifications entirely
 notifications:
@@ -105,96 +100,46 @@ env:
 #   - go get -t -v ./...
 
 script:
-  - go build -x -ldflags="-X main.version=$VERSION -s -w" -gcflags="-trimpath=$GOPATH" -asmflags="-trimpath=$GOPATH"
-  - ./NASP
+  - go build -x -ldflags="-X main.version=$VERSION -s -w" -gcflags="-trimpath=$GOPATH" -asmflags="-trimpath=$GOPATH" && ./test
 
 # after_success update the Docker latest image.
 # If this is tagged commit, create a named image as well
 after_success:
-  #- docker build -t ${DOCKER_REPOSITORY}:latest -t ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} --pull=true .
-  - "[ -n \"$TRAVIS_TAG\" ] && DOCKER_TAG=\"-t $DOCKER_REPOSITORY:$TRAVIS_TAG\""
-  - docker build -t ${DOCKER_REPOSITORY}:latest $DOCKER_TAG .
-  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
-  - docker push $DOCKER_REPOSITORY
+  # During testing it was observed the travis API request will be silently dropped
+  # if the docker branch does not exist.
+  #
+  # https://docs.travis-ci.com/user/triggering-builds
+  # The %2F in the request URL is required so that the owner and repository name
+  # in the repository slug are interpreted as a single URL segment.
+  # body='{
+  #"request": {
+  #"branch":"master"
+  #}}'
+  # travis env set TRAVIS_API_TOKEN $(travis token | sed 's/Your access token is//')
+  # "config": {
+  #  "env": {
+  #    "matrix": ["TEST=unit"]
+  #  },
+  #  "script": "echo FOO"
+  #}
+  - >
+    curl -s -X POST \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Travis-API-Version: 3" \
+      -H "Authorization: token $TRAVIS_API_TOKEN" \
+      -d '{ "request":{ "branch":"docker", "config": { "env": { "global": [ "TRAVIS_TAG=overrideTravisTag" ] } }' \
+      https://api.travis-ci.org/repo/${TRAVIS_REPO_SLUG/\//%2F}/requests
 
-  # https://docs.travis-ci.com/user/customizing-the-build#Deploying-your-Code
-  #deploy:
-  #  skip_cleanup: true
+before_deploy:
+  - tar cvzf nasp.tar.gz *
 
-
-  # TODO: remove env output
-  # The following was the output of the env command:
-  # MANPATH=/home/travis/.nvm/v0.10.36/share/man:/usr/local/clang-3.4/share/man:/usr/local/man:/usr/local/share/man:/usr/share/man
-  # NVM_IOJS_ORG_VERSION_LISTING=https://iojs.org/dist/index.tab
-  # rvm_bin_path=/home/travis/.rvm/bin
-  # HOSTNAME=testing-docker-529dc211-5fed-4586-9e66-0a562c42dca6
-  # HAS_JOSH_K_SEAL_OF_APPROVAL=true
-  # GEM_HOME=/home/travis/.rvm/gems/ruby-1.9.3-p551
-  # TERM=xterm
-  # SHELL=/bin/bash
-  # IRBRC=/home/travis/.rvm/rubies/ruby-1.9.3-p551/.irbrc
-  # TRAVIS_COMMIT=7ed7a67bf62076bddcb91bd060bc8614a01e007f
-  # NVM_PATH=/home/travis/.nvm/v0.10.36/lib/node
-  # TRAVIS_OS_NAME=linux
-  # OLDPWD=/home/travis/build/corburn/test
-  # MY_RUBY_HOME=/home/travis/.rvm/rubies/ruby-1.9.3-p551
-  # rvm_autoupdate_flag=0
-  # TRAVIS_GO_VERSION=1.0.3
-  # USER=travis
-  # NVM_DIR=/home/travis/.nvm
-  # _system_type=Linux
-  # TRAVIS_LANGUAGE=go
-  # rvm_path=/home/travis/.rvm
-  # TRAVIS=true
-  # TRAVIS_REPO_SLUG=corburn/test
-  # HAS_ANTARES_THREE_LITTLE_FRONZIES_BADGE=true
-  # TRAVIS_COMMIT_MESSAGE=disable install step
-  # TRAVIS_PULL_REQUEST=false
-  # PAGER=cat
-  # RACK_ENV=test
-  # rvm_prefix=/home/travis
-  # PATH=/home/travis/gopath/bin:/home/travis/.gimme/versions/go1.0.3.linux.amd64/bin:/home/travis/bin:/home/travis/.local/bin:/home/travis/.rvm/gems/ruby-1.9.3-p551/bin:/home/travis/.rvm/gems/ruby-1.9.3-p551@global/bin:/home/travis/.rvm/rubies/ruby-1.9.3-p551/bin:/usr/local/phantomjs/bin:/home/travis/.nvm/v0.10.36/bin:./node_modules/.bin:/usr/local/maven-3.2.5/bin:/usr/local/clang-3.4/bin:/home/travis/.gimme/versions/go1.4.1.linux.amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/travis/.rvm/bin
-  # TRAVIS_PULL_REQUEST_SHA=
-  # NVM_NODEJS_ORG_MIRROR=https://nodejs.org/dist
-  # PWD=/home/travis/gopath/src/github.com/corburn/test
-  # CONTINUOUS_INTEGRATION=true
-  # JAVA_HOME=/usr/lib/jvm/java-7-oracle
-  # LANG=en_US.UTF-8
-  # MERB_ENV=test
-  # _system_arch=x86_64
-  # TRAVIS_SUDO=false
-  # _system_version=12.04
-  # TRAVIS_TAG=
-  # TRAVIS_ALLOW_FAILURE=false
-  # GOMAXPROCS=2
-  # rvm_version=1.26.8 (1.26.8)
-  # TRAVIS_JOB_NUMBER=3.1
-  # TRAVIS_EVENT_TYPE=push
-  # SHLVL=1
-  # PS4=+
-  # HOME=/home/travis
-  # GOROOT=/home/travis/.gimme/versions/go1.0.3.linux.amd64
-  # RAILS_ENV=test
-  # CI=true
-  # TRAVIS_BUILD_ID=199668278
-  # TRAVIS_PULL_REQUEST_SLUG=
-  # COMPOSER_NO_INTERACTION=1
-  # GEM_PATH=/home/travis/.rvm/gems/ruby-1.9.3-p551:/home/travis/.rvm/gems/ruby-1.9.3-p551@global
-  # TRAVIS_SECURE_ENV_VARS=false
-  # DEBIAN_FRONTEND=noninteractive
-  # GOPATH=/home/travis/gopath
-  # NVM_BIN=/home/travis/.nvm/v0.10.36/bin
-  # NVM_IOJS_ORG_MIRROR=https://iojs.org/dist
-  # GIT_ASKPASS=echo
-  # TRAVIS_BRANCH=master
-  # TRAVIS_COMMIT_RANGE=3f553b88e967...7ed7a67bf620
-  # JRUBY_OPTS=--client -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -Xcext.enabled=false -J-Xss2m -Xcompile.invokedynamic=false
-  # TRAVIS_PULL_REQUEST_BRANCH=
-  # TRAVIS_JOB_ID=199668279
-  # RUBY_VERSION=ruby-1.9.3-p551
-  # container=docker
-  # TRAVIS_BUILD_DIR=/home/travis/gopath/src/github.com/corburn/test
-  # TRAVIS_BUILD_NUMBER=3
-  # _system_name=Ubuntu
-  # rvm_silence_path_mismatch_check_flag=1
-  # _=/usr/bin/env
+# https://docs.travis-ci.com/user/customizing-the-build#Deploying-your-Code
+deploy:
+  provider: releases
+  api_key:
+    secure: $GITHUB_API_TOKEN
+  file: nasp.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
