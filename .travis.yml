@@ -100,7 +100,8 @@ env:
 #   - go get -t -v ./...
 
 script:
-  - go build -x -ldflags="-X main.version=$VERSION -s -w" -gcflags="-trimpath=$GOPATH" -asmflags="-trimpath=$GOPATH" && ./test
+  - go build -x -ldflags="-X main.version=$VERSION -s -w" -gcflags="-trimpath=$GOPATH" -asmflags="-trimpath=$GOPATH"
+  - NASP
 
 # after_success update the Docker latest image.
 # If this is tagged commit, create a named image as well
