@@ -115,7 +115,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
     logging.info("command = %s" % command)
     if job_submitter == "PBS":
 
-        submit_command = _pbs_command(job_params['name'], job_params['work_dir'], job_params['mem_requested'], job_params['num_cpus'], job_params['walltime'], job_params['queue'], job_params['args'], hold, notify, waitfor_id)
+        submit_command = _pbs_command(job_parms['name'], job_parms['work_dir'], job_parms['mem_requested'], job_parms['num_cpus'], job_parms['walltime'], job_parms['queue'], job_parms['args'], hold, notify, waitfor_id)
         logging.debug("submit_command = {0}".format(submit_command))
         output = subprocess.getoutput("echo {0} | {1} - ".format(shlex.quote(command), submit_command))
         logging.debug("output = {0}".format(output))
@@ -126,7 +126,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
     elif job_submitter == "SLURM":
-        submit_command = _slurm_command(job_params['name'], job_params['work_dir'], job_params['mem_requested'], job_params['num_cpus'], job_params['walltime'], job_params['queue'], job_params['args'], hold, notify, waitfor_id)
+        submit_command = _slurm_command(job_parms['name'], job_parms['work_dir'], job_parms['mem_requested'], job_parms['num_cpus'], job_parms['walltime'], job_parms['queue'], job_parms['args'], hold, notify, waitfor_id)
         logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
         logging.debug("output = %s" % output)
