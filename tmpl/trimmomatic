@@ -1,6 +1,10 @@
 #!/bin/bash
 #
 # http://www.usadellab.org/cms/?page=trimmomatic
+#
+# > http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
+# > -phred33 or -phred64 specifies the base quality encoding. If no quality encoding is specified,
+# > it will be determined automatically (since version 0.32). The prior default was -phred64.
 
 # shellcheck source=./common.vars
 source ${workdir}/job_scripts/common.vars
@@ -27,7 +31,6 @@ if [ -n "$read2" ]; then
 		-jar "$trimmomatic" \
 		PE \
 		-threads "$ncpu" \
-		-phred33 \
 		"$read1" "$read2" \
 		"${workdir}/trimmed/${read1_filename}.fastq.gz" "${workdir}/trimmed/${read1_filename}_unpaired.fastq.gz" \
 		"${workdir}/trimmed/${read2_filename}.fastq.gz" "${workdir}/trimmed/${read2_filename}_unpaired.fastq.gz" \
@@ -41,7 +44,6 @@ else
 		-jar "$trimmomatic" \
 		SE \
 		-threads "$ncpu" \
-		-phred33 \
 		"$read1" "${workdir}/trimmed/${read1_filename}.fastq.gz" \
 		ILLUMINACLIP:${trimmomatic_se_adapter_fasta}:2:30:10 \
 		LEADING:3 \
