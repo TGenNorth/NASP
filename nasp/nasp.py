@@ -90,7 +90,10 @@ def _find_executable(application):  # This method is not OS-independent. Should 
     match = re.search('^(.*)\n.*$', str(executable, "utf-8"))
     if match:
         executable = match.group(1)
-    return executable
+    try:
+        return str(executable, 'utf-8')
+    except TypeError:
+        return executable
 
 
 def _find_reads(path):
