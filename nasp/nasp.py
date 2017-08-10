@@ -186,6 +186,7 @@ def _get_application_path(application):
 # NOTE: Wildcard characters are allowed in 'jarfile' as both fnmatch and glob will handle them
 def _get_java_path(jarfile):
     import fnmatch
+    import glob
     paths = ['/usr/share/java/']
     paths.extend(os.environ['PATH'].split(os.pathsep))
     for path in paths:
@@ -302,7 +303,10 @@ def _get_snpcallers(queue, args):
     response = input("\nWould you like to run GATK [Y]? ")
     if not re.match('^[Nn]', response):
         gatk_path = _get_java_path("GenomeAnalysisTK.jar")
-        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100 -ploidy 1",
+        # ##### ERROR MESSAGE: Invalid command line: The parameter standard_min_confidence_threshold_for_emitting is deprecated.
+        # This argument is no longer used in GATK versions 3.7 and newer. Please see the online documentation for the latest usage recommendations.
+        #gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100 -ploidy 1",
+        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -ploidy 1",
                                                {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
                                                 'queue': queue, 'args': args})
         snpcaller_list.append(gatk_settings)
