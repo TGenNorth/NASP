@@ -344,18 +344,18 @@ def _get_job_submitter():
     queue = ""
     args = ""
     response = input(
-        "\nWhat system do you use for job management (PBS/TORQUE, SLURM, SGE/OGE, and 'none' are currently supported) [PBS]? ")
+        "\nWhat system do you use for job management (PBS/TORQUE, SLURM, SGE/OGE, and 'none' are currently supported) [SLURM]? ")
     while job_submitter == "invalid":
-        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE) or response == "":
+        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE):
             job_submitter = "PBS"
-        elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
+        elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE) or response == "":
             job_submitter = "SLURM"
         elif re.match('^(SGE|OGE)', response, re.IGNORECASE):
             job_submitter = "SGE"
         elif re.match('^none$', response, re.IGNORECASE):
             job_submitter = "NONE"
         else:
-            response = input("  %s is not a valid job management system, please enter another [PBS]? " % response)
+            response = input("  %s is not a valid job management system, please enter another [SLURM]? " % response)
     if job_submitter != "NONE":
         queue = input(
             "  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? ")
