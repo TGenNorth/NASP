@@ -10,7 +10,7 @@ import re
 try:
     import collections
 except:
-    print("python 2.7+ must be installed")
+    print("> python 2.7+ must be installed")
     sys.exit()
 import os
 
@@ -23,107 +23,109 @@ def test_file(option, opt_str, value, parser):
 
 def get_field_index(matrix_in):
     """index to find where the SNP calls end"""
-    matrix=open(matrix_in, "rU")
     firstLine = open(matrix_in).readline()
     first_fields = firstLine.split("\t")
     last=first_fields.index("#SNPcall")
-    matrix.close()
     return last
 
 def raw_matrix(matrix_in):
-    """bring in ISG matrix and report the total number of SNPs"""
-    matrix=iter(fileinput.input([matrix_in]))
-    next(matrix)
-    lines=[ ]
-    for line in matrix:
-        lines.append(line)
+    """bring in NASP matrix and report the total number of SNPs"""
+    lines=[]
+    with open(matrix_in) as my_matrix:
+        for line in my_matrix:
+            if line.startswith("LocusID"):
+                pass
+            else:
+                lines.append("1")
     print("Total SNPs:",len(lines))
 
 def matrix_to_fasta(matrix_in, prefix, type, last):
-    """converts an ISG matrix to fasta format"""
-    reduced = [ ]
+    """converts a NASP matrix to fasta format"""
+    reduced = []
     out_fasta = open("%s.%s.fasta" % (prefix, type), "w")
-    for line in open(matrix_in):
-        fields = line.split()
-        reduced.append(fields[1:last])
+    with open(matrix_in) as my_matrix:
+        for line in my_matrix:
+            fields = line.split()
+            reduced.append(fields[1:last])
     test=map(list, zip(*reduced))
     for x in test:
         out_fasta.write(">"+str(x[0])+"\n")
         out_fasta.write("".join(x[1:])+"\n")
     out_fasta.close()
+    test=[]
+    reduced=[]
 
 def filter_matrix(matrix_in, last, filter_frequency):
-    """filter an ISG matrix position if it contains either missing
+    """filter a NASP matrix position if it contains either missing
     or ambiguous data.  Also removes positions if they are monomorphic"""
-    matrix = open(matrix_in, "rU")
     file_out=open("tmp.matrix", "w")
-    firstLine = matrix.readline()
+    firstLine = open(matrix_in).readline()
     file_out.write(firstLine,)
-    lines = [ ]
-    for line in matrix:
-        if line.startswith("LocusID"):
-            pass
-        else:
-            doubles=[ ]
-            fields = line.split("\t")
-            for field in fields[1:last]:
-                if len(field)>=2:
-	                doubles.append("1")
-            #Skips lines if they contain multiple calls per field
-            if len(doubles)>=1:
+    lines = []
+    with open(matrix_in) as my_matrix:
+        for line in my_matrix:
+            if line.startswith("LocusID"):
                 pass
             else:
-                all_counts = len(fields[1:last])
-                missing_counts = []
-                fixed_fields = []
-                fixed_fields.append(fields[0])
+                doubles=[ ]
+                fields = line.split("\t")
                 for field in fields[1:last]:
-                    fixed_fields.append(field.upper())
-                for field in fields[last+1:-1]:
-                    fixed_fields.append(field)
-                """replace missing elements with a gap character"""
-                new_fields=[]
-                for fixed_field in fixed_fields:
-                    if fixed_field == "X":
-                        gap_field = re.sub(r"X","-",fixed_field)
-                    elif fixed_field == "N":
-                        gap_field = re.sub(r"N","-",fixed_field)
-                    else:
-                        gap_field = fixed_field
-                    new_fields.append(gap_field)
-                """count the number of missing elements"""
-                for fixed_field in new_fields[1:last]:
-                    if fixed_field == "-":
-                        missing_counts.append("1")
-                totals_missing = int(all_counts)-int(len(missing_counts))
-                if (totals_missing/all_counts)>=float(filter_frequency): file_out.write("\t".join(new_fields)+"\n")
-                if (totals_missing/all_counts)>=float(filter_frequency): lines.append("1")
+                    if len(field)>=2:
+    	                doubles.append("1")
+                #Skips lines if they contain multiple calls per field
+                if len(doubles)>=1:
+                    pass
+                else:
+                    all_counts = len(fields[1:last])
+                    missing_counts = []
+                    fixed_fields = []
+                    fixed_fields.append(fields[0])
+                    for field in fields[1:last]:
+                        fixed_fields.append(field.upper())
+                    for field in fields[last+1:-1]:
+                        fixed_fields.append(field)
+                    """replace missing elements with a gap character"""
+                    new_fields=[]
+                    """Fix this to only include A,T,G,C"""
+                    new_fields.append(fixed_fields[0])
+                    for fixed_field in fixed_fields[1:last]:
+                        if fixed_field not in ["A","T","G","C"]:
+                            new_fields.append("-")
+                        else:
+                            new_fields.append(fixed_field)
+                    for field in fields[last+1:-1]:
+                        new_fields.append(field)
+                    """count the number of missing elements"""
+                    for fixed_field in new_fields[1:last]:
+                        if fixed_field == "-":
+                            missing_counts.append("1")
+                    totals_missing = int(all_counts)-int(len(missing_counts))
+                    if (totals_missing/all_counts)>=float(filter_frequency): file_out.write("\t".join(new_fields)+"\n")
+                    if (totals_missing/all_counts)>=float(filter_frequency): lines.append("1")
     print("number of SNPs after filtering:", len(lines))
-    matrix.close()
     file_out.close()
 
 def filter_singletons(last, tmp_matrix):
     """find positions in the matrix where there are at least 2 types of nucleotides
     in the alignment with a minimum frequency of 2 - this is the Mega definition
     of Parsimony informative SNP)"""
-    matrix = open(tmp_matrix, "rU")
     file_out=open("tmp2.matrix", "w")
-    firstLine = matrix.readline()
+    firstLine = open(tmp_matrix).readline()
     file_out.write(firstLine,)
-    lines = [ ]
-    for line in matrix:
-        fields=line.split("\t")
-        counter=collections.Counter(fields[1:last])
-        values=counter.values()
-        new_values=list(sorted(values, key=int))
-        if len(new_values)==1: sys.exc_clear()
-        else:
-            for i in range(2,5):
-                if len(new_values)==int(i) and new_values[i-2]>1: file_out.write(line,)
-                if len(new_values)==int(i) and new_values[i-2]>1: lines.append(line)
-        values=[]
+    lines = []
+    with open(tmp_matrix) as my_matrix:
+        for line in my_matrix:
+            fields=line.split("\t")
+            counter=collections.Counter(fields[1:last])
+            values=counter.values()
+            new_values=list(sorted(values, key=int))
+            if len(new_values)==1:
+                pass
+            else:
+                for i in range(2,5):
+                    if len(new_values)==int(i) and new_values[i-2]>1: file_out.write(line,)
+                    if len(new_values)==int(i) and new_values[i-2]>1: lines.append("1")
     print("number of parsimony-informative SNPs:", len(lines))
-    matrix.close()
     file_out.close()
 
 def test_file(option, opt_str, value, parser):
@@ -141,14 +143,14 @@ def main(matrix_in,prefix,filter_frequency):
     matrix_to_fasta("tmp.matrix", prefix, "filtered", last)
     filter_singletons(last, "tmp.matrix")
     matrix_to_fasta("tmp2.matrix", prefix, "filtered_PI_snps_only", last)
-    os.system("mv tmp.matrix clean_matrix.txt")
-    os.system("mv tmp2.matrix clean_PI_matrix.txt")
+    os.system("mv tmp.matrix %s_clean_matrix.txt" % prefix)
+    os.system("mv tmp2.matrix %s_clean_PI_matrix.txt" % prefix)
 
 if __name__ == "__main__":
     usage="usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option("-m", "--input_matrix", dest="matrix_in",
-                      help="/path/to/isg_matrix [REQUIRED]",
+                      help="/path/to/NASP_matrix [REQUIRED]",
                       action="callback", callback=test_file, type="string")
     parser.add_option("-p", "--output_prefix", dest="prefix",
                       help="prefix for outfiles [REQUIRED]",
@@ -165,3 +167,4 @@ if __name__ == "__main__":
             exit(-1)
 
     main(options.matrix_in,options.prefix,options.filter_frequency)
+
