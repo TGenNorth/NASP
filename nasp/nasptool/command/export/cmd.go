@@ -370,7 +370,7 @@ func (v *vcf) translateSampleAnalysisColumns(matrixLine []byte) (buf []byte, isA
 		if pattern[i+1] != '0' {
 			// Since we know the byte is one of 1,2,3,4 we can take advantage of
 			// ASCII codes to subtract 1 without parsing it as an integer.
-			buf = append(buf, '\t', pattern[i]-1)
+			buf = append(buf, '\t', pattern[i+1]-1)
 		} else {
 			// '0' indicates the analysis was not of sufficent quality to identify
 			// Early versions of NASP used a pattern value of 'N'

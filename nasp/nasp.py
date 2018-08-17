@@ -90,7 +90,10 @@ def _find_executable(application):  # This method is not OS-independent. Should 
     match = re.search('^(.*)\n.*$', str(executable, "utf-8"))
     if match:
         executable = match.group(1)
-    return executable
+    try:
+        return str(executable, 'utf-8')
+    except TypeError:
+        return executable
 
 
 def _find_reads(path):
@@ -183,6 +186,7 @@ def _get_application_path(application):
 # NOTE: Wildcard characters are allowed in 'jarfile' as both fnmatch and glob will handle them
 def _get_java_path(jarfile):
     import fnmatch
+    import glob
     paths = ['/usr/share/java/']
     paths.extend(os.environ['PATH'].split(os.pathsep))
     for path in paths:
@@ -299,7 +303,10 @@ def _get_snpcallers(queue, args):
     response = input("\nWould you like to run GATK [Y]? ")
     if not re.match('^[Nn]', response):
         gatk_path = _get_java_path("GenomeAnalysisTK.jar")
-        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100 -ploidy 1",
+        # ##### ERROR MESSAGE: Invalid command line: The parameter standard_min_confidence_threshold_for_emitting is deprecated.
+        # This argument is no longer used in GATK versions 3.7 and newer. Please see the online documentation for the latest usage recommendations.
+        #gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -stand_emit_conf 100 -ploidy 1",
+        gatk_settings = _get_advanced_settings("GATK", gatk_path, "-stand_call_conf 100 -ploidy 1",
                                                {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
                                                 'queue': queue, 'args': args})
         snpcaller_list.append(gatk_settings)
@@ -337,18 +344,18 @@ def _get_job_submitter():
     queue = ""
     args = ""
     response = input(
-        "\nWhat system do you use for job management (PBS/TORQUE, SLURM, SGE/OGE, and 'none' are currently supported) [PBS]? ")
+        "\nWhat system do you use for job management (PBS/TORQUE, SLURM, SGE/OGE, and 'none' are currently supported) [SLURM]? ")
     while job_submitter == "invalid":
-        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE) or response == "":
+        if re.match('^(PBS|Torque|qsub)$', response, re.IGNORECASE):
             job_submitter = "PBS"
-        elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE):
+        elif re.match('^(SLURM|sbatch)$', response, re.IGNORECASE) or response == "":
             job_submitter = "SLURM"
         elif re.match('^(SGE|OGE)', response, re.IGNORECASE):
             job_submitter = "SGE"
         elif re.match('^none$', response, re.IGNORECASE):
             job_submitter = "NONE"
         else:
-            response = input("  %s is not a valid job management system, please enter another [PBS]? " % response)
+            response = input("  %s is not a valid job management system, please enter another [SLURM]? " % response)
     if job_submitter != "NONE":
         queue = input(
             "  Would you like to specify a queue/partition to use for all jobs (leave blank to use default queue) []? ")
