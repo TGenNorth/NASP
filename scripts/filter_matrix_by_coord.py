@@ -10,89 +10,87 @@ import collections
 import sys
 
 def get_index_range(in_matrix):
-    matrix=open(in_matrix, "rU")
-    firstLine = matrix.readline()
-    first_fields = firstLine.split("\t")
-    last=first_fields.index("#SNPcall")
-    return last
+    with open(in_matrix) as my_file:
+        firstLine = my_file.readline()
+        first_fields = firstLine.split("\t")
+        last=first_fields.index("#SNPcall")
+        return last
 
 def filter_matrix(in_matrix, prefix, coords, action):
     """filter NASP matrix for a user provided list of genome
     coordinates"""
-    infile=open(in_matrix, "U")
     coords_file = open(coords, "r").read().splitlines()
-    out_file=open("%s.coord_filtered.matrix" % prefix, "w")
-    firstLine = infile.readline()
     sorted(coords_file)
-    out_file.write(firstLine,)
-    lines = [ ]
-    for line in infile:
-        fields=line.split("\t")
-        if action == "keep":
-            if fields[0] in coords_file:
-                lines.append(line)
-                out_file.write(line,)
-        elif action == "remove":
-            if fields[0] not in coords_file:
-                out_file.write(line,)
+    out_file=open("%s.coord_filtered.matrix" % prefix, "w")
+    lines = []
+    with open(in_matrix) as infile:
+        firstLine = infile.readline()
+        out_file.write(firstLine,)
+        for line in infile:
+            fields=line.split("\t")
+            if action == "keep":
+                if fields[0] in coords_file:
+                    lines.append("1")
+                    out_file.write(line,)
+            elif action == "remove":
+                if fields[0] not in coords_file:
+                    out_file.write(line,)
             else:
-                lines.append(line)
+                lines.append("1")
+    out_file.close()
     print("Number of SNPs matching in your list:", len(lines))
 
 def matrix_to_fasta(prefix, kind, type, last):
     """converts a NASP matrix to fasta format"""
-    reduced = [ ]
-    in_matrix = open("%s.%s.matrix" % (prefix,kind), "rU")
+    reduced = []
     out_fasta = open("%s.%s.fasta" % (prefix, type), "w")
-    for line in in_matrix:
-        fields = line.split("\t")
-        reduced.append(fields[2:last])
+    with open("%s.%s.matrix" % (prefix,kind)) as infile:
+        for line in infile:
+            fields = line.split("\t")
+            reduced.append(fields[2:last])
     test=map(list, zip(*reduced))
     for x in test:
         out_fasta.write(">"+str(x[0])+"\n")
         out_fasta.write("".join(x[1:])+"\n")
-    in_matrix.close()
     out_fasta.close()
     return last
 
 def filter_missing_matrix(prefix, last):
     """filter a NASP matrix position if it contains either missing
     or ambiguous data"""
-    matrix=open("%s.coord_filtered.matrix" % prefix, "rU")
     file_out=open("%s.coord_missing_filtered.matrix" % prefix, "w")
-    firstLine = matrix.readline()
-    file_out.write(firstLine,)
-    lines = [ ]
-    for line in matrix:
-        fields = line.split("\t")
-        if "X" not in fields[1:last] and "N" not in fields[1:last]: file_out.write(line,)
-        if "X" not in fields[1:last] and "N" not in fields[1:last]: lines.append(line)
+    lines = []
+    with open("%s.coord_filtered.matrix" % prefix) as infile:
+        firstLine = infile.readline()
+        file_out.write(firstLine,)
+        for line in infile:
+            fields = line.split("\t")
+            if "X" not in fields[1:last] and "N" not in fields[1:last]: file_out.write(line,)
+            if "X" not in fields[1:last] and "N" not in fields[1:last]: lines.append("1")
     print("number of SNPs after missing regions removed:", len(lines))
-    matrix.close()
     file_out.close()
 
 def filter_singletons(prefix, matrix_prefix, last):
     """find positions in the matrix where there are at least 2 types of nucleotides
     in the alignment with a minimum frequency of 2 - this is the Mega definition
     of Parsimony informative SNP)"""
-    matrix=open("%s.%s" % (prefix, matrix_prefix))
+    lines = []
     file_out=open("%s.PI.matrix.txt" % prefix, "w")
-    firstLine = matrix.readline()
-    file_out.write(firstLine,)
-    lines = [ ]
-    for line in matrix:
-        fields=line.split("\t")
-        counter=collections.Counter(fields[1:last])
-        values=counter.values()
-        new_values=list(sorted(values, key=int))
-        if len(new_values)==1: sys.exc_clear()
-        else:
-            for i in range(2,5):
-                if len(values)==int(i) and new_values[i-2]>1: file_out.write(line,)
-                if len(values)==int(i) and new_values[i-2]>1: lines.append(line)
-        values=[]
+    with open("%s.%s" % (prefix, matrix_prefix)) as infile:
+        firstLine = infile.readline()
+        file_out.write(firstLine,)
+        for line in infile:
+            fields=line.split("\t")
+            counter=collections.Counter(fields[1:last])
+            values=counter.values()
+            new_values=list(sorted(values, key=int))
+            if len(new_values)==1: sys.exc_clear()
+            else:
+                for i in range(2,5):
+                    if len(values)==int(i) and new_values[i-2]>1: file_out.write(line,)
+                    if len(values)==int(i) and new_values[i-2]>1: lines.append("1")
+            values=[]
     print("number of parsimony-informative SNPs:", len(lines))
-    matrix.close()
     file_out.close()
 
 def main(in_matrix, prefix, coords, action):
@@ -129,3 +127,4 @@ if __name__ == "__main__":
             exit(-1)
 
     main(options.in_matrix,options.prefix,options.coords,options.action)
+
