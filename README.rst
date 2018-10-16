@@ -1,3 +1,7 @@
+.. image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square
+    :target: http://bioconda.github.io/recipes/nasp/README.html
+    :alt: install with bioconda
+
 .. image:: https://landscape.io/github/TGenNorth/NASP/tests/landscape.svg?style=flat
    :target: https://landscape.io/github/TGenNorth/NASP/tests
    :alt: Code Health
