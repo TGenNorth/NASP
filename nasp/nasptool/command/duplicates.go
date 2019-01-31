@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/TGenNorth/NASP/mummer"
+	"github.com/TGenNorth/nasp/mummer"
 )
 
 var cmdDuplicates = &Command{
