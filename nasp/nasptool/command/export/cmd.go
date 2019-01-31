@@ -3,7 +3,6 @@ package export
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/TGenNorth/nasp/command"
+	"github.com/pkg/errors"
 )
 
 var cmd = &command.Command{
@@ -394,21 +394,22 @@ func (v *vcf) translateSampleAnalysisColumns(matrixLine []byte) (buf []byte, isA
 }
 
 func (v *vcf) ReadFrom(r io.Reader) error {
-	scanner := bufio.NewScanner(r)
+	b := bufio.NewReader(r)
 
 	// Skip the header line
-	scanner.Scan()
+	buffer, err := b.ReadBytes('\n')
 
-	for scanner.Scan() {
-		if scanner.Err() != nil {
-			return scanner.Err()
-		}
-		if _, err := v.Write(scanner.Bytes()); err != nil {
+	// NB: error must be checked outside loop
+	for buffer, err = b.ReadBytes('\n'); err == nil; buffer, err = b.ReadBytes('\n') {
+		if _, err := v.Write(buffer); err != nil {
 			return err
 		}
 	}
+	if err == io.EOF {
+		return nil
+	}
 
-	return nil
+	return err
 }
 
 type contigmeta struct {
@@ -421,34 +422,35 @@ func collectVcfMetadata(r io.Reader) (contigs []contigmeta, identifiers [][]byte
 	var lastContigName []byte = make([]byte, 0)
 	var lastContigLength int
 
-	scanner := bufio.NewScanner(r)
+	// swapped bufio.Scanner for bufio.Reader because a user encountered "bufio.Scanner: token too long".
+	// Reader.Read{Bytes,String} allocate memory as needed.
+	b := bufio.NewReader(r)
+
+	buffer, err := b.ReadBytes('\n')
+	if err != nil {
+		// TODO: wrap error with context (expected matrix header)
+		return nil, nil, err
+	}
 
 	// The sample identifiers are the header columns between LocusID and #SNPcall
-	scanner.Scan()
-	buffer := scanner.Bytes()
-
 	start := len("LocusID\tReference\t")
 	if !bytes.Equal(buffer[:start], []byte("LocusID\tReference\t")) {
-		log.Println("export: expected the first two columns of the input matrix to be LocusID and Reference; the output could be incorrect")
+		return nil, nil, errors.New("export: expected the first two columns of the input matrix to be LocusID and Reference")
 	}
 
 	end := bytes.Index(buffer, []byte("\t#SNPcall"))
 	if end == -1 {
 		return nil, nil, errors.New("export: #SNPcall header column not found. Expected the sample identifiers to be the columns between the LocusID and #SNPcall column")
 	}
-	snpIndRef := []byte("\t#SNPcall\t#Indelcall\t#Refcall")
-	if !bytes.Equal(buffer[end:end+len(snpIndRef)], snpIndRef) {
-		log.Printf("export: expected the input matrix columns following the sample analyses to match '%s'; the output could be incorrect\n", bytes.Replace(snpIndRef, []byte("\t"), []byte(" "), -1))
-	}
 
-	// Copy the header identifiers into a new backing array so they will persist
-	// after the next read.
+	// Copy the header identifiers into a new backing array so they will persist after the next read.
+	// TODO: this may not be required following the change from bufio.Scanner to bufio.Reader.
 	header := make([]byte, end-start)
 	copy(header, buffer[start:end])
 	identifiers = bytes.Split(header, []byte("\t"))
 
-	for scanner.Scan() {
-		buffer := scanner.Bytes()
+	// NB: error must be checked outside loop
+	for buffer, err = b.ReadBytes('\n'); err == nil; buffer, err = b.ReadBytes('\n') {
 		// Assumes each the LocusID column is <contig name>::<position>
 		idx := bytes.IndexByte(buffer, ':')
 		// TODO: err if idx == -1
@@ -464,6 +466,11 @@ func collectVcfMetadata(r io.Reader) (contigs []contigmeta, identifiers [][]byte
 			lastContigLength = 0
 		}
 		lastContigLength++
+	}
+	if err == io.EOF {
+		err = nil
+	} else if err != nil {
+		return nil, nil, errors.Wrap(err, "scan file for contig name and length")
 	}
 
 	contig := contigmeta{
