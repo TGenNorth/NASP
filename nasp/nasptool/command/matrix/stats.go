@@ -231,8 +231,8 @@ func (s SampleStats) statLine(buf []byte, stat SampleStat) []byte {
 		failedCoveragePercent = 0.0
 		failedProportionPercent = 0.0
 	} else {
-		failedCoveragePercent = float64(failedCoverage) / float64(stat.wasCalled)
-		failedProportionPercent = float64(failedCoverage) / float64(stat.wasCalled)
+		failedCoveragePercent = float64(failedCoverage) / float64(stat.wasCalled) * 100
+		failedProportionPercent = float64(failedProportion) / float64(stat.wasCalled) * 100
 	}
 
 	buf = buf[:0]
