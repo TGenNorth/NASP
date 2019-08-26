@@ -217,7 +217,9 @@ func (v *vcf) Write(line []byte) (n int64, err error) {
 	var start, end int
 	var ns uint
 
-	sampleColumns, isAllPassFilters, err := v.translateSampleAnalysisColumns(line)
+	// TODO: TrimSpace resolves a bug introduced when a bytes.Scanner was replaces by a bytes.Reader to resolve a buffer overflow (#47)
+	// Add a unit test verifying the output. In particular, does NASP handle input with long lines and does it handle newlines correctly.
+	sampleColumns, isAllPassFilters, err := v.translateSampleAnalysisColumns(bytes.TrimSpace(line))
 	if err != nil {
 		return 0, err
 	}
@@ -295,7 +297,7 @@ func parseUint(p []byte) (n uint) {
 			n *= 10
 			n += uint(digit - '0')
 		} else {
-			panic(fmt.Sprintf("Failed to parse '%s' as an integer"))
+			panic(fmt.Sprintf("Failed to parse '%s' as an integer", p))
 		}
 	}
 	return n
@@ -328,6 +330,7 @@ func (v *vcf) alts(callRegion []byte) []byte {
 // samples. The Pattern column is assumed to start with one additional character
 // for the reference.
 // It is assumes the columns are delimited by one tab character.
+// It assumes there is no trailing newline/whitespace characters.
 func (v *vcf) translateSampleAnalysisColumns(matrixLine []byte) (buf []byte, isAllPassFilters bool, err error) {
 	const (
 		nocall   = ":NoCall"
@@ -335,6 +338,7 @@ func (v *vcf) translateSampleAnalysisColumns(matrixLine []byte) (buf []byte, isA
 		propfail = ":PropFail"
 		pass     = ":PASS"
 	)
+
 	// Counting from the end of the line, calculate the regions of the remaining
 	// matrix columns based on the number of samples.
 	lineLength := len(matrixLine)
@@ -394,13 +398,14 @@ func (v *vcf) translateSampleAnalysisColumns(matrixLine []byte) (buf []byte, isA
 }
 
 func (v *vcf) ReadFrom(r io.Reader) error {
+	const delimiter = '\n'
 	b := bufio.NewReader(r)
 
 	// Skip the header line
-	buffer, err := b.ReadBytes('\n')
+	buffer, err := b.ReadBytes(delimiter)
 
 	// NB: error must be checked outside loop
-	for buffer, err = b.ReadBytes('\n'); err == nil; buffer, err = b.ReadBytes('\n') {
+	for buffer, err = b.ReadBytes(delimiter); err == nil; buffer, err = b.ReadBytes(delimiter) {
 		if _, err := v.Write(buffer); err != nil {
 			return err
 		}
@@ -451,7 +456,7 @@ func collectVcfMetadata(r io.Reader) (contigs []contigmeta, identifiers [][]byte
 
 	// NB: error must be checked outside loop
 	for buffer, err = b.ReadBytes('\n'); err == nil; buffer, err = b.ReadBytes('\n') {
-		// Assumes each the LocusID column is <contig name>::<position>
+		// Assumes each LocusID column is <contig name>::<position>
 		idx := bytes.IndexByte(buffer, ':')
 		// TODO: err if idx == -1
 		if !bytes.Equal(lastContigName, buffer[:idx]) {
