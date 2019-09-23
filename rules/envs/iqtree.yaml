@@ -1,5 +1,7 @@
 channels:
+  - local
   - bioconda
   - conda-forge
 dependencies:
-  - mummer4=4.0.0beta2
+  - iqtree
+  - nasp=2.0.0

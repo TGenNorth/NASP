@@ -1,0 +1,97 @@
+name: build latest
+on: [push]
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        # https://github.com/bioconda/bioconda-recipes/blob/3f5d499fd3c0bdf259710a228a8e49752b4c7996/README.md
+        # The bioconda channel is a Conda channel providing bioinformatics related packages for Linux and Mac OS.
+        os: [ubuntu-latest, macOS-latest]
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 1
+        # CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
+        # To initialize your shell, run
+        #
+        #     $ conda init <SHELL_NAME>
+        #
+        # Currently supported shells are:
+        #   - bash
+        #   - fish
+        #   - tcsh
+        #   - xonsh
+        #   - zsh
+        #   - powershell
+        #
+        # See 'conda init --help' for more information and options.
+        #
+        # IMPORTANT: You may need to close and restart your shell after running 'conda init'.
+        #
+        # ---------------------------------------------------------------------------------------------
+        #
+        # The default ~/.bashrc starts with an early return for non-interactive shells:
+        #     case $- in
+        #         *i*) ;;
+        #           *) return;;
+        #     esac
+        #
+        # https://help.github.com/en/articles/workflow-syntax-for-github-actions#using-a-specific-shell
+        # bash --noprofile --norc -eo pipefail {0}
+        #
+        # --------------------------------------------------------------------------------------------
+        #
+        # # >>> conda initialize >>>
+        # # !! Contents within this block are managed by 'conda init' !!
+        # __conda_setup="$('/home/runner/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+        # if [ $? -eq 0 ]; then
+        #     eval "$__conda_setup"
+        # else
+        #     if [ -f "/home/runner/miniconda3/etc/profile.d/conda.sh" ]; then
+        #         . "/home/runner/miniconda3/etc/profile.d/conda.sh"
+        #     else
+        #         export PATH="/home/runner/miniconda3/bin:$PATH"
+        #     fi
+        # fi
+        # unset __conda_setup
+        # # <<< conda initialize <<<
+        #
+        # --------------------------------------------------------------------------------------------
+      - name: install conda
+        run: |
+          PLATFORM=Linux
+          [[ "$RUNNER_OS" == "macOS" ]] && PLATFORM="MacOSX"
+          curl -LO https://repo.anaconda.com/miniconda/Miniconda3-latest-${PLATFORM}-x86_64.sh
+          bash Miniconda3-latest-${PLATFORM}-x86_64.sh -b -u
+          . "$HOME/miniconda3/etc/profile.d/conda.sh"
+          conda update -q -y -n base -c defaults conda
+      - name: "TODO: remove conda build"
+        # Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+        # WARNING:conda_build.build:Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+        # WARNING conda_build.build:bundle_conda(1042): Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+        run: |
+          . "$HOME/miniconda3/etc/profile.d/conda.sh"
+          conda install -n base -q -y conda-build conda-verify
+          conda activate base
+          conda build .
+          conda create -n bbmap -q -y -c conda-forge -c bioconda bbmap
+          conda activate bbmap
+          randomgenome.sh len=1000 out=reference.fasta
+          mkdir -pv assemblies pe_reads
+          for sample_name in a b c; do
+            mutate.sh id=0.9 in=reference.fasta out=assemblies/${sample_name}.fasta
+            randomreads.sh paired=t ref=reference.fasta out1=reads/${sample_name}_1.fq out2=reads/${sample_name}_2.fq len=100 coverage=15
+          done
+      - name: install snakemake
+        run: |
+          . "$HOME/miniconda3/etc/profile.d/conda.sh"
+          conda create -n snakemake -q -y -c conda-forge -c bioconda snakemake
+      - name: run snakemake
+        run: |
+          . "$HOME/miniconda3/etc/profile.d/conda.sh"
+          conda activate snakemake
+          snakemake --list-target-rules \
+          | xargs snakemake --use-conda -j --

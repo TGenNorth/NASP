@@ -1,0 +1,42 @@
+{% set version = "2.0.0" %}
+
+package:
+  name: 'nasp'
+  version: '{{ version }}'
+
+source:
+  #url: https://github.com/TGenNorth/NASP/archive/v{{ version }}.tar.gz
+  url: https://github.com/TGenNorth/NASP/archive/ed650f2fe691867bd61cbc488f1224d62a5017f0.tar.gz
+  sha256: 27137c7f4f01a417247272503dd656930e19a969f985d1c4093334d8366aac6a
+
+# https://tip.golang.org/doc/go1.12#modules
+# go 1.11 through 1.11.3 will fail if the go.mod 'go' directive specifies a newer version
+build:
+  number: 0
+  script: |
+    cd nasp/nasptool
+    sed -i 's/go 1.12/go 1.11/' go.mod
+    go build -o ${PREFIX}/bin/${PKG_NAME}
+
+requirements:
+  build:
+    - {{ compiler('go') }}
+
+test:
+  commands:
+    - nasp --help || test "$?" == "2"
+    #- nasp --version | grep -q "${PKG_VERSION}"
+    - nasp matrix --help || test "$?" == "1"
+
+about:
+  home: 'https://github.com/TGenNorth/NASP'
+  license: 'Academic and Research License'
+  license_file: 'LICENSE.rst'
+  summary: 'NASP: an accurate, rapid method for the identification of SNPs in WGS datasets that supports flexible input and output formats'
+
+extra:
+  identifiers:
+    - doi:10.1099/mgen.0.000074
+  recipe-maintainers:
+    - corburn
+

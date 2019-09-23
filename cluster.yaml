@@ -1,0 +1,12 @@
+# $HOME/.config/snakemake/nasp/cluster.yaml
+---
+__default__:
+  account: "my_account",
+  time: "00:15:00",
+  n: 1,
+  partition: "core"
+compute1:
+  time: "00:20:00"
+frankenfasta:
+  time: "00:20:00"
+...
