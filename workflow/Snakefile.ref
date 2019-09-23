@@ -1,0 +1,20 @@
+# Error: no Snakefile found, tried Snakefile, snakefile, workflow/Snakefile, workflow/snakefile.
+
+# this container defines the underlying OS for each job when using the workflow
+# with snakemake --use-conda --use-singularity
+singularity: "docker://continuumio/miniconda3"
+
+##### setup report #####
+
+report: "report/workflow.rst"
+
+##### load rules #####
+
+#include: "rules/counts.smk"
+#include: "rules/qc.smk"
+#include: "rules/filtration.smk"
+#include: "rules/cell-cycle.smk"
+#include: "rules/normalization.smk"
+#include: "rules/variance.smk"
+#include: "rules/cell-type.smk"
+#include: "rules/diffexp.smk"

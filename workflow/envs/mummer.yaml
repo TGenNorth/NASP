@@ -1,0 +1,5 @@
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - mummer4=4.0.0beta2
