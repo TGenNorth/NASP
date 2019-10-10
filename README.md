@@ -1,7 +1,9 @@
-[![Actions Status](https://github.com/TGenNorth/NASP/workflows/build/badge.svg)](https://github.com/TGenNorth/NASP/actions)
+[![Actions Status](https://github.com/TGenNorth/NASP/workflows/.github/workflows/main.yml/badge.svg)](https://github.com/TGenNorth/NASP/actions)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/nasp/badges/platforms.svg)](https://anaconda.org/bioconda/nasp)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/nasp/badges/license.svg)](https://anaconda.org/bioconda/nasp)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/nasp/badges/installer/conda.svg)](https://conda.anaconda.org/bioconda)
+
+# DEVELOPMENT BRANCH
 
 # Overview
 
@@ -9,11 +11,20 @@ NASP is a pipeline for analysis of genomic data. It is a suite of tools meant to
 
 # Installation
 
-`conda install -c bioconda nasp`
+`conda install -c bioconda 'nasp>1.1.2'`
 
 # Snakemake Workflow
 
-# PUBLICATION
+The NASP dispatcher is in the process of being replaced with a Snakemake workflow. The following is a proposed usage:
+
+```bash
+git clone --branch workflows https://github.com/TGenNorth/NASP.git workflows
+snakemake -j -s workflows/Snakemake --config reference=reference.fasta assembly_dir=assemblies pe_reads=pe_reads matrix
+```
+
+https://katacoda.com/corburn/scenarios/nasp
+
+# Publication
 Please read our paper for more information:
 
 Jason W. Sahl, Darrin Lemmer, Jason Travis, James M. Schupp, John D. Gillece, Maliha Aziz, Elizabeth M. Driebe, Kevin P. Drees, Nathan D. Hicks, Charles Hall Davis Williamson, Crystal M. Hepp, David Earl Smith, Chandler Roe, David M. Engelthaler, David M. Wagner, Paul Keim

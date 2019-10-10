@@ -1,0 +1,25 @@
+on: [push]
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v1
+        with:
+          # go-version is specified because the default is 1.10 which does not support modules
+          go-version: 1.13
+      - name: build
+        working-directory: nasp
+        env:
+          GO111MODULE: on
+        # TODO: set version based on git-describe when building and assert it is returned by --version
+        run: |
+          env
+          pwd
+          go build
+          ./nasp --help || [[ "$?" -eq 2 ]]
+          ./nasp --version || true
+
