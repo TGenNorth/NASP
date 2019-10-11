@@ -4,21 +4,38 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+        # go-version is specified because the default (1.10) does not support modules.
+        # https://github.com/actions/setup-go/blob/75259a5ae02e59409ee6c4fa1e37ed46ea4e5b8d/action.yml#L7
+        #
+        # 1.x will fetch the latest version
+        # https://github.com/actions/setup-go/blob/75259a5ae02e59409ee6c4fa1e37ed46ea4e5b8d/src/installer.ts#L158-L167
+        #
+        # 1.11 is included as the latest available version in the conda default channel
+        # ```bash
+        # conda search go
+        # Loading channels: done
+        # # Name                       Version           Build  Channel
+        # go                            1.10.3               3  pkgs/main
+        # go                            1.11.4               0  pkgs/main
+        # ```
+        go-version: [ 1.x, 1.11 ]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-go@v1
         with:
-          # go-version is specified because the default is 1.10 which does not support modules
-          go-version: 1.13
+          go-version: ${{ matrix.go-version }}
+      - working-directory: nasp
+        env:
+          GO111MODULE: on
+        # FIXME: go test ./... fails due to old/invalid tests
+        run: go test ./command
       - name: build
         working-directory: nasp
         env:
           GO111MODULE: on
         # TODO: set version based on git-describe when building and assert it is returned by --version
         run: |
-          env
-          pwd
           go build
           ./nasp --help || [[ "$?" -eq 2 ]]
           ./nasp --version || true
