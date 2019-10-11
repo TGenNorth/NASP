@@ -205,6 +205,9 @@ type delta struct {
 }
 
 /*
+Documentation for the nucmer "delta" format can be found here:
+http://mummer.sourceforge.net/manual/#nucmer
+
 Below is an example of what a delta file might look like:
 /home/username/reference.fasta /home/username/query.fasta
 PROMER
@@ -240,14 +243,24 @@ func (d *delta) ReadFrom(r io.Reader) (n int64, err error) {
 
 	scanner := bufio.NewScanner(r)
 
-	// The first line is the reference and query fasta filepaths separated by a space
+	// The first line SHOULD be the reference and query fasta filepaths separated by a space.
+	// In the absence of an alignment, nucmer has been observed to output simply 'NUCMER'.
 	if !scanner.Scan() {
 		// FIXME: Check for scanner.Err()
 		return n, ErrUnexpectedFormat
 	}
+	if err := scanner.Err(); err != nil {
+		return n, err
+	}
 
-	// TODO: verify fields is composed of the reference and query filepaths
+	// TODO: stop assuming the filepath is valid; perhaps print a warning
+	// if the path does not match the path from the (TODO) --reference flag
 	fields := strings.Fields(scanner.Text())
+	// FIXME: this is a weak assertion that the first line contains reference and query filepaths.
+	if len(fields) < 2 {
+		// TODO: add what was expected context
+		return n, ErrUnexpectedFormat
+	}
 	d.queryFilepath = fields[1]
 
 	// The second line specifies the alignment data type
