@@ -19,7 +19,7 @@ jobs:
         # go                            1.10.3               3  pkgs/main
         # go                            1.11.4               0  pkgs/main
         # ```
-        go-version: [ 1.x, 1.11 ]
+        go-version: [ 1.x, 1.11, 1.11.3, 1.11.2 ]
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-go@v1
@@ -36,6 +36,7 @@ jobs:
           GO111MODULE: on
         # TODO: set version based on git-describe when building and assert it is returned by --version
         run: |
+          go version
           go build
           ./nasp --help || [[ "$?" -eq 2 ]]
           ./nasp --version || true
