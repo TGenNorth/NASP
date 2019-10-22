@@ -15,7 +15,8 @@ build:
   number: 0
   script: |
     cd nasp/nasptool
-    sed -i 's/go 1.12/go 1.11/' go.mod
+    sed 's/go 1.12/go 1.11/' go.mod > tmp
+    mv tmp go.mod
     go build -o ${PREFIX}/bin/${PKG_NAME}
 
 requirements:
