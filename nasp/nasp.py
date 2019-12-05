@@ -312,24 +312,24 @@ def _get_snpcallers(queue, args):
         snpcaller_list.append(gatk_settings)
         logging.info(gatk_settings)
         using_gatk = True
-    response = input("\nWould you like to run SolSNP [N]? ")
+    #response = input("\nWould you like to run SolSNP [N]? ")
+    #if re.match('^[Yy]', response):
+    #    solsnp_path = _get_java_path("SolSNP.jar")
+    #    solsnp_settings = _get_advanced_settings("SolSNP", solsnp_path, "",
+    #                                             {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
+    #                                              'queue': queue, 'args': args})
+    #    snpcaller_list.append(solsnp_settings)
+    #    logging.info(solsnp_settings)
+    response = input("\nWould you like to run VarScan [N]? ")
     if re.match('^[Yy]', response):
-        solsnp_path = _get_java_path("SolSNP.jar")
-        solsnp_settings = _get_advanced_settings("SolSNP", solsnp_path, "",
-                                                 {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
-                                                  'queue': queue, 'args': args})
-        snpcaller_list.append(solsnp_settings)
-        logging.info(solsnp_settings)
-    response = input("\nWould you like to run VarScan [Y]? ")
-    if not re.match('^[Nn]', response):
         varscan_path = _get_java_path("VarScan.jar")
         varscan_settings = _get_advanced_settings("VarScan", varscan_path, "",
                                                   {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
                                                    'queue': queue, 'args': args})
         snpcaller_list.append(varscan_settings)
         logging.info(varscan_settings)
-    response = input("\nWould you like to run SAMtools [Y]? ")
-    if not re.match('^[Nn]', response):
+    response = input("\nWould you like to run SAMtools(BCFtools) [N]? ")
+    if re.match('^[Yy]', response):
         samtools_path = _get_application_path("bcftools")
         samtools_settings = _get_advanced_settings("SAMtools", samtools_path, "",
                                                    {'num_cpus': '4', 'mem_requested': '10', 'walltime': '36',
