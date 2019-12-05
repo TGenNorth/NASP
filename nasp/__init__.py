@@ -2,4 +2,4 @@
 
 __author__ = 'Darrin Lemmer'
 __email__ = 'dlemmer@tgen.org'
-__version__ = '1.1.2'
+__version__ = '1.2.0'
