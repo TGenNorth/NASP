@@ -864,8 +864,8 @@ def _index_bams(configuration, index_job_id):
     if not os.path.exists(bam_folder):
         os.makedirs(bam_folder)
     bam_files = []
-    command_parts = []
     for (name, bam) in alignments:
+        command_parts = []
         new_file = os.path.join(bam_folder, "%s.bam" % name)
         # GATK requires bams have a ReadGroup header. If one if not present,
         # assign a default value.
