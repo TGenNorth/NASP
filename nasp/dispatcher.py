@@ -15,7 +15,7 @@ import shlex
 from collections import namedtuple
 import os
 
-App = namedtuple('App', ['name', 'path', 'args', 'job_parms'])
+App = namedtuple('App', ['name', 'path', 'args', 'job_params'])
 #Assembly = namedtuple('Assembly', ['name', 'read1', 'read2'])
 
 def _parse_args():
@@ -115,7 +115,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
     logging.info("command = %s" % command)
     if job_submitter == "PBS":
 
-        submit_command = _pbs_command(job_parms['name'], job_parms['work_dir'], job_parms['mem_requested'], job_parms['num_cpus'], job_parms['walltime'], job_parms['queue'], job_parms['args'], hold, notify, waitfor_id)
+        submit_command = _pbs_command(job_params['name'], job_params['work_dir'], job_params['mem_requested'], job_params['num_cpus'], job_params['walltime'], job_params['queue'], job_params['args'], hold, notify, waitfor_id)
         logging.debug("submit_command = {0}".format(submit_command))
         output = subprocess.getoutput("echo {0} | {1} - ".format(shlex.quote(command), submit_command))
         logging.debug("output = {0}".format(output))
@@ -126,7 +126,7 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
     elif job_submitter == "SLURM":
-        submit_command = _slurm_command(job_parms['name'], job_parms['work_dir'], job_parms['mem_requested'], job_parms['num_cpus'], job_parms['walltime'], job_parms['queue'], job_parms['args'], hold, notify, waitfor_id)
+        submit_command = _slurm_command(job_params['name'], job_params['work_dir'], job_params['mem_requested'], job_params['num_cpus'], job_params['walltime'], job_params['queue'], job_params['args'], hold, notify, waitfor_id)
         logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
         logging.debug("output = %s" % output)
@@ -744,7 +744,7 @@ def _trim_adapters(read_tuple, configuration):
     trim_dir = os.path.join(configuration["output_folder"], 'trimmed')
     if not os.path.exists(trim_dir):
         os.makedirs(trim_dir)
-    #job_parms = {'queue':'', 'mem_requested':6, 'num_cpus':4, 'walltime':8, 'args':''}
+    #job_params = {'queue':'', 'mem_requested':6, 'num_cpus':4, 'walltime':8, 'args':''}
     job_parms['name'] = "nasp_trim_%s" % name
     job_parms['work_dir'] = trim_dir
     if read2:
@@ -775,19 +775,19 @@ def _align_reads(read_tuple, configuration, index_job_id, reference):
         if re.search('bwa', aligner.name, re.IGNORECASE):
             if re.search('mem', aligner.name, re.IGNORECASE):
                 aligner_name = 'bwamem'
-                align_command = _bwamem_command(aligner.path, aligner.args, aligner.job_parms['num_cpus'], reference, *read_tuple)
+                align_command = _bwamem_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
             else:
                 aligner_name = 'bwa'
-                align_command = _bwa_command(aligner.path, aligner.args, aligner.job_parms['num_cpus'], reference, output_folder, *read_tuple)
+                align_command = _bwa_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, output_folder, *read_tuple)
         elif re.search('b(ow)?t(ie)?2', aligner.name, re.IGNORECASE):
             aligner_name = 'bowtie2'
-            align_command = _bowtie2_command(aligner.path, aligner.args, aligner.job_parms['num_cpus'], reference, *read_tuple)
+            align_command = _bowtie2_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
         elif re.search('novo', aligner.name, re.IGNORECASE):
             aligner_name = 'novo'
-            align_command = _novoalign_command(aligner.path, aligner.args, aligner.job_parms['num_cpus'], reference, *read_tuple)
+            align_command = _novoalign_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
         elif re.search('snap', aligner.name, re.IGNORECASE):
             aligner_name = 'snap'
-            align_command = _snap_command(aligner.path, aligner.args, aligner.job_parms['num_cpus'], reference, output_folder, *read_tuple)
+            align_command = _snap_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, output_folder, *read_tuple)
         else:
             print("Unknown aligner \'{0}\' found, don't know what to do. Skipping...".format(aligner.name))
             continue
@@ -801,10 +801,10 @@ def _align_reads(read_tuple, configuration, index_job_id, reference):
             os.makedirs(work_dir)
 
         outfile = os.path.join(work_dir, "{bam_prefix}.bam".format(bam_prefix=bam_prefix))
-        aligner.job_parms['name'] = "nasp_{aligner}_{sample}".format(aligner=aligner_name, sample=read_tuple[0])
-        aligner.job_parms['work_dir'] = work_dir
+        aligner.job_params['name'] = "nasp_{aligner}_{sample}".format(aligner=aligner_name, sample=read_tuple[0])
+        aligner.job_params['work_dir'] = work_dir
 
-        job_id = _submit_job(job_submitter, align_command, aligner.job_parms, (index_job_id,))
+        job_id = _submit_job(job_submitter, align_command, aligner.job_params, (index_job_id,))
         if job_id:
             aligner_output.append((bam_prefix, job_id, outfile, aligner_name))
 
