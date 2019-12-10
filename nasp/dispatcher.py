@@ -11,12 +11,6 @@ Created on Mar 4, 2014
 '''
 
 import logging
-import shlex
-from collections import namedtuple
-import os
-
-App = namedtuple('App', ['name', 'path', 'args', 'job_params'])
-#Assembly = namedtuple('Assembly', ['name', 'read1', 'read2'])
 
 def _parse_args():
     import argparse
@@ -26,99 +20,33 @@ def _parse_args():
     return parser.parse_args()
 
 
-def _pbs_command(name, work_dir, mem_requested=1, num_cpus=1, walltime=1, queue='', args='', hold=False, notify=False, waitfor_id=None):
-
-    job_resources = 'ncpus={ncpu},mem={mem}gb,walltime={hours}:00:00'.format(**{
-        'ncpu': num_cpus,
-        'mem': mem_requested,
-        'hours': walltime
-    })
-
-    pbs_cmd = shlex.split("qsub -V -d {work_dir} -w {work_dir} -l {job_resources} -m a -N {job_name}".format(**{
-        'work_dir': shlex.quote(work_dir),
-        'job_resources': shlex.quote(job_resources),
-        'job_name': shlex.quote(name),
-    }))
-
-    if waitfor_id:
-        pbs_cmd.extend(['-W', 'depend={directive}:{job_ids}'.format(**{
-            'directive': waitfor_id[1] if len(waitfor_id) > 1 else 'afterok',
-            'job_ids': waitfor_id[0],
-        })])
-    if queue:
-        pbs_cmd.extend(['-q', queue])
-    if hold:
-        pbs_cmd.append('-h')
-    if notify:
-        pbs_cmd.extend(['-m', 'e'])
-
-    pbs_cmd.extend(shlex.split(args))
-
-    return ' '.join(map(shlex.quote, pbs_cmd))
-
-    logging.debug("submit_command = %s", submit_command)
-    output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
-    logging.debug("output = %s" % output)
-    job_match = re.search('^(\d+)\..*$', output)
-    if job_match:
-        jobid = job_match.group(1)
-    else:
-        logging.warning("Job not submitted!!")
-        print("WARNING: Job not submitted: %s" % output)
-
-
-def _slurm_command(name, work_dir, mem_requested=1, num_cpus=1, walltime=1, queue='', args='', hold=False, notify=False, waitfor_id=None):
-    slurm_cmd = shlex.split('sbatch -D {work_dir} -c {ncpu} --mem={mem_gb} --time={hours} --mail-type=FAIL -J {job_name}'.format(**{
-        'work_dir': shlex.quote(work_dir),
-        'ncpu': shlex.quote(str(num_cpus)),
-        'mem_gb': shlex.quote(str(mem_requested) + '000'),
-        'hours': shlex.quote(str(walltime) + ':00:00'),
-        'job_name': shlex.quote(name),
-    }))
-
-    if waitfor_id:
-        slurm_cmd.extend([
-            '-d', '{directive}:{job_ids}'.format(**{
-                'directive': waitfor_id[1] if len(waitfor_id) > 1 else 'afterok',
-                'job_ids': waitfor_id[0],
-            })
-        ])
-
-    if queue:
-        slurm_cmd.extend(['-p', queue])
-    if hold:
-        slurm_cmd.append('-H') 
-    if notify:
-        slurm_cmd.append('--mail-type=END')
-
-    slurm_cmd.extend(shlex.split(args))
-
-    return ' '.join(map(shlex.quote, slurm_cmd))
-
-    logging.debug("submit_command = %s" % submit_command)
-    output = subprocess.getoutput("{0} --wrap={1}".format(submit_command, shlex.quote(command)))
-    logging.debug("output = {0}".format(output))
-    job_match = re.search('^Submitted batch job (\d+)$', output)
-    if job_match:
-        jobid = job_match.group(1)
-    else:
-        logging.warning("Job not submitted!!")
-        print("WARNING: Job not submitted: %s" % output)
-
-
 def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, notify=False):
     import subprocess
     import re
     import os
 
-    jobid = None
+    # TODO(jtravis): remove unused output variable
+    output = jobid = None
     logging.info("command = %s" % command)
     if job_submitter == "PBS":
-
-        submit_command = _pbs_command(job_params['name'], job_params['work_dir'], job_params['mem_requested'], job_params['num_cpus'], job_params['walltime'], job_params['queue'], job_params['args'], hold, notify, waitfor_id)
-        logging.debug("submit_command = {0}".format(submit_command))
-        output = subprocess.getoutput("echo {0} | {1} - ".format(shlex.quote(command), submit_command))
-        logging.debug("output = {0}".format(output))
+        waitfor = ""
+        if waitfor_id:
+            dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
+            waitfor = "-W depend=%s:%s" % (dependency_string, waitfor_id[0])
+        queue = ""
+        if job_parms["queue"]:
+            queue = "-q %s" % job_parms["queue"]
+        args = job_parms["args"]
+        if hold:
+            args += " -h"
+        if notify:
+            args += " -m e"
+        submit_command = "qsub -V -d \'%s\' -w \'%s\' -l ncpus=%s,mem=%sgb,walltime=%s:00:00 -m a -N \'%s\' %s %s %s" % (
+            job_parms["work_dir"], job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'],
+            job_parms['walltime'], job_parms['name'], waitfor, queue, args)
+        logging.debug("submit_command = %s", submit_command)
+        output = subprocess.getoutput("echo \"%s\" | %s - " % (command, submit_command))
+        logging.debug("output = %s" % output)
         job_match = re.search('^(\d+)\..*$', output)
         if job_match:
             jobid = job_match.group(1)
@@ -126,7 +54,21 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
     elif job_submitter == "SLURM":
-        submit_command = _slurm_command(job_params['name'], job_params['work_dir'], job_params['mem_requested'], job_params['num_cpus'], job_params['walltime'], job_params['queue'], job_params['args'], hold, notify, waitfor_id)
+        waitfor = ""
+        if waitfor_id:
+            dependency_string = waitfor_id[1] if len(waitfor_id) > 1 else 'afterok'
+            waitfor = "-d %s:%s" % (dependency_string, waitfor_id[0])
+        queue = ""
+        if job_parms["queue"]:
+            queue = "-p %s" % job_parms["queue"]
+        args = job_parms["args"]
+        if hold:
+            args += " -H"
+        if notify:
+            args += " --mail-type=END"
+        submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --time=%s:00:00 --mail-type=FAIL -J \'%s\' %s %s %s" % (
+            job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'],
+            job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s" % submit_command)
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
         logging.debug("output = %s" % output)
@@ -266,325 +208,158 @@ def _index_reference(configuration):
     return job_id, reference
 
 
-def _gatk_index_command(picard_path, reference):
-    return 'java -Xmx{mem_gb} -jar {picard} CreateSequenceDictionary R={reference} O={dict}; {samtools} faidx {reference}'.format(**{
-        'picard': shlex.quote(picard_path),
-        'reference': shlex.quote(reference),
-        'dict': shlex.quote('reference.dict'),
-        'samtools': shlex.quote(samtools_path),
-    })
-
-def _bwa_index_command(bwa_path, reference):
-    return '{bwa} index {reference}'.format(**{
-        'bwa': shlex.quote(bwa_path),
-        'reference': shlex.quote(reference)
-    })
-
-def _bowtie2_index_command(bowtie2_path, reference):
-    (reference_root, _) = os.path.splitext(reference)
-    return '{bowtie2}-build {reference_in} {bt2_index_base}'.format(**{
-        'bowtie2': shlex.quote(bowtie2_path),
-        'reference_in': shlex.quote(reference),
-        'bt2_index_base': shlex.quote(reference_root)
-    })
-
-
-def _novo_index_command(path, reference):
-    return '{novoindex} {indexfile} {reference}'.format(**{
-        'novoindex': shlex.quote(path),
-        'reference': shlex.quote(reference)
-    })
-
-
-def _samtools_view_sort_index_pipe_command(samtools_path, output_bam):
-    (bam_prefix, _) = os.path.splitext(output_bam)
-    # The semicolon has a space on each side so the shlex parser will treat it as a separate token.
-    return '{samtools} view -S -u -h - | {samtools} sort - {bam_prefix} ; {samtools} index {bam_filename}'.format(**{
-        'samtools': shlex.quote(samtools_path),
-        'bam_prefix': shlex.quote(bam_prefix),
-        'bam_filename': shlex.quote(output_bam)
-    })
-
-
-def _bwamem_command(path, args, ncpu, reference, sample_name, read1, read2=None):
-    """
-    Args:
-        path (str): path to aligner executable
-        args (str): raw arguments to be passed to the aligner
-        ncpu: number of alignment threads to launch
-        reference: (str): reference filename
-        sample_name (str): 
-        read1 (str): absolute path to read1 fastq[.gz|.bz2]
-        read2 (str): absolute path to read2 fastq[.gz|.bz2]
-
-    Returns:
-        string: command to execute aligner
-    """
-    return '{bwa} mem -R {bam_string} {bam_args} -t {ncpu} {reference} {read1} {read2}'.format(**{
-        'bwa': shlex.quote(path),
-        'bam_string': shlex.quote('@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)),
-        'bam_args': ' '.join(map(shlex.quote, shlex.split(args))),
-        'ncpu': shlex.quote(str(ncpu)),
-        'reference': shlex.quote(reference),
-        'read1': shlex.quote(read1),
-        'read2': shlex.quote(read2) if read2 else ''
-    })
-
-
-def _bwa_command(path, args, ncpu, reference, output_folder, sample_name, read1, read2=None):
-    """
-    Args:
-        path (str): path to aligner executable
-        args (str): raw arguments to be passed to the aligner
-        ncpu: number of alignment threads to launch
-        reference: (str): reference filename
-        output_folder (str): directory for aligner to write output
-        sample_name (str): 
-        read1 (str): absolute path to read1 fastq[.gz|.bz2]
-        read2 (str): absolute path to read2 fastq[.gz|.bz2]
-
-    Returns:
-        string: command to execute aligner
-    """
+def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import re
     import os
 
-    bam_string = '@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)
-    # Parse read file basename
-    is_illumina_fastq = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1, re.IGNORECASE) else ""
-    quoted_bwa_args = ' '.join(map(shlex.quote, shlex.split(args)))
-
-    if read2:
-        outfile1 = os.path.join(output_folder, "{0}-R1.sai".format(sample_name))
-        outfile2 = os.path.join(output_folder, "{0}-R2.sai".format(sample_name))
-        align_read1 = '{bwa} aln {is_illumina_fastq} {reference} {read1} -t {ncpu} -f {outfile1} {bwa_args}'.format(**{
-            'bwa': shlex.quote(path),
-            'is_illumina_fastq': is_illumina_fastq,
-            'reference': shlex.quote(reference),
-            'read1': shlex.quote(read1),
-            'ncpu': shlex.quote(str(ncpu)),
-            'outfile1': shlex.quote(outfile1),
-            'bwa_args': quoted_bwa_args
-        })
-        align_read2 = '{bwa} aln {is_illumina_fastq} {reference} {read2} -t {ncpu} -f {outfile1} {bwa_args}'.format(**{
-            'bwa': path,
-            'is_illumina_fastq': is_illumina_fastq,
-            'reference': shlex.quote(reference),
-            'read2': shlex.quote(read2),
-            'ncpu': shlex.quote(str(ncpu)),
-            'outfile1': shlex.quote(outfile1),
-            'bwa_args': quoted_bwa_args
-        })
-        sampe_command = '{bwa} sampe -r {bam_string} {reference} {outfile1} {outfile2} {read1} {read2} {bwa_args}'.format(**{
-            'bwa': path,
-            'bam_string': shlex.quote(bam_string),
-            'reference': shlex.quote(reference),
-            'outfile1': shlex.quote(outfile1),
-            'outfile2': shlex.quote(outfile2),
-            'read1': shlex.quote(read1),
-            'read2': shlex.quote(read2),
-            'bwa_args': quoted_bwa_args
-        })
-        aligner_command = '; '.join([align_read1, align_read2, sampe_command])
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
+    bam_string = "\'@RG\\tID:%s\\tSM:%s\'" % (name, name)
+    sampath = samtools[1]
+    (aligner_name, path, args, job_parms) = aligner
+    ncpus = job_parms['num_cpus']
+    aligner_command = ""
+    if re.search('mem', aligner_name, re.IGNORECASE):
+        aligner_name = "bwamem"
+        aligner_command = "%s mem -R %s %s -t %s %s %s %s" % (path, bam_string, args, ncpus, reference, read1, read2)
     else:
-        outfile = os.path.join(output_folder, "%s.sai" % sample_name)
-        align_read = '{bwa} aln {is_illumina_fastq} {reference} {read1} -t {ncpu} -f {outfile} {bwa_args}'.format(**{
-            'bwa': path,
-            'is_illumina_fastq': is_illumina_fastq,
-            'reference': shlex.quote(reference),
-            'read1': shlex.quote(read1),
-            'ncpu': shlex.quote(str(ncpu)),
-            'outfile': shlex.quote(outfile),
-            'bwa_args': quoted_bwa_args
-        })
-        samse_command = '{bwa} samse -r {bam_string} {reference} {outfile} {read1} {bwa_args}'.format(**{
-            'bwa': path,
-            'bam_string': shlex.quote(bam_string),
-            'reference': shlex.quote(reference),
-            'outfile': shlex.quote(outfile),
-            'read1': shlex.quote(read1),
-            'bwa_args': quoted_bwa_args
-        })
-        aligner_command = '; '.join([align_read, samse_command])
+        aligner_name = "bwa"
+        # Parse read file basename
+        old_format_string = "-I" if re.search('(?:.*\/)?[^\/]+?_[12]_sequence\.txt(?:\.gz)?$', read1,
+                                              re.IGNORECASE) else ""
+        work_dir = os.path.join(output_folder, aligner_name)
+        command_parts = []
+        if read2:
+            output_file_1 = os.path.join(work_dir, "%s-R1.sai" % name)
+            output_file_2 = os.path.join(work_dir, "%s-R2.sai" % name)
+            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
+                path, old_format_string, reference, read1, ncpus, output_file_1, args))
+            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
+                path, old_format_string, reference, read2, ncpus, output_file_2, args))
+            command_parts.append("%s sampe -r %s %s %s %s %s %s %s" % (
+                path, bam_string, reference, output_file_1, output_file_2, read1, read2, args))
+        else:
+            output_file = os.path.join(work_dir, "%s.sai" % name)
+            command_parts.append("%s aln %s %s %s -t %s -f %s %s" % (
+                path, old_format_string, reference, read1, ncpus, output_file, args))
+            command_parts.append(
+                "%s samse -r %s %s %s %s %s" % (path, bam_string, reference, output_file, read1, args))
+        aligner_command = "\n".join(command_parts)
+    bam_nickname = "%s-%s" % (name, aligner_name)
+    samview_command = "%s view -S -b -h -" % sampath
+    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
+    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
+    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
+    work_dir = os.path.join(output_folder, aligner_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
+    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+    return bam_nickname, job_id, final_file
 
-    return aligner_command
 
-
-def _bowtie2_command(path, args, ncpu, reference, sample_name, read1, read2=None):
+def _run_bowtie2(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     """
     Args:
-        path (str): path to aligner executable
-        args (str): raw arguments to be passed to the aligner
-        ncpu: number of alignment threads to launch
-        reference: (str): reference filename
-        sample_name (str): 
-        read1 (str): absolute path to read1 fastq[.gz|.bz2]
-        read2 (str): absolute path to read2 fastq[.gz|.bz2]
+        read_tuple:
+        aligner (list): name, path, args, job parameters
+        samtools:
+        job_submitter (str):
+        index_job_id (tuple): (jobid, action)
+        reference:
+        output_folder:
 
     Returns:
-        string: command to execute bowtie2 aligner
+        tuple: bam nickname, job id, path to bam file
     """
     import os
 
-    # TODO: if possible, validate arguments (not empty/exist)
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
+    read_string = "-1 %s -2 %s" % (read1, read2) if read2 else "-U %s" % read1
+    ref_string = os.path.splitext(reference)[0]
+    bam_string = "--rg-id \'%s\' --rg \'SM:%s\'" % (name, name)
+    sampath = samtools[1]
+    (path, args, job_parms) = aligner[1:4]
+    aligner_name = "bowtie2"
+    ncpus = job_parms['num_cpus']
+    aligner_command = "%s %s -p %s %s -x %s %s" % (path, args, ncpus, bam_string, ref_string, read_string)
+    bam_nickname = "%s-%s" % (name, aligner_name)
+    samview_command = "%s view -S -b -h -" % sampath
+    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
+    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
+    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
+    work_dir = os.path.join(output_folder, aligner_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
+    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+    return bam_nickname, job_id, final_file
 
-    reference_basename = os.path.splitext(reference)[0]
 
-    aligner_command = '{bowtie2} {bowtie2_args} --threads {ncpu} --rg {read_group} --rg-id {read_group_id} -x {bt2_index_prefix} {read_args}'.format(**{
-        'bowtie2': path,
-        'bowtie2_args': ' '.join(map(shlex.quote, shlex.split(args))),
-        'ncpu': shlex.quote(str(ncpu)),
-        'read_group': shlex.quote('SM:' + sample_name),
-        'read_group_id': shlex.quote(sample_name),
-        'bt2_index_prefix': shlex.quote(reference_basename),
-        'read_args': "-1 {read1} -2 {read2}".format(read1=shlex.quote(read1), read2=shlex.quote(read2)) if read2 else "-U {read1}".format(read1=shlex.quote(read1))
-    })
-
-    return aligner_command
-
-
-def _novoalign_command(path, args, ncpu, reference, sample_name, read1, read2=None):
-    """
-    Args:
-        path (str): path to aligner executable
-        args (str): raw arguments to be passed to the aligner
-        ncpu: number of alignment threads to launch
-        reference: (str): reference filename
-        sample_name (str): 
-        read1 (str): absolute path to read1 fastq[.gz|.bz2]
-        read2 (str): absolute path to read2 fastq[.gz|.bz2]
-
-    Returns:
-        string: command to execute bowtie2 aligner
-    """
-
+def _run_novoalign(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import os
 
-    aligner_command = '{novoalign} -d {dbname} -f {read1} {read2} {paired_string} -c {ncpu} -o SAM {bam_string} {novoalign_args}'.format(**{
-        'novoalign': path,
-        'dbname': shlex.quote(reference + '.idx'),
-        'read1': shlex.quote(read1),
-        'read2': shlex.quote(read2) if read2 else '',
-        'paired_string': '-i PE 500,100' if read2 else '',
-        'ncpu': shlex.quote(str(ncpu)),
-        'bam_string': shlex.quote('@RG\\tID:{sample_name}\\tSM:{sample_name}'.format(sample_name=sample_name)),
-        'novoalign_args': ' '.join(map(shlex.quote, shlex.split(args)))
-    })
-    return aligner_command
-    
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
+    paired_string = "-i PE 500,100" if read2 else ""
+    bam_string = "\'@RG\\tID:%s\\tSM:%s\'" % (name, name)
+    sampath = samtools[1]
+    (path, args, job_parms) = aligner[1:4]
+    aligner_name = "novo"
+    ncpus = job_parms['num_cpus']
+    aligner_command = "%s -f %s %s %s -c %s -o SAM %s -d %s.idx %s" % (
+        path, read1, read2, paired_string, ncpus, bam_string, reference, args)
+    bam_nickname = "%s-%s" % (name, aligner_name)
+    samview_command = "%s view -S -b -h -" % sampath
+    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
+    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
+    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
+    work_dir = os.path.join(output_folder, aligner_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
+    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+    return bam_nickname, job_id, final_file
 
-def _snap_command(path, args, ncpu, reference, output_folder, sample_name, read1, read2=None):
-    """
-    Args:
-        path (str): path to aligner executable
-        args (str): raw arguments to be passed to the aligner
-        ncpu: number of alignment threads to launch
-        reference: (str): reference filename
-        output_folder (str): directory for aligner output
-        sample_name (str): 
-        read1 (str): absolute path to read1 fastq[.gz|.bz2]
-        read2 (str): absolute path to read2 fastq[.gz|.bz2]
 
-    Returns:
-        string: command to execute bowtie2 aligner
-    """
+def _run_snap(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
     import os
-
-    aligner_command = '{snap} {single_or_paired} {ref_dir} {read1} {read2} -t {ncpu} -b {snap_args} -o sam -'.format(**{
-        'snap': path,
-        'single_or_paired': 'paired' if read2 else 'single',
-        'ref_dir': shlex.quote(os.path.join(output_folder, 'reference', 'snap')),
-        'read1': shlex.quote(read1),
-        'read2': shlex.quote(read2) if read2 else '',
-        'ncpu': shlex.quote(str(ncpu)),
-        'snap_args': ' '.join(map(shlex.quote, shlex.split(args)))
-    })
-    return aligner_command
-
-
-def _gatk_command(path, args, ncpu, mem, output_folder, reference, bam):
-    (bam_root, _)= os.path.splitext(bam)
-    vcf = os.path.join(output_folder, 'gatk', '{0}-gatk.vcf'.format(bam_root))
-
-    return 'java -Xmx{mem}G -jar {gatk} -T UnifiedGenotyper -dt NONE -glm BOTH -I {bam} -R {reference} -nt {ncpu} -o {vcf} -out_mode EMIT_ALL_CONFIDENT_SITES -baq RECALCULATE {gatk_args}'.format(**{
-        'mem': shlex.quote(str(mem)),
-        'gatk': shlex.quote(path),
-        'bam': shlex.quote(bam),
-        'reference': shlex.quote(reference),
-        'ncpu': shlex.quote(str(ncpu)),
-        'vcf': shlex.quote(vcf),
-        'gatk_args': ' '.join(map(shlex.quote, shlex.split(args)))
-    })
-
-
-def _solsnp_command(path, args, ncpu, mem, output_folder, reference, bam):
-    (bam_root, _)= os.path.splitext(bam)
-    vcf = os.path.join(output_folder, 'solsnp', '{0}-solsnp.vcf'.format(bam_root))
-
-    return 'java -Xmx{mem}G -jar {solsnp} INPUT={bam} REFERENCE_SEQUENCE={reference} OUTPUT={vcf} SUMMARY=true CALCULATE_ALLELIC_BALANCE=true MINIMUM_COVERAGE=1 PLOIDY=Haploid STRAND_MODE=None OUTPUT_FORMAT=VCF OUTPUT_MODE=AllCallable {solsnp_args}'.format(**{
-        'mem': shlex.quote(str(mem)),
-        'solsnp': path,
-        'bam': shlex.quote(bam),
-        'reference': shlex.quote(reference),
-        'vcf': shlex.quote(vcf),
-        'solsnp_args': ' '.join(map(shlex.quote, shlex.split(args)))
-    })
-    
-
-def _varscan_command(varscan_path, varscan_args, ncpu, mem, output_folder, reference, bam, sample_name, samtools_path='samtools'):
-    import os
-    import re
-
-    # sample_name could be derived from the bam file based on the following assumption:
-    # the sample_name is the bam filename excluding an optional '-<ALIGNER_NAME>' suffix.
-
-    # TODO: assert bam_filename is not empty
-    #bam_filename = os.path.basename(bam)
-    #(bam_root, _)= os.path.splitext(bam_filename)
-
-    vcf = os.path.join(output_folder, '{0}-varscan.vcf'.format(sample_name))
-    pileup_file = os.path.join(os.path.dirname(bam), "{0}.mpileup".format(sample_name))
-    sample_list = os.path.join(output_folder, "{0}.txt".format(sample_name))
-
-    snpcall_command = ' ; '.join([
-        "echo {sample_name} > {sample_list}".format(**{
-            'sample_name': shlex.quote(sample_name),
-            'sample_list': shlex.quote(sample_list),
-        }),
-         "{samtools} mpileup -B -d 10000000 -f {reference} {bam} > {pileup_file}".format(**{
-             'samtools': samtools_path,
-             'reference': shlex.quote(reference),
-             'bam': shlex.quote(bam),
-             'pileup_file': shlex.quote(pileup_file),
-        }),
-       "java -Xmx{mem_gb} -jar {varscan} mpileup2cns {pileup_file} --output-vcf 1 --vcf-sample-list {sample_list} {varscan_args} > {vcf}".format(**{
-            'mem_gb': shlex.quote(str(mem) + 'G'),
-            'varscan': varscan_path,
-            'pileup_file': shlex.quote(pileup_file),
-            'sample_list': shlex.quote(sample_list),
-            'varscan_args': ' '.join(map(shlex.quote, shlex.split(varscan_args))),
-            'vcf': shlex.quote(vcf),
-        })
-    ])
-
-    return snpcall_command
+    (name, read1) = read_tuple[0:2]
+    read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
+    paired_string = "paired" if read2 else "single"
+    sampath = samtools[1]
+    (path, args, job_parms) = aligner[1:4]
+    aligner_name = "snap"
+    reads = []
+    for read in (read1, read2):
+        reads.append(read)
+    read_string = " ".join(reads)
+    ref_dir = os.path.join(os.path.join(output_folder, "reference"), aligner_name)
+    ncpus = job_parms['num_cpus']
+    bam_nickname = "%s-%s" % (name, aligner_name)
+    aligner_command = "%s %s %s %s -t %s -b %s -o -sam -" % (
+        path, paired_string, ref_dir, read_string, ncpus, args)
+    samview_command = "%s view -S -b -h -" % (sampath)
+    samsort_command = "%s sort - %s" % (sampath, bam_nickname)
+    samindex_command = "%s index %s.bam" % (sampath, bam_nickname)
+    command = "%s | %s | %s \n %s" % (aligner_command, samview_command, samsort_command, samindex_command)
+    work_dir = os.path.join(output_folder, aligner_name)
+    if not os.path.exists(work_dir):
+        os.makedirs(work_dir)
+    final_file = os.path.join(work_dir, "%s.bam" % bam_nickname)
+    job_parms['name'] = "nasp_%s_%s" % (aligner_name, name)
+    job_parms['work_dir'] = work_dir
+    job_id = _submit_job(job_submitter, command, job_parms, (index_job_id,))
+    return bam_nickname, job_id, final_file
 
 
-#def _samtools_command(nickname, bam_file, snpcaller, samtools, job_submitter, aligner_job_id, reference, output_folder):
-def _samtools_command(path, args, ncpu, mem, output_folder, reference, bam):
-    import os
-    (bam_root, _)= os.path.splitext(bam)
-    vcf = os.path.join(output_folder, 'samtools', '{0}-samtools.vcf'.format(bam_root))
-
-    return '{samtools} mpileup -uD -d 10000000 -f {reference} {bam} | {samtools} view -ceg {samtools_args} - > {vcf}'.format(**{
-        'samtools': path,
-        'reference': shlex.quote(reference),
-        'bam': shlex.quote(bam),
-        'samtools_args': ' '.join(map(shlex.quote, shlex.split(args))),
-        'vcf': shlex.quote(vcf)
-    })
-
-    
 def _run_gatk(nickname, bam_file, snpcaller, job_submitter, aligner_job_id, reference, output_folder):
     import os
 
@@ -711,30 +486,6 @@ def _convert_external_genome(assembly, configuration, index_job_id, reference):
     return job_id, final_file
 
 
-# http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf
-def _trimmomatic_command(path, args, ncpu, output_folder, sample_name, read1, read2=None):
-
-    parameters = {
-        'trimmomatic': path,
-        'ncpu': shlex.quote(str(ncpu)),
-        'input_read1': shlex.quote(read1),
-        'input_read2': shlex.quote(read2),
-        'output_pe_read1_paired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name + '_R1_paired.fastq.gz')),
-        'output_pe_read1_unpaired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_R1_unpaired.fastq.gz')),
-        'output_pe_read2_paired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_R2_paired.fastq.gz')),
-        'output_pe_read2_unpaired': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_R2_unpaired.fastq.gz')),
-        'output_se_trimmed': shlex.quote(os.path.join(output_folder, 'trimmomatic', sample_name+ '_trimmed.fastq.gz')),
-        'trimmomatic_args': ' '.join(map(shlex.quote, shlex.split(args)))
-    }
-
-    if read2:
-        # Paired End
-        return 'java -jar {trimmomatic} PE -threads {ncpu} {input_read1} {input_read2} {output_pe_read1_paired} {output_pe_read2_unpaired} {output_pe_read2_paired} {output_pe_read2_unpaired} {trimmomatic_args}'.format(**parameters)
-
-    # Single End
-    return 'java -jar {trimmomatic} SE -threads {ncpu} {input_read1} {output_se_trimmed} {trimmomatic_args}'.format(**parameters)
-
-
 def _trim_adapters(read_tuple, configuration):
     import os
 
@@ -761,61 +512,42 @@ def _trim_adapters(read_tuple, configuration):
 
 def _align_reads(read_tuple, configuration, index_job_id, reference):
     import re
-    import os
 
-    output_folder = configuration['output_folder']
-    samtools_path = configuration['samtools'][1]
-    job_submitter = configuration['job_submitter']
     aligner_output = []
-
-    for aligner in map(App._make, configuration['aligners']):
-        aligner_name = ''
-        align_command = ''
-
-        if re.search('bwa', aligner.name, re.IGNORECASE):
-            if re.search('mem', aligner.name, re.IGNORECASE):
-                aligner_name = 'bwamem'
-                align_command = _bwamem_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
-            else:
-                aligner_name = 'bwa'
-                align_command = _bwa_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, output_folder, *read_tuple)
-        elif re.search('b(ow)?t(ie)?2', aligner.name, re.IGNORECASE):
-            aligner_name = 'bowtie2'
-            align_command = _bowtie2_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
-        elif re.search('novo', aligner.name, re.IGNORECASE):
-            aligner_name = 'novo'
-            align_command = _novoalign_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, *read_tuple)
-        elif re.search('snap', aligner.name, re.IGNORECASE):
-            aligner_name = 'snap'
-            align_command = _snap_command(aligner.path, aligner.args, aligner.job_params['num_cpus'], reference, output_folder, *read_tuple)
+    for aligner in configuration["aligners"]:
+        name = aligner[0]
+        if re.search('bwa', name, re.IGNORECASE):
+            (bam_nickname, job_id, final_file) = _run_bwa(read_tuple, aligner, configuration["samtools"],
+                                                          configuration["job_submitter"], index_job_id, reference,
+                                                          configuration["output_folder"])
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
+        elif re.search('b(ow)?t(ie)?2', name, re.IGNORECASE):
+            (bam_nickname, job_id, final_file) = _run_bowtie2(read_tuple, aligner, configuration["samtools"],
+                                                              configuration["job_submitter"], index_job_id, reference,
+                                                              configuration["output_folder"])
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
+        elif re.search('novo', name, re.IGNORECASE):
+            (bam_nickname, job_id, final_file) = _run_novoalign(read_tuple, aligner, configuration["samtools"],
+                                                                configuration["job_submitter"], index_job_id, reference,
+                                                                configuration["output_folder"])
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
+        elif re.search('snap', name, re.IGNORECASE):
+            (bam_nickname, job_id, final_file) = _run_snap(read_tuple, aligner, configuration["samtools"],
+                                                           configuration["job_submitter"], index_job_id, reference,
+                                                           configuration["output_folder"])
+            if job_id:
+                aligner_output.append((bam_nickname, job_id, final_file, name))
         else:
-            print("Unknown aligner \'{0}\' found, don't know what to do. Skipping...".format(aligner.name))
-            continue
-
-        output_bam = os.path.join(output_folder, aligner_name, '{sample}-{aligner}.bam'.format(sample=read_tuple[0], aligner=aligner_name))
-        
-        command = align_command + ' | ' + _samtools_view_sort_index_pipe_command(samtools_path, output_bam)
-
-        work_dir = os.path.join(output_folder, aligner_name)
-        if not os.path.exists(work_dir):
-            os.makedirs(work_dir)
-
-        outfile = os.path.join(work_dir, "{bam_prefix}.bam".format(bam_prefix=bam_prefix))
-        aligner.job_params['name'] = "nasp_{aligner}_{sample}".format(aligner=aligner_name, sample=read_tuple[0])
-        aligner.job_params['work_dir'] = work_dir
-
-        job_id = _submit_job(job_submitter, align_command, aligner.job_params, (index_job_id,))
-        if job_id:
-            aligner_output.append((bam_prefix, job_id, outfile, aligner_name))
-
+            print("Unknown aligner \'%s\' found, don't know what to do. Skipping..." % name)
     return aligner_output
 
 
 def _call_snps(aligner_output, configuration, reference):
     import re
 
-    # TODO: skip task if the file exists and a --force flag was not used
-    # TODO: implement a GNU make style --force flag
     snpcaller_output = []
     for (nickname, aligner_job_id, bam_file, aligner_name) in aligner_output:
         if aligner_job_id:
@@ -940,7 +672,8 @@ def _export_matrices(configuration, matrix_job_id):
         for exported_matrix in ['bestsnp', 'missingdata']:
             commands.append("{0} export --type {1} {2}.tsv > {2}.{1}".format(gonasp_path, file_type, exported_matrix))
 
-    command = '; '.join(commands)
+    commands.append('wait')
+    command = ' & '.join(commands)
 
     job_id = _submit_job(configuration["job_submitter"], command, job_parms, (matrix_job_id,), notify=False)
 
