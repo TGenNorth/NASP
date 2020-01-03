@@ -1,7 +1,5 @@
 channels:
-  - local
-  - bioconda
   - conda-forge
+  - bioconda
 dependencies:
   - mummer4=4.0.0beta2
-  - nasp=2.0.0

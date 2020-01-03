@@ -1,7 +1,5 @@
 channels:
-  - local
-  - bioconda
   - conda-forge
+  - bioconda
 dependencies:
   - iqtree
-  - nasp=2.0.0
