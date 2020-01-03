@@ -1,4 +1,3 @@
-name: build latest
 on: [push]
 jobs:
   build:
@@ -10,10 +9,23 @@ jobs:
         # The bioconda channel is a Conda channel providing bioinformatics related packages for Linux and Mac OS.
         os: [ubuntu-latest, macOS-latest]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
-          ref: ${{ github.ref }}
-          fetch-depth: 1
+          path: workflow
+          persist-credentials: false
+      - uses: actions/checkout@v2
+        with:
+          path: src
+          persist-credentials: false
+          ref: dev
+      # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/development-tools-for-github-actions#add-a-system-path-add-path
+      - name: install NASP
+        working-directory: src/nasp
+        run: |
+          go env
+          go install
+          echo "::add-path::$(go env GOPATH)/bin"
+
         # CommandNotFoundError: Your shell has not been properly configured to use 'conda activate'.
         # To initialize your shell, run
         #
@@ -68,15 +80,9 @@ jobs:
           bash Miniconda3-latest-${PLATFORM}-x86_64.sh -b -u
           . "$HOME/miniconda3/etc/profile.d/conda.sh"
           conda update -q -y -n base -c defaults conda
-      - name: "TODO: remove conda build"
-        # Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
-        # WARNING:conda_build.build:Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
-        # WARNING conda_build.build:bundle_conda(1042): Importing conda-verify failed.  Please be sure to test your packages.  conda install conda-verify to make this message go away.
+      - name: generate test data
         run: |
           . "$HOME/miniconda3/etc/profile.d/conda.sh"
-          conda install -n base -q -y conda-build conda-verify
-          conda activate base
-          conda build .
           conda create -n bbmap -q -y -c conda-forge -c bioconda bbmap
           conda activate bbmap
           randomgenome.sh len=1000 out=reference.fasta
