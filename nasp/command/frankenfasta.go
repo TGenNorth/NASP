@@ -306,6 +306,10 @@ func (d *delta) ReadFrom(r io.Reader) (n int64, err error) {
 		return n, err
 	}
 
+	// May occur if there were no records
+	if record == nil {
+		return n, ErrUnexpectedFormat
+	}
 	d.records = append(d.records, record)
 
 	return n, nil
