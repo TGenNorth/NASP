@@ -36,29 +36,24 @@ validate(config, schema="schemas/config.schema.yaml")
 #ids, = glob_wildcards("thedir/{id}.fastq.gz")
 
 docstring= r"""
-TODO: Help for this script
+TODO: tips/usage
 
-./pe_reads/
-./se_reads/
-./ubam/
-./assemblies/
-./reference.fasta
-
-USAGE
+snakemake --lt or --list-target-rules or --list
 
 snamekemake -s /path/to/workflow/Snakefile -j $(nproc) --use-conda iqtree
 """
 
 # https://www.biostars.org/p/220268/#220632
 # Tutorial: How to make your snakefiles self-documenting
+#for rule in workflow.rules:
+#  print( rule.name )
+#  print( rule.docstring )
 rule help:
   """
   Print list of all targets with help.
   """
   run:
-    for rule in workflow.rules:
-      print( rule.name )
-      print( rule.docstring )
+    print(docstring)
 
 #rule all:
 #  input: []

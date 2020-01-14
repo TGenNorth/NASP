@@ -14,6 +14,10 @@ def aggregate_input(wildcards):
       return "alt/{sample}.txt"
 
 rule matrix:
+  """
+  The NASP matrix aggregates VCF and Frankenfasta files into .tsv matrix and stats file summaries.
+  The primary output is the 'bestsnp.tsv' representing high-confidence SNPs across all samples.
+  """
   params:
     minimum_coverage=config['minimum_coverage'],
     minimum_proportion=config['minimum_proportion']
@@ -38,8 +42,12 @@ rule matrix:
       frankenfasta/*.frankenfasta
     """
 
-# TODO: mark fasta as temporary
 rule iqtree:
+  """
+  Generate a Maximum Parsimony tree from the NASP 'bestsnp' matrix.
+
+  The primary output is the 'bestsnp.treefile'
+  """
   input: rules.matrix.output.bestsnp
   output:
     temp('bestsnp'),

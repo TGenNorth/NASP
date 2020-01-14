@@ -1,4 +1,11 @@
 rule testdata:
+  """
+  Create a testdata/ directory with randomly generated data to test the workflow.
+
+  Example usage:
+    snakemake --use-conda testdata
+    snakemake --use-conda -j -d ./testdata/ iqtree
+  """
   conda: "envs/bbmap.yaml"
   output:
     'testdata/reference.fasta',
@@ -6,6 +13,7 @@ rule testdata:
     expand('testdata/pe_reads/{sample_name}_{read_number}.fq', sample_name=list('abcdefg'), read_number=[1,2]),
     expand('testdata/se_reads/{sample_name}.fq', sample_name=list('abcdefg')),
     expand('testdata/assemblies/{sample_name}.fasta', sample_name=list('abcdefg'))
+    # TODO: generate unaligned BAM
     #expand('testdata/ubam/{sample_name}.{ext}', sample_name=list('abcdefgh'), ext=['cram', 'crai'])
   shell: """
     mkdir -pv testdata/{{assemblies,pe_reads,se_reads,ubam}}
