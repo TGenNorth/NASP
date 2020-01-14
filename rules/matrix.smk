@@ -38,7 +38,9 @@ rule iqtree:
       'ckp.gz'
     ])
   # https://bitbucket.org/snakemake/snakemake/issues/279/unifying-resources-and-cluster-config
-  threads: 3
+  # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#threads
+  # FIXME: iqtree has been observed to abort if given too many threads for too trivial an input.
+  threads: workflow.cores * 0.75
   resources:
     mem_gb=lambda wildcards, threads: threads * 2
   conda: "envs/iqtree.yaml"
