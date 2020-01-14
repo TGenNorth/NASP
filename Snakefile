@@ -33,55 +33,40 @@ validate(config, schema="schemas/config.schema.yaml")
 #ids, = glob_wildcards("thedir/{id}.fastq.gz")
 
 docstring= r"""
-Help for this script
+TODO: Help for this script
+
+./pe_reads/
+./se_reads/
+./ubam/
+./assemblies/
+./reference.fasta
 
 USAGE
 
-snamekemake -s snakefile.smk ...
+snamekemake -s /path/to/workflow/Snakefile -j $(nproc) --use-conda iqtree
 """
 
 rule help:
   run:
     print(docstring)
 
-rule all:
-  input: []
-  output: []
-  params: []
-  log: []
-  benchmark: []
-  message: ''
-  threads: 1
-  resources:
-    mem_mb=lambda wildcards, attempt: attempt * 100
-  run:
-    print(config)
-
-#rule bestsnp.tsv:
-#  input:
-#    reference=config['reference'],
-#    vcf
-
-# https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#directories-as-outputs
-#rule vcf:
-#    input: expand("vcf/{id}.vcf", id=IDS)
-#    output:
-#        directory("path/to/outputdir")
-#    shell:
-#        "somecommand {input} {output}"
-
-#rule vcf:
-#  input: "bam/{sample}.bam"
-#  output: "vcf/{sample}.vcf"
-#  conda: "envs/samtools_bwa_gatk.yaml"
-#  shell: """
-#  gatk
-#  """
+#rule all:
+#  input: []
+#  output: []
+#  params: []
+#  log: []
+#  benchmark: []
+#  message: ''
+#  threads: 1
+#  resources:
+#    mem_mb=lambda wildcards, attempt: attempt * 100
+#  run:
+#    print(config)
 
 rule config:
   run:
-    print( config )
-    print(rules.frankenfasta.output)
+    import json, sys
+    json.dump(config, sys.stdout, indent='  ')
 
 # onstart handler, that allows to add code that shall be only executed before the actual workflow execution (not on dryrun).
 # Parameters defined in the cluster config file are now accessible in the job properties under the key “cluster”.

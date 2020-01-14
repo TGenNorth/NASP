@@ -4,6 +4,11 @@
   "title": "Northern Arizona SNP Pipeline",
   "type": "object",
   "properties": {
+    "outdir": {
+      "default": "./",
+      "description": "TODO",
+      "type": "string"
+    },
     "reference": {
       "default": "reference.fasta",
       "description": "TODO",
