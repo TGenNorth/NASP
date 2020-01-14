@@ -27,6 +27,20 @@ rule matrix:
 # TODO: mark fasta as temporary
 rule iqtree:
   input: rules.matrix.output.bestsnp
+  output:
+    expand('{input}.fasta.{ext}', input=rules.matrix.output.bestsnp, ext=[
+      'bionj',
+      'iqtree',
+      'log',
+      'mldist',
+      'model.gz',
+      'treefile',
+      'ckp.gz'
+    ])
+  # https://bitbucket.org/snakemake/snakemake/issues/279/unifying-resources-and-cluster-config
+  threads: 3
+  resources:
+    mem_gb=lambda wildcards, threads: threads * 2
   conda: "envs/iqtree.yaml"
   shell: """
   nasp export --type fasta {input} > {input}.fasta
