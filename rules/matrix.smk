@@ -1,4 +1,4 @@
-assemblies, = glob_wildcards(expand("{assemblies_dir}/{{id}}.fasta", assemblies_dir=config['assemblies_dir'])[0])
+assemblies, = glob_wildcards(expand("{assemblies_dir}/{{id}}.fasta", assemblies_dir=config['assemblies'])[0])
 reads, = glob_wildcards('reads/{id}_1.fq')
 
 rule matrix:

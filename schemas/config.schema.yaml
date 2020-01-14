@@ -5,33 +5,42 @@
   "type": "object",
   "properties": {
     "reference": {
-      "type": "string",
+      "default": "reference.fasta",
       "description": "TODO",
-      "default": "reference.fasta"
+      "type": "string"
     },
-    "assemblies_dir": {
-      "type": "string",
+    "assemblies": {
+      "default": "assemblies",
       "description": "TODO",
-      "default": "assemblies"
+      "type": "string"
+    },
+    "pe_reads": {
+      "default": "pe_reads",
+      "description": "directory containing paired-end fastq files",
+      "type": "string"
+    },
+    "se_reads": {
+      "default": "se_reads",
+      "description": "directory containing single-end fastq files",
+      "type": "string"
+    },
+    "ubam": {
+      "default": "ubam",
+      "description": "directory containing unaligned sam/bam/cram files",
+      "type": "string"
     },
     "minimum_coverage": {
+      "default": 10,
       "description": "TODO",
-      "type": "integer",
       "minimum": 0,
-      "default": 0
-    },
-    "minimum_coverage": {
-      "description": "TODO",
-      "type": "integer",
-      "minimum": 0,
-      "default": 10
+      "type": "integer"
     },
     "minimum_proportion": {
+      "default": 0.9,
       "description": "TODO",
-      "type": "number",
-      "minimum": 0,
       "maximum": 1,
-      "default": 0.9
+      "minimum": 0,
+      "type": "number"
     }
   }
 }

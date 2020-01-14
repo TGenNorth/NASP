@@ -80,21 +80,20 @@ jobs:
           bash Miniconda3-latest-${PLATFORM}-x86_64.sh -b -u
           . "$HOME/miniconda3/etc/profile.d/conda.sh"
           conda update -q -y -n base -c defaults conda
-      - name: generate test data
-        run: |
-          . "$HOME/miniconda3/etc/profile.d/conda.sh"
-          conda create -n bbmap -q -y -c conda-forge -c bioconda bbmap
-          conda activate bbmap
-          randomgenome.sh len=1000 out=reference.fasta
-          mkdir -pv assemblies pe_reads
-          for sample_name in a b c; do
-            mutate.sh id=0.9 in=reference.fasta out=assemblies/${sample_name}.fasta
-            randomreads.sh paired=t ref=reference.fasta out1=reads/${sample_name}_1.fq out2=reads/${sample_name}_2.fq len=100 coverage=15
-          done
+          conda --version
+          conda config \
+            --prepend channels defaults \
+            --prepend channels bioconda \
+            --prepend channels conda-forge
       - name: install snakemake
         run: |
           . "$HOME/miniconda3/etc/profile.d/conda.sh"
           conda create -n snakemake -q -y -c conda-forge -c bioconda snakemake
+      - name: snakemake testdata
+        run: |
+          . "$HOME/miniconda3/etc/profile.d/conda.sh"
+          conda activate snakemake
+          snakemake --use-conda testdata
       - name: run snakemake
         run: |
           . "$HOME/miniconda3/etc/profile.d/conda.sh"

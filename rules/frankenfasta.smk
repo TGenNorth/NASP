@@ -2,7 +2,7 @@
 rule frankenfasta:
   input:
     reference=config['reference'],
-    query=expand('{assemblies_dir}/{{sample_name}}.fasta', assemblies_dir=config['assemblies_dir'])
+    query=expand('{assemblies_dir}/{{sample_name}}.fasta', assemblies_dir=config['assemblies'])
   output: 'frankenfasta/{sample_name}.frankenfasta'
   params:
     sample_name='{sample_name}'

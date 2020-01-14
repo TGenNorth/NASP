@@ -95,6 +95,7 @@ report: "report/workflow.rst"
 
 ##### load rules #####
 
+include: "rules/testdata.smk"
 include: "rules/matrix.smk"
 include: "rules/frankenfasta.smk"
 include: "rules/bwa.smk"
