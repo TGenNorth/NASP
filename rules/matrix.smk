@@ -28,7 +28,8 @@ rule matrix:
 rule iqtree:
   input: rules.matrix.output.bestsnp
   output:
-    expand('{input}.fasta.{ext}', input=rules.matrix.output.bestsnp, ext=[
+    temp('bestsnp'),
+    expand('bestsnp.{ext}', ext=[
       'bionj',
       'iqtree',
       'log',
@@ -37,14 +38,12 @@ rule iqtree:
       'treefile',
       'ckp.gz'
     ])
-  # https://bitbucket.org/snakemake/snakemake/issues/279/unifying-resources-and-cluster-config
   # https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#threads
   # FIXME: iqtree has been observed to abort if given too many threads for too trivial an input.
+  # TODO: config parameterize iqtree
   threads: workflow.cores * 0.75
-  resources:
-    mem_gb=lambda wildcards, threads: threads * 2
   conda: "envs/iqtree.yaml"
   shell: """
-  nasp export --type fasta {input} > {input}.fasta
-  iqtree -nt {threads} -s {input}.fasta
+  nasp export --type fasta {input} > bestsnp
+  iqtree -nt {threads} -s bestsnp
   """

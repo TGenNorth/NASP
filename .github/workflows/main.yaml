@@ -94,9 +94,16 @@ jobs:
           . "$HOME/miniconda3/etc/profile.d/conda.sh"
           conda activate snakemake
           snakemake --use-conda testdata
+      #- name: run snakemake
+      #  run: |
+      #    . "$HOME/miniconda3/etc/profile.d/conda.sh"
+      #    conda activate snakemake
+      #    snakemake --list-target-rules \
+      #    | xargs snakemake --use-conda -j --
       - name: run snakemake
+        working-directory: ./testdata
         run: |
           . "$HOME/miniconda3/etc/profile.d/conda.sh"
           conda activate snakemake
-          snakemake --list-target-rules \
-          | xargs snakemake --use-conda -j --
+          snakemake -j -s $GITHUB_WORKSPACE/workflow/Snakefile --use-conda -- iqtree
+          cat bestsnp.{iqtree,treefile}
