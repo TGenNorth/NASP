@@ -1,3 +1,6 @@
+#PE_READS, = glob_wildcards(expand('{pe_reads}/{{sample_name}}_R1_001.fastq.gz', pe_reads=config['pe_reads']))
+#SE_READS, = glob_wildcards(expand('{se_reads}/{{sample_name}}.fastq.gz', se_reads=config['se_reads']))
+
 from snakemake.utils import min_version, validate
 
 # 5.4.0
@@ -46,9 +49,16 @@ USAGE
 snamekemake -s /path/to/workflow/Snakefile -j $(nproc) --use-conda iqtree
 """
 
+# https://www.biostars.org/p/220268/#220632
+# Tutorial: How to make your snakefiles self-documenting
 rule help:
+  """
+  Print list of all targets with help.
+  """
   run:
-    print(docstring)
+    for rule in workflow.rules:
+      print( rule.name )
+      print( rule.docstring )
 
 #rule all:
 #  input: []
@@ -64,6 +74,9 @@ rule help:
 #    print(config)
 
 rule config:
+  """
+  Print workflow configuration
+  """
   run:
     import json, sys
     json.dump(config, sys.stdout, indent='  ')

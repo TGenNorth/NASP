@@ -33,13 +33,13 @@ rule bwa:
 rule reference_samtools_faidx:
   input: config['reference']
   output: expand('{reference}.fai', reference=config['reference'])
-  conda: "envs/gatk4.yaml"
+  conda: 'envs/gatk4.yaml'
   shell: 'samtools faidx {input}'
 
 rule reference_picard_sequence_dictionary:
   input: config['reference']
   output: 'reference.dict'
-  conda: "envs/gatk4.yaml"
+  conda: 'envs/gatk4.yaml'
   shell: """
   picard CreateSequenceDictionary \
     R={input}

@@ -1,6 +1,18 @@
 assemblies, = glob_wildcards(expand("{assemblies_dir}/{{id}}.fasta", assemblies_dir=config['assemblies'])[0])
 reads, = glob_wildcards('reads/{id}_1.fq')
 
+# input function for the rule aggregate
+def aggregate_input(wildcards):
+  # decision based on content of output file
+  # Important: use the method open() of the returned file!
+  # This way, Snakemake is able to automatically download the file if it is generated in
+  # a cloud environment without a shared filesystem.
+  with checkpoints.frankenfasta.get(sample=wildcards.sample).output[0].open() as f:
+    if f.read().strip() == "a":
+      return "post/{sample}.txt"
+    else:
+      return "alt/{sample}.txt"
+
 rule matrix:
   params:
     minimum_coverage=config['minimum_coverage'],
@@ -9,6 +21,8 @@ rule matrix:
     reference=config['reference'],
     frankenfasta=expand('frankenfasta/{id}.frankenfasta', id=assemblies)
     #vcf=expand('gatk4/{id}.vcf', id=reads)
+  params:
+    prefix=lambda wildcards, output: output[0][:-4]
   output:
     general_stats="general_stats.tsv",
     sample_stats="sample_stats.tsv",
