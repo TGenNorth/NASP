@@ -107,3 +107,5 @@ jobs:
           conda activate snakemake
           snakemake -j -s $GITHUB_WORKSPACE/workflow/Snakefile --use-conda -- iqtree
           cat bestsnp.{iqtree,treefile}
+          snakemake -j -s $GITHUB_WORKSPACE/workflow/Snakefile --use-conda -- iqtree
+          cat bestsnp.{iqtree,treefile}

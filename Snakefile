@@ -1,6 +1,3 @@
-#PE_READS, = glob_wildcards(expand('{pe_reads}/{{sample_name}}_R1_001.fastq.gz', pe_reads=config['pe_reads']))
-#SE_READS, = glob_wildcards(expand('{se_reads}/{{sample_name}}.fastq.gz', se_reads=config['se_reads']))
-
 from snakemake.utils import min_version, validate
 
 # 5.4.0
@@ -16,9 +13,11 @@ min_version("5.6.0")
 # * validate user-input configuration
 # * define default values
 #
-# The `configfile: [FILE]` directive is not used because it requires the file exists in the working directory.
+# The `configfile: [FILE]` directive is not used because it requires the file exist in the working directory.
 # `snakemake --configfile [FILE]` allows the user to override values in the config, but not the path to the config.
 #configfile: "config.yaml"
+#
+# The schema path is relative to the Snakefile
 validate(config, schema="schemas/config.schema.yaml")
 
 #cells = pd.read_csv(config["cells"], sep="\t").set_index("id", drop=False)
@@ -34,9 +33,16 @@ validate(config, schema="schemas/config.schema.yaml")
 #assemblies, = glob_wildcards(expand("{assemblies_dir}/{{id}}.fasta", assemblies_dir=config['assemblies_dir']))
 #assemblies = expand("{assemblies_dir}/{{id}}.fasta", assemblies_dir=config['assemblies_dir'])
 #ids, = glob_wildcards("thedir/{id}.fastq.gz")
+#PE_READS, = glob_wildcards(expand('{pe_reads}/{{sample_name}}_R1_001.fastq.gz', pe_reads=config['pe_reads']))
+#SE_READS, = glob_wildcards(expand('{se_reads}/{{sample_name}}.fastq.gz', se_reads=config['se_reads']))
 
 docstring= r"""
 TODO: tips/usage
+
+https://snakemake.readthedocs.io/en/stable/executing/cli.html
+
+--snakefile, -s
+The workflow definition in form of a snakefile.Usually, you should not need to specify this. By default, Snakemake will search for ‘Snakefile’, ‘snakefile’, ‘workflow/Snakefile’, ‘workflow/snakefile’ beneath the current working directory, in this order. Only if you definitely want a different layout, you need to use this parameter.
 
 snakemake --lt or --list-target-rules or --list
 
@@ -79,7 +85,7 @@ rule config:
 # onstart handler, that allows to add code that shall be only executed before the actual workflow execution (not on dryrun).
 # Parameters defined in the cluster config file are now accessible in the job properties under the key “cluster”.
 
-
+# TODO: What are the Snakemake default search paths? (/etc/Snakefile? /xdg
 # Error: no Snakefile found, tried Snakefile, snakefile, workflow/Snakefile, workflow/snakefile.
 
 ##### setup report #####
