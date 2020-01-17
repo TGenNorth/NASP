@@ -81,6 +81,7 @@ rule config:
   run:
     import json, sys
     json.dump(config, sys.stdout, indent='  ')
+    print()
 
 # onstart handler, that allows to add code that shall be only executed before the actual workflow execution (not on dryrun).
 # Parameters defined in the cluster config file are now accessible in the job properties under the key “cluster”.

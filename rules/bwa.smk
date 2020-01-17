@@ -1,20 +1,20 @@
+pe_samples, = glob_wildcards(os.path.join(config['pe_reads'], '{sample_name}_1.fq'))
+reference = config['reference']
+
 rule bwa_index:
   input: config['reference'],
-  output: expand('{reference}.{ext}', reference=config['reference'], ext=['amb', 'ann', 'bwt', 'pac', 'sa'])
-  conda: "envs/bwa.yaml"
-  shell: """
-  bwa index {input}
-  """
+  output: multiext(config['reference'], '.amb', '.ann', '.bwt', '.pac', '.sa')
+  conda: 'envs/bwa.yaml'
+  shell: 'bwa index {input}'
 
 # usage: bwa mem [options] <idxbase> <in1.fq> [in2.fq]
 # http://www.htslib.org/workflow/
-#fq=expand('{assemblies_dir}/{{sample_name}}.fasta', assemblies_dir=config['assemblies_dir'])
-rule bwa:
+rule bwa_mem:
   input:
-    reference=config['reference'],
+    reference=rules.bwa_index.input,
     bwa_index=rules.bwa_index.output,
-    fq='reads/{sample_name}_1.fq',
-    fq2='reads/{sample_name}_2.fq',
+    fq=os.path.join(config['pe_reads'], '{sample_name}_1.fq'),
+    fq2=os.path.join(config['pe_reads'], '{sample_name}_2.fq')
   output:
     alignment='bwa/{sample_name}.cram',
     alignment_index='bwa/{sample_name}.cram.crai'
@@ -52,14 +52,16 @@ rule gatk4:
     reference_samtools_faidx=rules.reference_samtools_faidx.output,
     reference_picard_sequence_dictionary=rules.reference_picard_sequence_dictionary.output,
     alignment='bwa/{sample_name}.cram',
-  output: 'gatk4/{sample_name}.vcf'
+  output:
+    vcf = 'gatk4/{sample_name}.vcf',
+    idx = 'gatk4/{sample_name}.vcf.idx'
   conda: "envs/gatk4.yaml"
   shell: """
   gatk \
     HaplotypeCaller \
     -R {input.reference} \
     -I {input.alignment} \
-    -O {output} \
+    -O {output.vcf} \
     --output-mode EMIT_ALL_CONFIDENT_SITES
   """
 

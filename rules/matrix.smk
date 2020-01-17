@@ -1,5 +1,5 @@
-assemblies, = glob_wildcards(expand("{assemblies_dir}/{{id}}.fasta", assemblies_dir=config['assemblies'])[0])
-reads, = glob_wildcards('reads/{id}_1.fq')
+pe_samples, = glob_wildcards(os.path.join(config['pe_reads'], '{sample_name}_1.fq'))
+assemblies, = glob_wildcards(os.path.join(config['assemblies'], '{id}.fasta'))
 
 # input function for the rule aggregate
 def aggregate_input(wildcards):
@@ -23,8 +23,8 @@ rule matrix:
     minimum_proportion=config['minimum_proportion']
   input:
     reference=config['reference'],
-    frankenfasta=expand('frankenfasta/{id}.frankenfasta', id=assemblies)
-    #vcf=expand('gatk4/{id}.vcf', id=reads)
+    frankenfasta=expand('frankenfasta/{id}.frankenfasta', id=assemblies),
+    vcf=expand('gatk4/{id}.vcf', id=pe_samples)
   params:
     prefix=lambda wildcards, output: output[0][:-4]
   output:
