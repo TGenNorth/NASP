@@ -3,6 +3,7 @@ package export
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -11,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/TGenNorth/nasp/command"
-	"github.com/pkg/errors"
 )
 
 var cmd = &command.Command{
@@ -475,7 +475,7 @@ func collectVcfMetadata(r io.Reader) (contigs []contigmeta, identifiers [][]byte
 	if err == io.EOF {
 		err = nil
 	} else if err != nil {
-		return nil, nil, errors.Wrap(err, "scan file for contig name and length")
+		return nil, nil, fmt.Errorf("scan file for contig name and length: %w")
 	}
 
 	contig := contigmeta{
