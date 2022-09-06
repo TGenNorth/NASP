@@ -5,6 +5,8 @@
 
 # DEVELOPMENT BRANCH
 
+## I have declared doom for all these files
+
 # Overview
 
 NASP is a pipeline for analysis of genomic data. It is a suite of tools meant to collect and report on statistically-relevant high-confidence positions in a collection of genomes, with emphasis on variant positions, especially single nucleotide polymorphisms (SNPs). NASP expects some combination of files in FASTA, FASTQ, SAM, BAM, and VCF format as input, and will produce output files also in those formats. As NASP is a pipeline, it expects to link a set of external tools (usually installed separately) to complete specific analysis tasks.
