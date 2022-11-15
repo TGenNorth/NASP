@@ -11,6 +11,11 @@
 The Northern Arizona SNP Pipeline (NASP)
 ========================================
 
+ANNOUNCEMENT:
+---------
+
+As of NOV 2022, The Northern Arizona Piline is currently being revised and will be updated. The [current release version](https://github.com/TGenNorth/NASP/releases/tag/v1.2.0) will not recieve further updates but will continue to be supported until the release of the upcoming version. Stay tuned, for further updates on development.
+
 OVERVIEW:
 ---------
 
