@@ -11,6 +11,8 @@ Created on Mar 4, 2014
 '''
 
 import logging
+import shlex
+
 
 def _parse_args():
     import argparse
@@ -21,9 +23,9 @@ def _parse_args():
 
 
 def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, notify=False):
-    import subprocess
-    import re
     import os
+    import re
+    import subprocess
 
     # TODO(jtravis): remove unused output variable
     output = jobid = None
@@ -66,15 +68,16 @@ def _submit_job(job_submitter, command, job_parms, waitfor_id=None, hold=False, 
             args += " -H"
         if notify:
             args += " --mail-type=END"
-        submit_command = "sbatch -D \'%s\' -c%s --mem=%s000 --time=%s:00:00 --mail-type=FAIL -J \'%s\' %s %s %s" % (
+        submit_command = "sbatch --parsable -D \'%s\' -c%s --mem=%s000 --time=%s:00:00 --mail-type=FAIL -J \'%s\' %s %s %s" % (
             job_parms["work_dir"], job_parms['num_cpus'], job_parms['mem_requested'], job_parms['walltime'],
             job_parms['name'], waitfor, queue, args)
         logging.debug("submit_command = %s" % submit_command)
+        #output = subprocess.run(shlex.split("%s --wrap=\"%s\"" % (submit_command, command)), capture_output=True).stdout
         output = subprocess.getoutput("%s --wrap=\"%s\"" % (submit_command, command))
+
         logging.debug("output = %s" % output)
-        job_match = re.search('^Submitted batch job (\d+)$', output)
-        if job_match:
-            jobid = job_match.group(1)
+        if output:
+            jobid = output.split("\n")[-1]#job_match.group(1)
         else:
             logging.warning("Job not submitted!!")
             print("WARNING: Job not submitted: %s" % output)
@@ -209,8 +212,8 @@ def _index_reference(configuration):
 
 
 def _run_bwa(read_tuple, aligner, samtools, job_submitter, index_job_id, reference, output_folder):
-    import re
     import os
+    import re
 
     (name, read1) = read_tuple[0:2]
     read2 = read_tuple[2] if len(read_tuple) >= 3 else ""
@@ -625,8 +628,9 @@ def _index_bams(configuration, index_job_id):
 
 
 def _create_matrices(configuration, reference, dups_file, vcf_files, franken_fastas, job_ids):
-    import nasp.matrix_DTO as matrix_DTO
     import os
+
+    import nasp.matrix_DTO as matrix_DTO
 
     output_dir = configuration['output_folder']
     path = configuration["matrix_generator"][1]
